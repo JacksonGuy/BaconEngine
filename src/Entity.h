@@ -7,6 +7,7 @@ class Entity {
     public:
         sf::Vector2<float> position;
         sf::Vector2<float> scale;
+        int width, height; 
         float rotation;
         sf::Sprite sprite;
 
