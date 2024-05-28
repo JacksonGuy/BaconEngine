@@ -19,8 +19,8 @@ LIBS =
 EXE = 
 
 ifeq ($(UNAME), Linux)
-	LIBS += -lsfml-graphics -lsfml-window -lsfml-system
-	EXE = bin/run
+	LIBS += -lGL -lglfw -lsfml-graphics -lsfml-window -lsfml-system
+	EXE = run
 endif
 
 ifeq ($(OS), Windows_NT)

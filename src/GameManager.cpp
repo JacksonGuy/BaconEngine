@@ -2,7 +2,7 @@
 #include <iostream>
 
 std::map<std::string, sf::Texture*> GameManager::Textures;
-std::vector<Entity> GameManager::Entities;
+std::vector<Entity*> GameManager::Entities;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     sf::Texture* texture = new sf::Texture();
@@ -14,7 +14,7 @@ sf::Texture* GameManager::LoadTexture(std::string path) {
 }
 
 void GameManager::DrawEntities(sf::RenderWindow& window) {
-    for (Entity& e : Entities) {
-        window.draw(e.sprite);
+    for (Entity* e : Entities) {
+        window.draw(e->sprite);
     }
 }

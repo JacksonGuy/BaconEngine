@@ -12,7 +12,7 @@
 class GameManager {
     public:
         static std::map<std::string, sf::Texture*> Textures;
-        static std::vector<Entity> Entities;
+        static std::vector<Entity*> Entities;
         
         static sf::Texture* LoadTexture(std::string path);
         static void DrawEntities(sf::RenderWindow& window);

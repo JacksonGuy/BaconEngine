@@ -17,13 +17,15 @@ int main() {
 
     // Create Entities
     Entity player({20.0f, 20.0f});
-    player.SetSprite("./assets/test.png");
-    GameManager::Entities.push_back(player);
+    player.SetSprite("./assets/player.jpg");
+    GameManager::Entities.push_back(&player);
 
+    // Engine UI variables
     sf::Clock deltaClock;
     float color[] = {0.5f, 0.5f, 0.5f};
-    float scaleX;
-    float scaleY;
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
+    
     while (window.isOpen())
     {
         sf::Event event;
@@ -40,14 +42,16 @@ int main() {
         ImGui::Begin("Test Window");
         ImGui::Button("This is a button");
         ImGui::ColorEdit3("Color", color);
-        ImGui::SliderFloat("Scale X", &scaleX, 0.0f, 10.0f);
-        ImGui::SliderFloat("Scale Y", &scaleY, 0.0f, 10.0f);
+        ImGui::InputFloat("Scale X", &scaleX, 0.0f, 10.0f);
+        ImGui::InputFloat("Scale Y", &scaleY, 0.0f, 10.0f);
         ImGui::End();
 
         player.sprite.setScale(scaleX, scaleY);
 
         window.clear(sf::Color(40, 40, 40));
+        
         GameManager::DrawEntities(window);
+
         ImGui::SFML::Render(window);
         window.display();
     }
