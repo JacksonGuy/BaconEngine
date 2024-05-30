@@ -18,3 +18,8 @@ void GameManager::DrawEntities(sf::RenderWindow& window) {
         window.draw(e->sprite);
     }
 }
+
+sf::Vector2f GameManager::ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view) {
+    sf::Vector2f viewCenter = view.getCenter();
+    sf::Vector2f adjusted = viewCenter - mousePos;
+}

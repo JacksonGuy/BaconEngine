@@ -9,18 +9,21 @@
 #include "src/Entity.h" 
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(1280, 720), "Demo");
+    unsigned int screenWidth = 1280;
+    unsigned int screenHeight = 720;
+    
+    sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Demo");
     if (!ImGui::SFML::Init(window)) {
         std::cout << "[ERROR] Failed to initialize ImGui\n";
         return -1;
     }
 
     // Camera View
-    sf::View camera(sf::Vector2f(0,0), sf::Vector2f(800, 600));
+    sf::View camera(sf::Vector2f(0,0), sf::Vector2f(screenWidth, screenHeight));
     window.setView(camera);
 
     // Create Entities
-    Entity player({20.0f, 20.0f});
+    Entity player(sf::Vector2f{0.0f, 0.0f});
     player.SetSprite("./assets/player.jpg");
 
     // Engine UI variables
@@ -28,7 +31,7 @@ int main() {
     std::vector<Entity*> showDetails;
     float color[] = {0.5f, 0.5f, 0.5f};
     sf::Vector2f mousePos;
-    bool cameraMove = false; 
+    bool cameraMove = false;
     
     while (window.isOpen())
     {
@@ -42,25 +45,29 @@ int main() {
 
             // Input
             if (event.type == sf::Event::MouseButtonPressed) {
-                //std::cout << "[DEBUG] Mouse button " << event.mouseButton.button << " pressed" << std::endl;
-
+                // Left Mouse
                 if (event.mouseButton.button == 0) {
                     // Camera drag move toggle
                     // Get starting position as reference for movement
-                    mousePos = window.mapPixelToCoords(sf::Mouse::getPosition());
+                    mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
                     cameraMove = true;
                 }
+                // Right Mouse
                 else if (event.mouseButton.button == 1) {
-                    sf::Vector2f converted = window.mapPixelToCoords(sf::Mouse::getPosition(), camera);
-                    std::cout << "[DEBUG] Mouse Position: " << converted.x << "," << converted.y << std::endl;
+                    // Check each entity to see if we right clicked it
+                    sf::Vector2f converted = window.mapPixelToCoords(sf::Mouse::getPosition(window));
                     for (Entity* e : GameManager::Entities) {
-                        std::cout << "[DEBUG] Entity Rect: (" << e->rect.top << ","
-                            << e->rect.left << ","
-                            << e->rect.width << ","
-                            << e->rect.height << ")" << std::endl;
+                        bool selected = false;
                         if (e->rect.contains(converted.x, converted.y)) {
-                            std::cout << "[DEBUG] Showing details for Entity" << std::endl;
-                            showDetails.push_back(e);
+                            // Check if there's already a window for the entity
+                            for (Entity* other : showDetails) {
+                                if (e->ID == other->ID) {
+                                    selected = true;
+                                    break;
+                                }
+                            }
+                            // Don't open another window if there's already one 
+                            if (!selected) showDetails.push_back(e);
                         }                        
                     }
                 }
@@ -77,7 +84,7 @@ int main() {
                     break;
                 }
                 // Calculate change
-                sf::Vector2f currentPos = window.mapPixelToCoords(sf::Mouse::getPosition());
+                sf::Vector2f currentPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
                 sf::Vector2f change = (sf::Vector2f)(mousePos - currentPos);
 
                 // Update position
@@ -98,19 +105,34 @@ int main() {
         }
 
         ImGui::Begin("Game Details");
-            ImGui::Button("This is a button");
+            if (ImGui::Button("This is a button")) {
+                std::cout << "[DEBUG] Player Position: " << player.position.x << ", " << player.position.y << std::endl;
+                std::cout << "[DEBUG] Entity Name: " << player.name << std::endl;
+            }
         ImGui::End();
 
         for (Entity* e : showDetails) {
-            ImGui::Begin("Entity Details");
-                ImGui::InputFloat("X", &e->position.x);
-                ImGui::InputFloat("Y", &e->position.y);
-                ImGui::InputFloat("Scale X", &e->scale.x);
-                ImGui::InputFloat("Scale Y", &e->scale.y);
+            std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
+            ImGui::Begin(name.c_str());
+                ImGui::Text("ID: %d", e->ID);
+
+                char nameBuff[32];
+                strcat(nameBuff, e->name.c_str());
+                if (ImGui::InputText("Name", nameBuff, 32)) {
+                    e->name = nameBuff;
+                }
+                
+                float e_pos[] = {e->position.x, e->position.y};
+                if (ImGui::InputFloat2("Position", e_pos)) {
+                    e->SetPosition({e_pos[0], e_pos[1]});
+                }
+
+                float e_scale[] = {e->scale.y, e->scale.y};
+                if (ImGui::InputFloat2("Scale", e_scale)) {
+                    e->SetSpriteScale({e_scale[0], e_scale[1]});
+                }
             ImGui::End();
         }
-
-        player.UpdateSpriteScale();
 
         window.clear(sf::Color(40, 40, 40));
         

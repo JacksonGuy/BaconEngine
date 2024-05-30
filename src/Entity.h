@@ -4,19 +4,24 @@
 #include <SFML/Graphics.hpp>
 
 class Entity {
+    static unsigned int IDNum;
+
     public:
-        sf::Vector2<float> position;
-        sf::Vector2<float> scale;
+        unsigned int ID;
+        std::string name;
+
+        sf::Vector2f position;
+        sf::Vector2f scale;
         int width, height; 
         float rotation;
         sf::Sprite sprite;
         sf::Rect<int> rect;
 
-        Entity();
-        Entity(sf::Vector2<float> position);
+        Entity(sf::Vector2f position);
 
         void SetSprite(std::string path);
-        void UpdateSpriteScale();
+        void SetPosition(sf::Vector2f position);
+        void SetSpriteScale(sf::Vector2f scale);
         void UpdateRect();
 };
 

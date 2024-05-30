@@ -16,6 +16,7 @@ class GameManager {
         
         static sf::Texture* LoadTexture(std::string path);
         static void DrawEntities(sf::RenderWindow& window);
+        static sf::Vector2f ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view);
     private:
 };
 
