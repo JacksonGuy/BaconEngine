@@ -9,17 +9,17 @@
 #include "src/Entity.h" 
 
 int main() {
-    unsigned int screenWidth = 1280;
-    unsigned int screenHeight = 720;
-    
-    sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Demo");
+    GameManager::screenWidth = 1280;
+    GameManager::screenHeight = 720;
+
+    sf::RenderWindow window(sf::VideoMode(GameManager::screenWidth, GameManager::screenHeight), "Demo");
     if (!ImGui::SFML::Init(window)) {
         std::cout << "[ERROR] Failed to initialize ImGui\n";
         return -1;
     }
 
     // Camera View
-    sf::View camera(sf::Vector2f(0,0), sf::Vector2f(screenWidth, screenHeight));
+    sf::View camera(sf::Vector2f(0,0), sf::Vector2f(GameManager::screenWidth, GameManager::screenHeight));
     window.setView(camera);
 
     // Create Entities
@@ -32,6 +32,13 @@ int main() {
     float color[] = {0.5f, 0.5f, 0.5f};
     sf::Vector2f mousePos;
     bool cameraMove = false;
+
+    // Editor Tools
+    bool panMode = true;
+    bool selectMode = false;
+
+    // GameManager Things
+    GameManager::LoadFont("./assets/fonts/arial.ttf"); 
     
     while (window.isOpen())
     {
@@ -47,10 +54,12 @@ int main() {
             if (event.type == sf::Event::MouseButtonPressed) {
                 // Left Mouse
                 if (event.mouseButton.button == 0) {
-                    // Camera drag move toggle
-                    // Get starting position as reference for movement
-                    mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                    cameraMove = true;
+                    if (panMode) {
+                        // Camera drag move toggle
+                        // Get starting position as reference for movement
+                        mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                        cameraMove = true;
+                    }
                 }
                 // Right Mouse
                 else if (event.mouseButton.button == 1) {
@@ -74,23 +83,37 @@ int main() {
             }
             
             if (event.type == sf::Event::MouseButtonReleased) {
-                // Untoggle camera move
-                cameraMove = false;
+                if (panMode) {
+                    // Untoggle camera move
+                    cameraMove = false;
+                }
             }
 
             if (event.type == sf::Event::MouseMoved) {
-                // Only move while holding down left mouse
-                if (!cameraMove) {
-                    break;
-                }
-                // Calculate change
-                sf::Vector2f currentPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                sf::Vector2f change = (sf::Vector2f)(mousePos - currentPos);
+                if (panMode) {
+                    // Only move while holding down left mouse
+                    if (!cameraMove) {
+                        break;
+                    }
+                    // Calculate change
+                    sf::Vector2f currentPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                    sf::Vector2f change = (sf::Vector2f)(mousePos - currentPos);
 
-                // Update position
-                camera.setCenter(camera.getCenter() + change);
-                window.setView(camera);
+                    // Update position
+                    camera.setCenter(camera.getCenter() + change);
+                    window.setView(camera);
+                }
             }
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::M)) {
+            panMode = true;
+            selectMode = false;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+            selectMode = true;
+            panMode = false;
         }
 
         ImGui::SFML::Update(window, deltaClock.restart());
@@ -135,7 +158,14 @@ int main() {
         }
 
         window.clear(sf::Color(40, 40, 40));
-        
+
+        if (panMode) {
+            GameManager::DrawScreenText(window, camera, "Pan", {10.0f, 10.0f});
+        }
+        else if (selectMode) {
+            GameManager::DrawScreenText(window, camera, "Select", {10.0f, 10.0f});
+        }
+
         GameManager::DrawEntities(window);
 
         ImGui::SFML::Render(window);

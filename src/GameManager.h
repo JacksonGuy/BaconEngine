@@ -11,11 +11,17 @@
 
 class GameManager {
     public:
+        static unsigned int screenWidth;
+        static unsigned int screenHeight;
         static std::map<std::string, sf::Texture*> Textures;
         static std::vector<Entity*> Entities;
+        static sf::Font font;
         
         static sf::Texture* LoadTexture(std::string path);
+        static void LoadFont(std::string path);
         static void DrawEntities(sf::RenderWindow& window);
+        static void DrawText(sf::RenderWindow& window, std::string text, sf::Vector2f position);
+        static void DrawScreenText(sf::RenderWindow& window, sf::View& view, std::string text, sf::Vector2f position);
         static sf::Vector2f ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view);
     private:
 };

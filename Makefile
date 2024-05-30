@@ -24,7 +24,7 @@ ifeq ($(UNAME), Linux)
 endif
 
 ifeq ($(OS), Windows_NT)
-	LIBS += -lopengl32 -lglfw3 -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lwinmm -lgdi32
+	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype 
 	EXE = bin/run.exe
 endif
 
