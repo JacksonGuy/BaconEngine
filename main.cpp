@@ -28,10 +28,17 @@ int main() {
 
     // Engine UI variables
     sf::Clock deltaClock;
+    sf::Clock fpsClock;
     std::vector<Entity*> showDetails;
     float color[] = {0.5f, 0.5f, 0.5f};
     sf::Vector2f mousePos;
     bool cameraMove = false;
+    bool showEntityCreate = false;
+
+    // Create Entity Variables
+    char createNameBuffer[32] = "";
+    float createPosition[] = {0.0f, 0.0f};
+    char createImagePath[32] = "";
 
     // Editor Tools
     bool panMode = true;
@@ -42,6 +49,9 @@ int main() {
     
     while (window.isOpen())
     {
+        float currentTime = fpsClock.restart().asSeconds();
+        float fps = 1.0f / currentTime;
+
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -118,31 +128,47 @@ int main() {
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
+        // Top menu bar
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                     ImGui::MenuItem("Save");
                     ImGui::MenuItem("Save as");
                 ImGui::EndMenu();
             }
+            if (ImGui::BeginMenu("Create")) {
+                    ImGui::MenuItem("Entity", NULL, &showEntityCreate);
+                ImGui::EndMenu();
+            }
             ImGui::EndMainMenuBar();
         }
 
+        // General Test Menu
         ImGui::Begin("Game Details");
+            ImGui::Text("Version 0.1a");
+            ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
             if (ImGui::Button("This is a button")) {
-                std::cout << "[DEBUG] Player Position: " << player.position.x << ", " << player.position.y << std::endl;
-                std::cout << "[DEBUG] Entity Name: " << player.name << std::endl;
+                for (Entity* e : GameManager::Entities) {
+                    std::cout << "[DEBUG] Scale: " << e->scale.x << ", " << e->scale.y << std::endl; 
+                }
             }
         ImGui::End();
 
+        // Entity detail menus
         for (Entity* e : showDetails) {
             std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
             ImGui::Begin(name.c_str());
                 ImGui::Text("ID: %d", e->ID);
 
                 char nameBuff[32];
-                strcat(nameBuff, e->name.c_str());
-                if (ImGui::InputText("Name", nameBuff, 32)) {
+                strcpy(nameBuff, e->name.data());
+                if (ImGui::InputText("Name", nameBuff, sizeof(nameBuff))) {
                     e->name = nameBuff;
+                }
+
+                char e_textureBuff[64];
+                strcpy(e_textureBuff, e->texturePath.data());
+                if (ImGui::InputText("Texture", e_textureBuff, 64)) {
+                    e->SetSprite(e_textureBuff);
                 }
                 
                 float e_pos[] = {e->position.x, e->position.y};
@@ -150,9 +176,34 @@ int main() {
                     e->SetPosition({e_pos[0], e_pos[1]});
                 }
 
-                float e_scale[] = {e->scale.y, e->scale.y};
-                if (ImGui::InputFloat2("Scale", e_scale)) {
-                    e->SetSpriteScale({e_scale[0], e_scale[1]});
+                int e_width = e->width;
+                int e_height = e->height;
+                if (ImGui::InputInt("Width", &e_width)) {
+                    e->width = e_width;
+                    e->UpdateRect();
+                    e->SetSprite(e->texturePath);
+                }
+                if (ImGui::InputInt("Height", &e_height)) {
+                    e->height = e_height;
+                    e->UpdateRect();
+                    e->SetSprite(e->texturePath);
+                }
+            ImGui::End();
+        }
+
+        if (showEntityCreate) {
+            ImGui::Begin("Create new entity");
+                // Displays
+                ImGui::InputText("Name", createNameBuffer, 32);
+                ImGui::InputFloat2("Position", createPosition);
+                ImGui::InputText("Image Path", createImagePath, 32);
+
+                // Create Button
+                if (ImGui::Button("Create")) {
+                   Entity* entity = new Entity({createPosition[0], createPosition[1]});
+                   entity->name = createNameBuffer;
+                   entity->SetSprite(createImagePath);
+                   std::cout << "[DEBUG] Created new entity" << std::endl;
                 }
             ImGui::End();
         }

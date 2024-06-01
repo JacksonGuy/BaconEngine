@@ -9,6 +9,7 @@ class Entity {
     public:
         unsigned int ID;
         std::string name;
+        std::string texturePath;
 
         sf::Vector2f position;
         sf::Vector2f scale;
