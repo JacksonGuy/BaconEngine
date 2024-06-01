@@ -21,6 +21,7 @@ int main() {
     // Camera View
     sf::View camera(sf::Vector2f(0,0), sf::Vector2f(GameManager::screenWidth, GameManager::screenHeight));
     window.setView(camera);
+    float cameraZoom = 1.0f;
 
     // Create Entities
     Entity player(sf::Vector2f{0.0f, 0.0f});
@@ -34,6 +35,7 @@ int main() {
     sf::Vector2f mousePos;
     bool cameraMove = false;
     bool showEntityCreate = false;
+    bool showTestMenu = true;
 
     // Create Entity Variables
     char createNameBuffer[32] = "";
@@ -73,21 +75,13 @@ int main() {
                 }
                 // Right Mouse
                 else if (event.mouseButton.button == 1) {
-                    // Check each entity to see if we right clicked it
+                    // Check if we right clicked an entity
                     sf::Vector2f converted = window.mapPixelToCoords(sf::Mouse::getPosition(window));
                     for (Entity* e : GameManager::Entities) {
-                        bool selected = false;
                         if (e->rect.contains(converted.x, converted.y)) {
-                            // Check if there's already a window for the entity
-                            for (Entity* other : showDetails) {
-                                if (e->ID == other->ID) {
-                                    selected = true;
-                                    break;
-                                }
-                            }
-                            // Don't open another window if there's already one 
-                            if (!selected) showDetails.push_back(e);
-                        }                        
+                            // Toggle visability
+                            e->showDetailMenu = !e->showDetailMenu;
+                        }
                     }
                 }
             }
@@ -113,6 +107,20 @@ int main() {
                     camera.setCenter(camera.getCenter() + change);
                     window.setView(camera);
                 }
+            }
+
+            // Mouse Wheel
+            if (event.type == sf::Event::MouseWheelMoved) {
+                if (event.mouseWheel.delta == 1) {
+                    if (cameraZoom > 1) cameraZoom = 1;
+                    cameraZoom -= 0.1f;
+                }
+                else if (event.mouseWheel.delta == -1) {
+                    if (cameraZoom < 1) cameraZoom = 1;
+                    cameraZoom += 0.1f;
+                }
+                camera.zoom(cameraZoom);
+                window.setView(camera);
             }
         }
 
@@ -143,20 +151,23 @@ int main() {
         }
 
         // General Test Menu
-        ImGui::Begin("Game Details");
-            ImGui::Text("Version 0.1a");
-            ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
-            if (ImGui::Button("This is a button")) {
-                for (Entity* e : GameManager::Entities) {
-                    std::cout << "[DEBUG] Scale: " << e->scale.x << ", " << e->scale.y << std::endl; 
+        if (showTestMenu) {
+            ImGui::Begin("Game Details", &showTestMenu);
+                ImGui::Text("Version 0.1a");
+                ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
+                if (ImGui::Button("This is a button")) {
+                    for (Entity* e : GameManager::Entities) {
+                        std::cout << "[DEBUG] Show Entity: " << e->showDetailMenu << std::endl;
+                    }
                 }
-            }
-        ImGui::End();
+            ImGui::End();
+        }
 
         // Entity detail menus
-        for (Entity* e : showDetails) {
+        for (Entity* e : GameManager::Entities) {
+            if (!e->showDetailMenu) continue;
             std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
-            ImGui::Begin(name.c_str());
+            ImGui::Begin(name.c_str(), &(e->showDetailMenu));
                 ImGui::Text("ID: %d", e->ID);
 
                 char nameBuff[32];

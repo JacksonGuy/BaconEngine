@@ -18,9 +18,11 @@ class Entity {
         sf::Sprite sprite;
         sf::Rect<int> rect;
 
+        bool showDetailMenu;
+
         Entity(sf::Vector2f position);
 
-        void SetSprite(std::string path);
+        void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position);
         void SetSpriteScale(sf::Vector2f scale);
         void UpdateRect();

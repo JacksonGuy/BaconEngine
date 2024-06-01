@@ -9,12 +9,17 @@ unsigned int GameManager::screenHeight;
 
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
-    sf::Texture* texture = new sf::Texture();
-    if (!texture->loadFromFile(path)) {
-        std::cout << "[ERROR] Couldn't load texture: " << path << std::endl;
+    if (Textures.find(path) == Textures.end()) {
+        std::cout << "[DEBUG] Loading New Texture" << std::endl;
+        sf::Texture* texture = new sf::Texture();
+        if (!texture->loadFromFile(path)) {
+            std::cout << "[ERROR] Couldn't load texture: " << path << std::endl;
+        }
+        Textures[path] = texture;
+    } else {
+        std::cout << "[DEBUG] Texture Already Loaded" << std::endl;
     }
-    Textures[path] = texture;
-    return texture;
+    return Textures[path];
 }
 
 void GameManager::LoadFont(std::string path) {
