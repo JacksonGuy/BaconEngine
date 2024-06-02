@@ -24,8 +24,11 @@ int main() {
     float cameraZoom = 1.0f;
 
     // Create Entities
-    Entity player(sf::Vector2f{0.0f, 0.0f});
-    player.SetSprite("./assets/player.jpg");
+    // Entity player(sf::Vector2f{0.0f, 0.0f});
+    // player.SetSprite("./assets/player.jpg");
+    sf::CircleShape originDot(10);
+    originDot.setFillColor(sf::Color::White);
+    originDot.setPosition(0.0f, 0.0f);
 
     // Engine UI variables
     sf::Clock deltaClock;
@@ -36,15 +39,12 @@ int main() {
     bool cameraMove = false;
     bool showEntityCreate = false;
     bool showTestMenu = true;
+    bool entitySelect = false;
 
     // Create Entity Variables
     char createNameBuffer[32] = "";
     float createPosition[] = {0.0f, 0.0f};
     char createImagePath[32] = "";
-
-    // Editor Tools
-    bool panMode = true;
-    bool selectMode = false;
 
     // GameManager Things
     GameManager::LoadFont("./assets/fonts/arial.ttf"); 
@@ -66,13 +66,18 @@ int main() {
             if (event.type == sf::Event::MouseButtonPressed) {
                 // Left Mouse
                 if (event.mouseButton.button == 0) {
-                    if (panMode) {
-                        // Camera drag move toggle
-                        // Get starting position as reference for movement
-                        mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                        cameraMove = true;
-                    }
+                    // sf::Vector2f converted = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                    // if (GameManager::MouseOnEntity(converted)) {
+                    //     entitySelect = true;
+                    //     std::cout << "[DEBUG] Left Click on entity" << std::endl;
+                    // }
+
+                    // Camera drag move toggle
+                    // Get starting position as reference for movement
+                    mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                    cameraMove = true;
                 }
+
                 // Right Mouse
                 else if (event.mouseButton.button == 1) {
                     // Check if we right clicked an entity
@@ -87,26 +92,22 @@ int main() {
             }
             
             if (event.type == sf::Event::MouseButtonReleased) {
-                if (panMode) {
-                    // Untoggle camera move
-                    cameraMove = false;
-                }
+                // Untoggle camera move
+                cameraMove = false;
             }
 
             if (event.type == sf::Event::MouseMoved) {
-                if (panMode) {
-                    // Only move while holding down left mouse
-                    if (!cameraMove) {
-                        break;
-                    }
-                    // Calculate change
-                    sf::Vector2f currentPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                    sf::Vector2f change = (sf::Vector2f)(mousePos - currentPos);
-
-                    // Update position
-                    camera.setCenter(camera.getCenter() + change);
-                    window.setView(camera);
+                // Only move while holding down left mouse
+                if (!cameraMove) {
+                    break;
                 }
+                // Calculate change
+                sf::Vector2f currentPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                sf::Vector2f change = (sf::Vector2f)(mousePos - currentPos);
+
+                // Update position
+                camera.setCenter(camera.getCenter() + change);
+                window.setView(camera);
             }
 
             // Mouse Wheel
@@ -122,16 +123,6 @@ int main() {
                 camera.zoom(cameraZoom);
                 window.setView(camera);
             }
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::M)) {
-            panMode = true;
-            selectMode = false;
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            selectMode = true;
-            panMode = false;
         }
 
         ImGui::SFML::Update(window, deltaClock.restart());
@@ -164,7 +155,9 @@ int main() {
         }
 
         // Entity detail menus
-        for (Entity* e : GameManager::Entities) {
+        for (size_t i = 0; i < GameManager::Entities.size(); i++) {
+            Entity* e = GameManager::Entities[i];
+
             if (!e->showDetailMenu) continue;
             std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
             ImGui::Begin(name.c_str(), &(e->showDetailMenu));
@@ -199,11 +192,19 @@ int main() {
                     e->UpdateRect();
                     e->SetSprite(e->texturePath);
                 }
+
+                if (ImGui::Button("Delete")) {
+                    std::cout << "[DEBUG] Deleted Entity" << std::endl;
+                    
+                    free(GameManager::Entities[i]);
+                    GameManager::Entities.erase(GameManager::Entities.begin() + i);
+                    free(e);
+                }
             ImGui::End();
         }
 
         if (showEntityCreate) {
-            ImGui::Begin("Create new entity");
+            ImGui::Begin("Create new entity", &showEntityCreate);
                 // Displays
                 ImGui::InputText("Name", createNameBuffer, 32);
                 ImGui::InputFloat2("Position", createPosition);
@@ -220,13 +221,7 @@ int main() {
         }
 
         window.clear(sf::Color(40, 40, 40));
-
-        if (panMode) {
-            GameManager::DrawScreenText(window, camera, "Pan", {10.0f, 10.0f});
-        }
-        else if (selectMode) {
-            GameManager::DrawScreenText(window, camera, "Select", {10.0f, 10.0f});
-        }
+        window.draw(originDot);
 
         GameManager::DrawEntities(window);
 

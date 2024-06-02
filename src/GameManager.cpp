@@ -16,9 +16,7 @@ sf::Texture* GameManager::LoadTexture(std::string path) {
             std::cout << "[ERROR] Couldn't load texture: " << path << std::endl;
         }
         Textures[path] = texture;
-    } else {
-        std::cout << "[DEBUG] Texture Already Loaded" << std::endl;
-    }
+    } 
     return Textures[path];
 }
 
@@ -61,4 +59,13 @@ void GameManager::DrawScreenText(sf::RenderWindow& window, sf::View& view, std::
 sf::Vector2f GameManager::ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view) {
     sf::Vector2f viewCenter = view.getCenter();
     sf::Vector2f adjusted = viewCenter - mousePos;
+}
+
+bool GameManager::MouseOnEntity(sf::Vector2f mousePos) {
+    for (Entity* e : GameManager::Entities) {
+        if (e->rect.contains(mousePos.x, mousePos.y)) {
+            return true;
+        }
+    }
+    return false;
 }
