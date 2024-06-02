@@ -7,7 +7,7 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "Entity.h"
+#include "Entity.hpp"
 
 class GameManager {
     public:

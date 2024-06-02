@@ -1,4 +1,4 @@
-#include "GameManager.h"
+#include "GameManager.hpp"
 #include <iostream>
 
 std::map<std::string, sf::Texture*> GameManager::Textures;

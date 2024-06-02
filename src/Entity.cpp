@@ -1,5 +1,5 @@
-#include "Entity.h"
-#include "GameManager.h"
+#include "Entity.hpp"
+#include "GameManager.hpp"
 
 #include <iostream>
 

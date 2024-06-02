@@ -5,14 +5,18 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 
-#include "src/GameManager.h"
-#include "src/Entity.h" 
+#include "src/GameManager.hpp"
+#include "src/Entity.hpp"
+#include "src/File.hpp" 
 
 int main() {
     GameManager::screenWidth = 1280;
     GameManager::screenHeight = 720;
 
-    sf::RenderWindow window(sf::VideoMode(GameManager::screenWidth, GameManager::screenHeight), "Demo");
+    std::string projectTitle = "Untitled Project";
+    bool loadedProject = false;
+
+    sf::RenderWindow window(sf::VideoMode(GameManager::screenWidth, GameManager::screenHeight), "Bacon - " + projectTitle);
     if (!ImGui::SFML::Init(window)) {
         std::cout << "[ERROR] Failed to initialize ImGui\n";
         return -1;
@@ -26,7 +30,7 @@ int main() {
     // Create Entities
     // Entity player(sf::Vector2f{0.0f, 0.0f});
     // player.SetSprite("./assets/player.jpg");
-    sf::CircleShape originDot(10);
+    sf::CircleShape originDot(5);
     originDot.setFillColor(sf::Color::White);
     originDot.setPosition(0.0f, 0.0f);
 
@@ -34,12 +38,17 @@ int main() {
     sf::Clock deltaClock;
     sf::Clock fpsClock;
     std::vector<Entity*> showDetails;
-    float color[] = {0.5f, 0.5f, 0.5f};
     sf::Vector2f mousePos;
     bool cameraMove = false;
     bool showEntityCreate = false;
     bool showTestMenu = true;
     bool entitySelect = false;
+
+    // Save/Load Project Variables
+    bool showLoadPopup = false;
+    char loadProjectName[64] = {0};
+    bool showSaveAsPopup = false;
+    char saveAsProjectname[64];
 
     // Create Entity Variables
     char createNameBuffer[32] = "";
@@ -66,12 +75,6 @@ int main() {
             if (event.type == sf::Event::MouseButtonPressed) {
                 // Left Mouse
                 if (event.mouseButton.button == 0) {
-                    // sf::Vector2f converted = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                    // if (GameManager::MouseOnEntity(converted)) {
-                    //     entitySelect = true;
-                    //     std::cout << "[DEBUG] Left Click on entity" << std::endl;
-                    // }
-
                     // Camera drag move toggle
                     // Get starting position as reference for movement
                     mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
@@ -130,10 +133,76 @@ int main() {
         // Top menu bar
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                    ImGui::MenuItem("Save");
-                    ImGui::MenuItem("Save as");
+                    if (ImGui::MenuItem("Save")) {
+                        if (!loadedProject) {
+                            showSaveAsPopup = true;
+                        }
+                        else {
+                            save(projectTitle);
+                        }
+                    }
+                    
+                    if (ImGui::MenuItem("Save as")) {
+                        showSaveAsPopup = true;
+                    }
+                    
+                    if (ImGui::MenuItem("Load")) {
+                        showLoadPopup = true;
+                    }
+
+
+                    // Popups
+                    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+                    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
                 ImGui::EndMenu();
             }
+
+            if (showLoadPopup) {
+                ImGui::OpenPopup("Load Project");
+            }
+
+            if (showSaveAsPopup) {
+                ImGui::OpenPopup("Save As Project");
+            }
+
+            if (ImGui::BeginPopupModal("Load Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("Load Project");
+                ImGui::Separator();
+                ImGui::InputText("##", loadProjectName, 64);
+                if (ImGui::Button("Load")) {
+                    ImGui::CloseCurrentPopup();
+                    showLoadPopup = false;
+                    load(loadProjectName);
+                    std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
+                }
+                if (ImGui::Button("Cancel")) {
+                    showLoadPopup = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
+            if (ImGui::BeginPopupModal("Save As Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("Save Project");
+                ImGui::Separator();
+                ImGui::InputText("##", saveAsProjectname, 64);
+                if (ImGui::Button("Save")) {
+                    ImGui::CloseCurrentPopup();
+                    showSaveAsPopup = false;
+
+                    save(saveAsProjectname);
+                    projectTitle = saveAsProjectname;
+                    loadedProject = true;
+                    window.setTitle("Bacon - " + std::string(saveAsProjectname));
+                }
+                if (ImGui::Button("Cancel")) {
+                    showSaveAsPopup = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
             if (ImGui::BeginMenu("Create")) {
                     ImGui::MenuItem("Entity", NULL, &showEntityCreate);
                 ImGui::EndMenu();
