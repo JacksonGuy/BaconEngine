@@ -216,8 +216,11 @@ int main() {
                 ImGui::Text("Version 0.1a");
                 ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
                 if (ImGui::Button("This is a button")) {
-                    for (Entity* e : GameManager::Entities) {
-                        std::cout << "[DEBUG] Show Entity: " << e->showDetailMenu << std::endl;
+                    if (GameManager::player != nullptr) {
+                        std::cout << "[DEBUG] Player Name: " << GameManager::player->name << std::endl;
+                    }
+                    else {
+                        std::cout << "[DEBUG] No Player Selected" << std::endl;
                     }
                 }
             ImGui::End();
@@ -236,6 +239,25 @@ int main() {
                 strcpy(nameBuff, e->name.data());
                 if (ImGui::InputText("Name", nameBuff, sizeof(nameBuff))) {
                     e->name = nameBuff;
+                }
+
+                bool isPlayer = e->isPlayer;
+                if (GameManager::player != nullptr && GameManager::player != e) {
+                    ImGui::BeginDisabled();
+                }
+                if (ImGui::Checkbox("Player", &isPlayer)) {
+                    e->isPlayer = !e-isPlayer;
+                    if (GameManager::player == nullptr) {
+                        GameManager::player = e;
+                        std::cout << "[DEBUG] Set Player" << std::endl;
+                    }
+                    else {
+                        GameManager::player = nullptr;
+                        std::cout << "[DEBUG] Unset Player" << std::endl;
+                    }
+                }
+                if (GameManager::player != nullptr && GameManager::player != e) {
+                    ImGui::EndDisabled();
                 }
 
                 char e_textureBuff[64];
@@ -260,6 +282,19 @@ int main() {
                     e->height = e_height;
                     e->UpdateRect();
                     e->SetSprite(e->texturePath);
+                }
+
+                float rotation;
+                if (ImGui::InputFloat("Rotation", &rotation)) {
+                    // Adjust rotation angle if necessary
+                    if (rotation > 360) {
+                        rotation -= 360;
+                    }
+
+                    // Rotate
+                    e->rotation = rotation;
+                    e->sprite.setRotation(rotation);
+                    e->UpdateRect();
                 }
 
                 if (ImGui::Button("Delete")) {

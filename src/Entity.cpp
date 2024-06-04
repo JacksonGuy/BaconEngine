@@ -15,10 +15,10 @@ Entity::Entity(sf::Vector2f position = {0.0f, 0.0f}) {
     this->scale = {1.0f, 1.0f};
     width = 256;
     height = 256;
-    this->rect = sf::Rect<int>(this->position.x, this->position.y, this->width, this->height);
     this->rotation = 0.0f;
 
     this->showDetailMenu = false;
+    this->isPlayer = false;
 
     GameManager::Entities.push_back(this);
 
@@ -33,9 +33,11 @@ void Entity::SetSprite(std::string path, bool autoScale) {
         this->scale.y = ((float)this->height) / texture->getSize().y;
     }
     
-    this->sprite.setScale(this->scale);
     this->sprite.setTexture(*texture, true);
     this->sprite.setPosition(this->position);
+    this->sprite.setOrigin((sf::Vector2f)texture->getSize()/2.0f);
+    this->sprite.setScale(this->scale);
+    this->UpdateRect();
 }
 
 void Entity::SetPosition(sf::Vector2f position) {
@@ -50,5 +52,5 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
 }
 
 void Entity::UpdateRect() {
-    this->rect = sf::Rect<int>(this->position.x, this->position.y, this->width, this->height);
+    this->rect = this->sprite.getGlobalBounds();
 }

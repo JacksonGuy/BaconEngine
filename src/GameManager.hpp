@@ -16,6 +16,7 @@ class GameManager {
         static std::map<std::string, sf::Texture*> Textures;
         static std::vector<Entity*> Entities;
         static sf::Font font;
+        static Entity* player;
         
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);

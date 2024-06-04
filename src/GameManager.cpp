@@ -6,6 +6,7 @@ std::vector<Entity*> GameManager::Entities;
 sf::Font GameManager::font;
 unsigned int GameManager::screenWidth;
 unsigned int GameManager::screenHeight;
+Entity* GameManager::player = nullptr;
 
 
 sf::Texture* GameManager::LoadTexture(std::string path) {

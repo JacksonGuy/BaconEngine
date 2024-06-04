@@ -16,9 +16,10 @@ class Entity {
         int width, height; 
         float rotation;
         sf::Sprite sprite;
-        sf::Rect<int> rect;
+        sf::Rect<float> rect;
 
         bool showDetailMenu;
+        bool isPlayer;
 
         Entity(sf::Vector2f position);
 
