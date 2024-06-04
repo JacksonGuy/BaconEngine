@@ -20,7 +20,8 @@ void save(std::string filename) {
             {"scale", {e->scale.x, e->scale.y}},
             {"width", e->width},
             {"height", e->height},
-            {"rotation", e->rotation}
+            {"rotation", e->rotation},
+            {"isPlayer", e->isPlayer}
         };
     }
 
@@ -38,16 +39,13 @@ void load(std::string filename) {
         std::cout << "[DEBUG] Creating entity..." << std::endl;
 
         std::string name = entity["name"];
-        //name.erase(name.end()-1); // Remove quotes from start and end of string
-        //name.erase(name.begin());
         std::string texturePath = entity["texturePath"];
-        //texturePath.erase(texturePath.end()-1);
-        //texturePath.erase(texturePath.begin());
         sf::Vector2f position = {entity["position"][0], entity["position"][1]};
         sf::Vector2f scale = {entity["scale"][0], entity["scale"][1]};
         int width = entity["width"];
         int height = entity["height"];
         float rotation = entity["rotation"];
+        bool isPlayer = entity["isPlayer"];
 
         std::cout << "[DEBUG] Loaded Variables..." << std::endl;
 
@@ -58,6 +56,7 @@ void load(std::string filename) {
         e->rotation = rotation;
         e->UpdateRect();
         e->SetSprite(texturePath, false);
+        e->isPlayer = isPlayer;
 
         std::cout << "[DEBUG] Successfully Created Entity" << std::endl;
     }

@@ -48,15 +48,6 @@ void GameManager::DrawText(sf::RenderWindow& window, std::string text, sf::Vecto
     window.draw(renderText);
 }
 
-void GameManager::DrawScreenText(sf::RenderWindow& window, sf::View& view, std::string text, sf::Vector2f position) {
-    // Adjust for View offset
-    sf::Vector2f center = view.getCenter();
-    sf::Vector2f corner = {center.x - (GameManager::screenWidth/2), center.y - (GameManager::screenHeight/2)};
-    sf::Vector2f adjusted = corner + position;
-
-    GameManager::DrawText(window, text, adjusted);
-}  
-
 sf::Vector2f GameManager::ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view) {
     sf::Vector2f viewCenter = view.getCenter();
     sf::Vector2f adjusted = viewCenter - mousePos;

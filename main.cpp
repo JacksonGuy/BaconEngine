@@ -28,8 +28,6 @@ int main() {
     float cameraZoom = 1.0f;
 
     // Create Entities
-    // Entity player(sf::Vector2f{0.0f, 0.0f});
-    // player.SetSprite("./assets/player.jpg");
     sf::CircleShape originDot(5);
     originDot.setFillColor(sf::Color::White);
     originDot.setPosition(0.0f, 0.0f);
@@ -51,7 +49,7 @@ int main() {
     char saveAsProjectname[64];
 
     // Create Entity Variables
-    char createNameBuffer[32] = "";
+    char createNameBuffer[32] = "Entity";
     float createPosition[] = {0.0f, 0.0f};
     char createImagePath[32] = "";
 
@@ -67,6 +65,7 @@ int main() {
         while (window.pollEvent(event))
         {
             ImGui::SFML::ProcessEvent(window, event);
+            auto& io = ImGui::GetIO(); 
 
             if (event.type == sf::Event::Closed)
                 window.close();
@@ -74,7 +73,7 @@ int main() {
             // Input
             if (event.type == sf::Event::MouseButtonPressed) {
                 // Left Mouse
-                if (event.mouseButton.button == 0) {
+                if (event.mouseButton.button == 0 && !io.WantCaptureMouse) {
                     // Camera drag move toggle
                     // Get starting position as reference for movement
                     mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
@@ -216,11 +215,8 @@ int main() {
                 ImGui::Text("Version 0.1a");
                 ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
                 if (ImGui::Button("This is a button")) {
-                    if (GameManager::player != nullptr) {
-                        std::cout << "[DEBUG] Player Name: " << GameManager::player->name << std::endl;
-                    }
-                    else {
-                        std::cout << "[DEBUG] No Player Selected" << std::endl;
+                    for (Entity* e : GameManager::Entities) {
+                        std::cout << "[DEBUG] Entity Name: " << e->name << std::endl;
                     }
                 }
             ImGui::End();
@@ -235,18 +231,12 @@ int main() {
             ImGui::Begin(name.c_str(), &(e->showDetailMenu));
                 ImGui::Text("ID: %d", e->ID);
 
-                char nameBuff[32];
-                strcpy(nameBuff, e->name.data());
-                if (ImGui::InputText("Name", nameBuff, sizeof(nameBuff))) {
-                    e->name = nameBuff;
-                }
+                ImGui::InputText("Name", e->name.data(), sizeof(e->name.data()));
 
-                bool isPlayer = e->isPlayer;
                 if (GameManager::player != nullptr && GameManager::player != e) {
                     ImGui::BeginDisabled();
                 }
-                if (ImGui::Checkbox("Player", &isPlayer)) {
-                    e->isPlayer = !e-isPlayer;
+                if (ImGui::Checkbox("Player", &e->isPlayer)) {
                     if (GameManager::player == nullptr) {
                         GameManager::player = e;
                         std::cout << "[DEBUG] Set Player" << std::endl;
@@ -260,49 +250,46 @@ int main() {
                     ImGui::EndDisabled();
                 }
 
-                char e_textureBuff[64];
-                strcpy(e_textureBuff, e->texturePath.data());
-                if (ImGui::InputText("Texture", e_textureBuff, 64)) {
-                    e->SetSprite(e_textureBuff);
+                ImGui::Separator();
+                ImGui::InputText("Texture", e->texturePath.data(), 64);
+                if (ImGui::Button("Change Texture")) {
+                    e->SetSprite(e->texturePath);
                 }
+                ImGui::Separator();
                 
+                // Temporary Conversion to float array for input
                 float e_pos[] = {e->position.x, e->position.y};
                 if (ImGui::InputFloat2("Position", e_pos)) {
                     e->SetPosition({e_pos[0], e_pos[1]});
                 }
 
-                int e_width = e->width;
-                int e_height = e->height;
-                if (ImGui::InputInt("Width", &e_width)) {
-                    e->width = e_width;
+                if (ImGui::InputInt("Width", &e->width)) {
                     e->UpdateRect();
                     e->SetSprite(e->texturePath);
                 }
-                if (ImGui::InputInt("Height", &e_height)) {
-                    e->height = e_height;
+                if (ImGui::InputInt("Height", &e->height)) {
                     e->UpdateRect();
                     e->SetSprite(e->texturePath);
                 }
 
-                float rotation;
-                if (ImGui::InputFloat("Rotation", &rotation)) {
+                if (ImGui::InputFloat("Rotation", &e->rotation)) {
                     // Adjust rotation angle if necessary
-                    if (rotation > 360) {
-                        rotation -= 360;
+                    if (e->rotation > 360) {
+                        e->rotation -= 360;
+                    }
+                    if (e->rotation < -360) {
+                        e->rotation += 360;
                     }
 
                     // Rotate
-                    e->rotation = rotation;
-                    e->sprite.setRotation(rotation);
+                    e->sprite.setRotation(e->rotation);
                     e->UpdateRect();
                 }
 
                 if (ImGui::Button("Delete")) {
-                    std::cout << "[DEBUG] Deleted Entity" << std::endl;
-                    
                     free(GameManager::Entities[i]);
                     GameManager::Entities.erase(GameManager::Entities.begin() + i);
-                    free(e);
+                    std::cout << "[DEBUG] Deleted Entity" << std::endl;
                 }
             ImGui::End();
         }
@@ -316,10 +303,10 @@ int main() {
 
                 // Create Button
                 if (ImGui::Button("Create")) {
-                   Entity* entity = new Entity({createPosition[0], createPosition[1]});
-                   entity->name = createNameBuffer;
-                   entity->SetSprite(createImagePath);
-                   std::cout << "[DEBUG] Created new entity" << std::endl;
+                    Entity* entity = new Entity({createPosition[0], createPosition[1]});
+                    entity->name = createNameBuffer;
+                    entity->SetSprite(createImagePath);
+                    std::cout << "[DEBUG] Created new entity" << std::endl;
                 }
             ImGui::End();
         }
