@@ -35,12 +35,12 @@ int main() {
     // Engine UI variables
     sf::Clock deltaClock;
     sf::Clock fpsClock;
-    std::vector<Entity*> showDetails;
     sf::Vector2f mousePos;
     bool cameraMove = false;
     bool showEntityCreate = false;
     bool showTestMenu = true;
     bool entitySelect = false;
+    bool showEntityList = false;
 
     // Save/Load Project Variables
     bool showLoadPopup = false;
@@ -157,6 +157,16 @@ int main() {
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Create")) {
+                    ImGui::MenuItem("Entity", NULL, &showEntityCreate);
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("View")) {
+                if (ImGui::MenuItem("Entity List", NULL, &showEntityList));
+                ImGui::EndMenu();
+            }
+
             if (showLoadPopup) {
                 ImGui::OpenPopup("Load Project");
             }
@@ -202,10 +212,6 @@ int main() {
                 ImGui::EndPopup();
             }
 
-            if (ImGui::BeginMenu("Create")) {
-                    ImGui::MenuItem("Entity", NULL, &showEntityCreate);
-                ImGui::EndMenu();
-            }
             ImGui::EndMainMenuBar();
         }
 
@@ -311,6 +317,18 @@ int main() {
             ImGui::End();
         }
 
+        if (showEntityList) {
+            ImGui::Begin("Entities", &showEntityList);
+                auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+                for (Entity* e : GameManager::Entities) {
+                    ImGui::TreeNodeEx(e->name.data(), flags);
+                    if (ImGui::IsItemClicked()) {
+                        e->showDetailMenu = !e->showDetailMenu;
+                    }
+                }
+            ImGui::End();
+        }
+
         window.clear(sf::Color(40, 40, 40));
         window.draw(originDot);
 
@@ -322,5 +340,4 @@ int main() {
 
     window.close();
     ImGui::SFML::Shutdown();
-    return 0;
 }
