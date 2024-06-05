@@ -42,6 +42,9 @@ int main() {
     bool entitySelect = false;
     bool showEntityList = false;
 
+    bool showFailedPopup = false;
+    std::string failedMessage;
+
     // Save/Load Project Variables
     bool showLoadPopup = false;
     char loadProjectName[64] = {0};
@@ -149,7 +152,6 @@ int main() {
                         showLoadPopup = true;
                     }
 
-
                     // Popups
                     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
                     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -175,6 +177,10 @@ int main() {
                 ImGui::OpenPopup("Save As Project");
             }
 
+            if (showFailedPopup) {
+                ImGui::OpenPopup("Failed");
+            }
+
             if (ImGui::BeginPopupModal("Load Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
                 ImGui::Text("Load Project");
                 ImGui::Separator();
@@ -182,8 +188,15 @@ int main() {
                 if (ImGui::Button("Load")) {
                     ImGui::CloseCurrentPopup();
                     showLoadPopup = false;
-                    load(loadProjectName);
-                    std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
+                    if (load(loadProjectName)) {
+                        std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
+                    }
+                    else {
+                        showFailedPopup = true;
+                        failedMessage = "Error: Failed to load project (Project doesn't exist).";
+                        showLoadPopup = false;
+                        ImGui::CloseCurrentPopup();
+                    }
                 }
                 if (ImGui::Button("Cancel")) {
                     showLoadPopup = false;
@@ -207,6 +220,16 @@ int main() {
                 }
                 if (ImGui::Button("Cancel")) {
                     showSaveAsPopup = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
+            if (ImGui::BeginPopupModal("Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text(failedMessage.c_str());
+                if (ImGui::Button("OK")) {
+                    showFailedPopup = false;
+                    failedMessage = "";
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();

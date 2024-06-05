@@ -1,5 +1,5 @@
 #!/bin/bash
-make
+make all
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if [[ $? == 0 ]]; then
         ./run

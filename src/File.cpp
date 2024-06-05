@@ -28,11 +28,16 @@ void save(std::string filename) {
     outfile << std::setw(4) << level_data;
 }
 
-void load(std::string filename) {
+bool load(std::string filename) {
     std::string projectName = "./Projects/" + filename;
     std::cout << "[DEBUG] Loading Project " << projectName << std::endl;
 
     std::ifstream infile(projectName);
+    if (!infile.is_open()) {
+        std::cout << "[ERROR] Project " << filename << " does not exist" << std::endl;
+        return false;
+    }
+
     json level_data = json::parse(infile);
 
     for (auto& entity : level_data) {
@@ -60,4 +65,6 @@ void load(std::string filename) {
 
         std::cout << "[DEBUG] Successfully Created Entity" << std::endl;
     }
+
+    return true;
 }

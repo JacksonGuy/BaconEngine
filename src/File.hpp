@@ -4,6 +4,6 @@
 #include <string>
 
 void save(std::string filename);
-void load(std::string filename);
+bool load(std::string filename);
 
 #endif
