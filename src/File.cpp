@@ -63,6 +63,10 @@ bool load(std::string filename) {
         e->SetSprite(texturePath, false);
         e->isPlayer = isPlayer;
 
+        if (isPlayer) {
+            GameManager::player = e;
+        }
+
         std::cout << "[DEBUG] Successfully Created Entity" << std::endl;
     }
 

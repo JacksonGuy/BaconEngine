@@ -5,7 +5,12 @@ CFLAGS += -Linclude/SFML/lib
 CFLAGS += -DSFML_STATIC
 CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 
-SOURCES = main.cpp
+ifeq ($(target), editor)
+	SOURCES += editor.cpp
+else
+	SOURCES += player.cpp
+endif
+
 SOURCES += $(wildcard src/*.cpp)
 SOURCES += include/imgui/imgui.cpp 
 SOURCES += include/imgui/imgui_draw.cpp
@@ -20,12 +25,20 @@ EXE =
 
 ifeq ($(UNAME), Linux)
 	LIBS += -lGL -lglfw -lsfml-graphics -lsfml-window -lsfml-system
-	EXE = run
+	ifeq ($(target), editor)
+		EXE = editor
+	else
+		EXE = player
+	endif
 endif
 
 ifeq ($(OS), Windows_NT)
 	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype 
-	EXE = bin/run.exe
+	ifeq ($(target), editor)
+		EXE = editor.exe
+	else
+		EXE = player.exe
+	endif
 endif
 
 %.o : %.cpp
