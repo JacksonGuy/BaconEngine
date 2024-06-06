@@ -7,7 +7,8 @@ sf::Font GameManager::font;
 unsigned int GameManager::screenWidth;
 unsigned int GameManager::screenHeight;
 Entity* GameManager::player = nullptr;
-
+bool GameManager::isPlayingGame;
+EditorSaveState GameManager::saveState;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
@@ -48,11 +49,6 @@ void GameManager::DrawText(sf::RenderWindow& window, std::string text, sf::Vecto
     window.draw(renderText);
 }
 
-sf::Vector2f GameManager::ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view) {
-    sf::Vector2f viewCenter = view.getCenter();
-    sf::Vector2f adjusted = viewCenter - mousePos;
-}
-
 bool GameManager::MouseOnEntity(sf::Vector2f mousePos) {
     for (Entity* e : GameManager::Entities) {
         if (e->rect.contains(mousePos.x, mousePos.y)) {
@@ -60,4 +56,36 @@ bool GameManager::MouseOnEntity(sf::Vector2f mousePos) {
         }
     }
     return false;
+}
+
+void GameManager::SaveEditorState(sf::RenderWindow& window) {
+    // Clear saveState
+    for (Entity* e : saveState.Entities) {
+        delete e;
+    }
+    saveState.Entities.clear();
+
+    // Copy entities 
+    for (Entity* e : GameManager::Entities) {
+        Entity* copy = new Entity(*e);
+        saveState.Entities.push_back(copy);
+    }
+    saveState.CameraPos = window.getView().getCenter();
+}
+
+void GameManager::RestoreEditorState(sf::RenderWindow& window) {
+    for (Entity* e : GameManager::Entities) {
+        delete e;
+    } 
+    GameManager::Entities.clear();
+
+    for (Entity* e : saveState.Entities) {
+        Entity* copy = new Entity(*e);
+        if (copy->isPlayer) {
+            GameManager::player = copy;
+        }
+        GameManager::Entities.push_back(copy);
+    }
+    sf::View camera(saveState.CameraPos, sf::Vector2f(screenWidth, screenHeight));
+    window.setView(camera);
 }

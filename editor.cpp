@@ -58,7 +58,10 @@ int main() {
     char createImagePath[32] = "";
 
     // GameManager Things
-    GameManager::LoadFont("./assets/fonts/arial.ttf"); 
+    GameManager::LoadFont("./assets/fonts/arial.ttf");
+
+    // Player Things
+    bool playerExists = false; 
     
     while (window.isOpen())
     {
@@ -252,6 +255,23 @@ int main() {
                         std::cout << "[DEBUG] Entity Name: " << e->name << std::endl;
                     }
                 }
+                if (!GameManager::isPlayingGame) {
+                    if (ImGui::Button("Play Game")) {
+                        save(projectTitle); // TODO
+
+                        GameManager::SaveEditorState(window);
+                        std::cout << "[PLAYER] Editor data saved. Starting game..." << std::endl;
+
+                        GameManager::isPlayingGame = true;
+                    }
+                }
+                else {
+                    if (ImGui::Button("End Game")) {
+                        GameManager::RestoreEditorState(window);
+                        std::cout << "[PLAYER] Game Ended. Editor data restored." << std::endl;
+                        GameManager::isPlayingGame = false;
+                    }
+                }
             ImGui::End();
         }
 
@@ -356,9 +376,34 @@ int main() {
             ImGui::End();
         }
 
-        window.clear(sf::Color(40, 40, 40));
-        window.draw(originDot);
+        // Player Input
+        float speed = 0.1f;
+        if (GameManager::isPlayingGame && GameManager::player != nullptr) {
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+                GameManager::player->position.y -= speed;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                GameManager::player->position.y += speed;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+                GameManager::player->position.x -= speed;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+                GameManager::player->position.x += speed;
+            }
 
+            GameManager::player->UpdateRect();
+            GameManager::player->sprite.setPosition(GameManager::player->position);
+            camera.setCenter(GameManager::player->position);
+            window.setView(camera);
+        }
+
+        // Editor
+        window.clear(sf::Color(40, 40, 40));
+
+        if (!GameManager::isPlayingGame) {
+            window.draw(originDot);
+        }
         GameManager::DrawEntities(window);
 
         ImGui::SFML::Render(window);

@@ -56,6 +56,7 @@ void PlayerInstance::Update() {
             GameManager::player->position.x += speed;
         }
 
+        GameManager::player->UpdateRect();
         GameManager::player->sprite.setPosition(GameManager::player->position);
         this->camera->setCenter(GameManager::player->position);
         this->window->setView(*this->camera);

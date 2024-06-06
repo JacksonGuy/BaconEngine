@@ -5,7 +5,7 @@
 
 unsigned int Entity::IDNum = 0;
 
-Entity::Entity(sf::Vector2f position = {0.0f, 0.0f}) {
+Entity::Entity(sf::Vector2f position) {
     this->ID = Entity::IDNum;
     Entity::IDNum++;
     this->name = "Entity " + std::to_string(this->ID);
@@ -23,6 +23,22 @@ Entity::Entity(sf::Vector2f position = {0.0f, 0.0f}) {
     GameManager::Entities.push_back(this);
 
     std::cout << "[DEBUG] Entities count: " << GameManager::Entities.size() << std::endl;
+}
+
+Entity::Entity(Entity& e) {
+    this->ID = e.ID;
+    this->name = e.name;
+    this->position = e.position;
+    this->scale = e.scale;
+    this->width = e.width;
+    this->height = e.height;
+    this->rotation = e.rotation;
+
+    this->showDetailMenu = false;
+    this->isPlayer = e.isPlayer;
+
+    this->SetSprite(e.texturePath, false);
+    this->SetPosition(this->position);
 }
 
 void Entity::SetSprite(std::string path, bool autoScale) {

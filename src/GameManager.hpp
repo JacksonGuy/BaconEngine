@@ -9,6 +9,11 @@
 
 #include "Entity.hpp"
 
+struct EditorSaveState {
+    std::vector<Entity*> Entities;
+    sf::Vector2f CameraPos;
+};
+
 class GameManager {
     public:
         static unsigned int screenWidth;
@@ -17,15 +22,20 @@ class GameManager {
         static std::vector<Entity*> Entities;
         static sf::Font font;
         static Entity* player;
-        
+        static bool isPlayingGame;
+
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);
         static void DrawEntities(sf::RenderWindow& window);
         static void DrawText(sf::RenderWindow& window, std::string text, sf::Vector2f position);
-        static sf::Vector2f ConvertMouseCoords(sf::Vector2f mousePos, sf::View& view);
-    
+
         static bool MouseOnEntity(sf::Vector2f mousePos);
+
+        static void SaveEditorState(sf::RenderWindow& window);
+        static void RestoreEditorState(sf::RenderWindow& window);
+
     private:
+        static EditorSaveState saveState;
 };
 
 #endif

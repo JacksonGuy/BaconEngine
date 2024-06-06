@@ -54,3 +54,4 @@ clean:
 	rm -rf ./*.o
 	rm -rf ./src/*.o
 	rm -rf ./bin/*.exe
+	rm -rf ./*.exe

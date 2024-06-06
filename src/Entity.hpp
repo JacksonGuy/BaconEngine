@@ -21,7 +21,8 @@ class Entity {
         bool showDetailMenu;
         bool isPlayer;
 
-        Entity(sf::Vector2f position);
+        Entity(sf::Vector2f position = sf::Vector2f(0,0));
+        Entity(Entity& e);
 
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position);
