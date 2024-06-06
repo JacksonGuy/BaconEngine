@@ -55,6 +55,7 @@ bool load(std::string filename) {
         std::cout << "[DEBUG] Loaded Variables..." << std::endl;
 
         Entity* e = new Entity(position);
+        e->name = name;
         e->scale = scale;
         e->width = width;
         e->height = height;

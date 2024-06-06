@@ -8,6 +8,7 @@
 #include "src/GameManager.hpp"
 #include "src/Entity.hpp"
 #include "src/File.hpp" 
+#include "src/PlayerInstance.hpp"
 
 int main() {
     GameManager::screenWidth = 1280;
@@ -190,6 +191,9 @@ int main() {
                     showLoadPopup = false;
                     if (load(loadProjectName)) {
                         std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
+                        loadedProject = true;
+                        projectTitle = loadProjectName;
+                        window.setTitle("Bacon - " + projectTitle);
                     }
                     else {
                         showFailedPopup = true;
@@ -216,7 +220,7 @@ int main() {
                     save(saveAsProjectname);
                     projectTitle = saveAsProjectname;
                     loadedProject = true;
-                    window.setTitle("Bacon - " + std::string(saveAsProjectname));
+                    window.setTitle("Bacon - " + projectTitle);
                 }
                 if (ImGui::Button("Cancel")) {
                     showSaveAsPopup = false;
