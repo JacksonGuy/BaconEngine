@@ -70,3 +70,31 @@ bool load(std::string filename) {
 
     return true;
 }
+
+void saveConfig(ConfigState state) {
+    std::ofstream outfile("config.json");
+    json settings;
+
+    settings["version"] = state.version;
+    settings["resolution"] = state.resolution;
+
+    outfile << std::setw(4) << settings;
+}
+
+ConfigState loadConfig() {
+    std::ifstream infile("config.json");
+    if (!infile.is_open()) {
+        GameManager::ConsoleWrite("[ERROR] Failed to load editor settings");
+        return (ConfigState){"0","800x600"};
+    }
+    std::cout << "Loaded Config" << std::endl;
+
+    json settings = json::parse(infile);
+    std::cout << "Parsed JSON" << std::endl;
+    ConfigState state = {
+        settings["version"],
+        settings["resolution"]
+    };
+
+    return state;
+}

@@ -4,8 +4,8 @@
 std::map<std::string, sf::Texture*> GameManager::Textures;
 std::vector<Entity*> GameManager::Entities;
 sf::Font GameManager::font;
-unsigned int GameManager::screenWidth;
-unsigned int GameManager::screenHeight;
+unsigned int GameManager::screenWidth = 1280;
+unsigned int GameManager::screenHeight = 720;
 Entity* GameManager::player = nullptr;
 bool GameManager::isPlayingGame;
 EditorSaveState GameManager::saveState;

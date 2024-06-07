@@ -9,10 +9,55 @@
 #include "src/Entity.hpp"
 #include "src/File.hpp" 
 
-int main() {
-    GameManager::screenWidth = 1280;
-    GameManager::screenHeight = 720;
+namespace Settings {
+    int selectedResolution = 2;
+    const int resolutionsCount = 6;
+    std::string EngineVersion = "";
+    const char* resolutions[] = {
+        "640x480",
+        "800x600",
+        "1280x720",
+        "1440x900",
+        "1600x900",
+        "1920x1080"
+    };
+    std::map<std::string, sf::Vector2u> resolutionConvert = {
+        {"640x480", sf::Vector2u(640, 480)},
+        {"800x600", sf::Vector2u(800, 600)},
+        {"1280x720", sf::Vector2u(1280, 720)},
+        {"1440x900", sf::Vector2u(1440, 900)},
+        {"1600x900", sf::Vector2u(1600, 900)},
+        {"1920x1080", sf::Vector2u(1920,1080)}
+    };
+    
+    sf::Vector2u GetCurrentResolution() {
+        std::string setting = Settings::resolutions[Settings::selectedResolution];
+        return Settings::resolutionConvert[setting];
+    }
 
+    std::string GetResolutionString() {
+        return Settings::resolutions[Settings::selectedResolution];
+    }
+
+    void ApplySettings(ConfigState state) {
+        for (int i = 0; i < Settings::resolutionsCount; i++) {
+            if (Settings::resolutions[i] == state.resolution) {
+                selectedResolution = i;
+                break;
+            }
+        }
+        Settings::EngineVersion = state.version;
+    }
+
+    void ChangeResolution(sf::RenderWindow& window) {
+        sf::Vector2u size = Settings::GetCurrentResolution();
+        window.setSize(size);
+        GameManager::screenWidth = size.x;
+        GameManager::screenHeight = size.y;
+    }
+}
+
+int main() {
     std::string projectTitle = "Untitled Project";
     bool loadedProject = false;
 
@@ -21,6 +66,11 @@ int main() {
         std::cout << "[ERROR] Failed to initialize ImGui\n";
         return -1;
     }
+
+    // Load Editor Settings
+    ConfigState settings = loadConfig();
+    Settings::ApplySettings(settings);
+    Settings::ChangeResolution(window);
 
     // Camera View
     sf::View camera(sf::Vector2f(0,0), sf::Vector2f(GameManager::screenWidth, GameManager::screenHeight));
@@ -42,6 +92,7 @@ int main() {
     bool entitySelect = false;
     bool showEntityList = false;
     bool showConsole = false;
+    bool showSettingsMenu = false;
 
     bool showFailedPopup = false;
     std::string failedMessage;
@@ -172,6 +223,7 @@ int main() {
                 if (ImGui::MenuItem("Entity List", NULL, &showEntityList));
                 if (ImGui::MenuItem("Test Menu", NULL, &showTestMenu));
                 if (ImGui::MenuItem("Console", NULL, &showConsole));
+                if (ImGui::MenuItem("Editor Settings", NULL, &showSettingsMenu));
                 ImGui::EndMenu();
             }
 
@@ -251,7 +303,7 @@ int main() {
         // General Test Menu
         if (showTestMenu) {
             ImGui::Begin("Game Details", &showTestMenu);
-                ImGui::Text("Version 0.2a");
+                ImGui::Text(Settings::EngineVersion.c_str());
                 ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
                 if (ImGui::Button("This is a button")) {
                     GameManager::ConsoleWrite("This is some text");
@@ -385,6 +437,31 @@ int main() {
             ImGui::End();
         }
 
+        if (showSettingsMenu) {
+            ImGui::Begin("Settings", &showSettingsMenu);
+                ImGui::BeginTabBar("SettingsMenus", ImGuiTabBarFlags_None);
+                    ImGui::BeginTabItem("Display");
+                        ImGui::Text("Resolution");
+                        const char* previewValue = Settings::resolutions[Settings::selectedResolution];
+                        if (ImGui::BeginCombo("##", previewValue)) {
+                            for (int i = 0; i < Settings::resolutionsCount; i++) {
+                                const bool isSelected = (Settings::selectedResolution == i);
+                                if (ImGui::Selectable(Settings::resolutions[i], isSelected)) {
+                                    Settings::selectedResolution = i;
+                                    Settings::ChangeResolution(window);
+                                }
+
+                                if (isSelected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+                    ImGui::EndTabItem();
+                ImGui::EndTabBar();
+            ImGui::End();
+        }
+
         // Player Input
         float speed = 0.1f;
         if (GameManager::isPlayingGame && GameManager::player != nullptr) {
@@ -419,6 +496,13 @@ int main() {
         window.display();
     }
 
+    ConfigState finalSettings = {
+        Settings::EngineVersion,
+        Settings::GetResolutionString()
+    };
+    saveConfig(finalSettings);
+    std::cout << "Saved Editor Settings" << std::endl;
+    
     window.close();
     ImGui::SFML::Shutdown();
 }
