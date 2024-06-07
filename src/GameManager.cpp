@@ -9,13 +9,16 @@ unsigned int GameManager::screenHeight;
 Entity* GameManager::player = nullptr;
 bool GameManager::isPlayingGame;
 EditorSaveState GameManager::saveState;
+ImGuiTextBuffer GameManager::ConsoleLog;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
-        std::cout << "[DEBUG] Loading New Texture" << std::endl;
+        //std::cout << "[DEBUG] Loading New Texture" << std::endl;
+        GameManager::ConsoleWrite("[DEBUG] Loading new texture...");
         sf::Texture* texture = new sf::Texture();
         if (!texture->loadFromFile(path)) {
-            std::cout << "[ERROR] Couldn't load texture: " << path << std::endl;
+            //std::cout << "[ERROR] Couldn't load texture: " << path << std::endl;
+            GameManager::ConsoleWrite("[ERROR] Couldn't load texture:" + path);
         }
         Textures[path] = texture;
     } 
@@ -25,7 +28,8 @@ sf::Texture* GameManager::LoadTexture(std::string path) {
 void GameManager::LoadFont(std::string path) {
     sf::Font font;
     if (!font.loadFromFile(path)) {
-        std::cout << "[ERROR] Failed to load font: " << path << std::endl;
+        //std::cout << "[ERROR] Failed to load font: " << path << std::endl;
+        GameManager::ConsoleWrite("[ERROR] Failed to load font: " + path);
     }
     GameManager::font = font; 
 }
@@ -88,4 +92,9 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window) {
     }
     sf::View camera(saveState.CameraPos, sf::Vector2f(screenWidth, screenHeight));
     window.setView(camera);
+}
+
+void GameManager::ConsoleWrite(std::string text) {
+    std::string newText = text + "\n";
+    GameManager::ConsoleLog.append(newText.c_str());
 }

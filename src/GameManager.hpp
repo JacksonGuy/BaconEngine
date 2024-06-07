@@ -6,6 +6,7 @@
 #include <string>
 
 #include <SFML/Graphics.hpp>
+#include "imgui.h"
 
 #include "Entity.hpp"
 
@@ -23,6 +24,7 @@ class GameManager {
         static sf::Font font;
         static Entity* player;
         static bool isPlayingGame;
+        static ImGuiTextBuffer ConsoleLog;
 
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);
@@ -33,6 +35,8 @@ class GameManager {
 
         static void SaveEditorState(sf::RenderWindow& window);
         static void RestoreEditorState(sf::RenderWindow& window);
+
+        static void ConsoleWrite(std::string text);
 
     private:
         static EditorSaveState saveState;

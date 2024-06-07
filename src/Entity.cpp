@@ -21,8 +21,6 @@ Entity::Entity(sf::Vector2f position) {
     this->isPlayer = false;
 
     GameManager::Entities.push_back(this);
-
-    std::cout << "[DEBUG] Entities count: " << GameManager::Entities.size() << std::endl;
 }
 
 Entity::Entity(Entity& e) {

@@ -30,19 +30,20 @@ void save(std::string filename) {
 
 bool load(std::string filename) {
     std::string projectName = "./Projects/" + filename;
-    std::cout << "[DEBUG] Loading Project " << projectName << std::endl;
+    //std::cout << "[DEBUG] Loading Project " << projectName << std::endl;
+    GameManager::ConsoleWrite("[DEBUG] Loading Project: " + projectName);
 
     std::ifstream infile(projectName);
     if (!infile.is_open()) {
-        std::cout << "[ERROR] Project " << filename << " does not exist" << std::endl;
+        //std::cout << "[ERROR] Project " << filename << " does not exist" << std::endl;
+        GameManager::ConsoleWrite("[ERROR] Failed to load project (Project doesn't exist)");
         return false;
     }
 
     json level_data = json::parse(infile);
 
+    GameManager::ConsoleWrite("[DEBUG] Creating Entities...");
     for (auto& entity : level_data) {
-        std::cout << "[DEBUG] Creating entity..." << std::endl;
-
         std::string name = entity["name"];
         std::string texturePath = entity["texturePath"];
         sf::Vector2f position = {entity["position"][0], entity["position"][1]};
@@ -51,8 +52,6 @@ bool load(std::string filename) {
         int height = entity["height"];
         float rotation = entity["rotation"];
         bool isPlayer = entity["isPlayer"];
-
-        std::cout << "[DEBUG] Loaded Variables..." << std::endl;
 
         Entity* e = new Entity(position);
         e->name = name;
@@ -67,8 +66,6 @@ bool load(std::string filename) {
         if (isPlayer) {
             GameManager::player = e;
         }
-
-        std::cout << "[DEBUG] Successfully Created Entity" << std::endl;
     }
 
     return true;

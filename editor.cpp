@@ -8,7 +8,6 @@
 #include "src/GameManager.hpp"
 #include "src/Entity.hpp"
 #include "src/File.hpp" 
-#include "src/PlayerInstance.hpp"
 
 int main() {
     GameManager::screenWidth = 1280;
@@ -42,6 +41,7 @@ int main() {
     bool showTestMenu = true;
     bool entitySelect = false;
     bool showEntityList = false;
+    bool showConsole = false;
 
     bool showFailedPopup = false;
     std::string failedMessage;
@@ -170,6 +170,8 @@ int main() {
 
             if (ImGui::BeginMenu("View")) {
                 if (ImGui::MenuItem("Entity List", NULL, &showEntityList));
+                if (ImGui::MenuItem("Test Menu", NULL, &showTestMenu));
+                if (ImGui::MenuItem("Console", NULL, &showConsole));
                 ImGui::EndMenu();
             }
 
@@ -193,7 +195,8 @@ int main() {
                     ImGui::CloseCurrentPopup();
                     showLoadPopup = false;
                     if (load(loadProjectName)) {
-                        std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
+                        //std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
+                        GameManager::ConsoleWrite("[DEBUG] Successfully Loaded Project");
                         loadedProject = true;
                         projectTitle = loadProjectName;
                         window.setTitle("Bacon - " + projectTitle);
@@ -248,19 +251,18 @@ int main() {
         // General Test Menu
         if (showTestMenu) {
             ImGui::Begin("Game Details", &showTestMenu);
-                ImGui::Text("Version 0.1a");
+                ImGui::Text("Version 0.2a");
                 ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
                 if (ImGui::Button("This is a button")) {
-                    for (Entity* e : GameManager::Entities) {
-                        std::cout << "[DEBUG] Entity Name: " << e->name << std::endl;
-                    }
+                    GameManager::ConsoleWrite("This is some text");
                 }
                 if (!GameManager::isPlayingGame) {
                     if (ImGui::Button("Play Game")) {
                         save(projectTitle); // TODO
 
                         GameManager::SaveEditorState(window);
-                        std::cout << "[PLAYER] Editor data saved. Starting game..." << std::endl;
+                        //std::cout << "[PLAYER] Editor data saved. Starting game..." << std::endl;
+                        GameManager::ConsoleWrite("[PLAYER] Editor data saved. Starting game...");
 
                         GameManager::isPlayingGame = true;
                     }
@@ -268,7 +270,8 @@ int main() {
                 else {
                     if (ImGui::Button("End Game")) {
                         GameManager::RestoreEditorState(window);
-                        std::cout << "[PLAYER] Game Ended. Editor data restored." << std::endl;
+                        //std::cout << "[PLAYER] Game Ended. Editor data restored." << std::endl;
+                        GameManager::ConsoleWrite("[PLAYER] Game Ended. Editor data restored.");
                         GameManager::isPlayingGame = false;
                     }
                 }
@@ -292,11 +295,9 @@ int main() {
                 if (ImGui::Checkbox("Player", &e->isPlayer)) {
                     if (GameManager::player == nullptr) {
                         GameManager::player = e;
-                        std::cout << "[DEBUG] Set Player" << std::endl;
                     }
                     else {
                         GameManager::player = nullptr;
-                        std::cout << "[DEBUG] Unset Player" << std::endl;
                     }
                 }
                 if (GameManager::player != nullptr && GameManager::player != e) {
@@ -342,7 +343,6 @@ int main() {
                 if (ImGui::Button("Delete")) {
                     free(GameManager::Entities[i]);
                     GameManager::Entities.erase(GameManager::Entities.begin() + i);
-                    std::cout << "[DEBUG] Deleted Entity" << std::endl;
                 }
             ImGui::End();
         }
@@ -359,7 +359,6 @@ int main() {
                     Entity* entity = new Entity({createPosition[0], createPosition[1]});
                     entity->name = createNameBuffer;
                     entity->SetSprite(createImagePath);
-                    std::cout << "[DEBUG] Created new entity" << std::endl;
                 }
             ImGui::End();
         }
@@ -373,6 +372,16 @@ int main() {
                         e->showDetailMenu = !e->showDetailMenu;
                     }
                 }
+            ImGui::End();
+        }
+
+        if (showConsole) {
+            ImGui::Begin("Console", &showConsole);
+                if (ImGui::Button("Clear")) {
+                    GameManager::ConsoleLog.clear();
+                }
+                ImGui::Separator();
+                ImGui::TextUnformatted(GameManager::ConsoleLog.begin(), GameManager::ConsoleLog.end());
             ImGui::End();
         }
 
