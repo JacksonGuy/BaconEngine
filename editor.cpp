@@ -172,15 +172,16 @@ int main() {
 
             // Mouse Wheel
             if (event.type == sf::Event::MouseWheelMoved) {
+                // Mouse wheel moved forwards
                 if (event.mouseWheel.delta == 1) {
-                    if (cameraZoom > 1) cameraZoom = 1;
-                    cameraZoom -= 0.1f;
+                    camera.zoom(0.8);
+                    cameraZoom *= 1.2;
                 }
+                // Mouse wheel moved back
                 else if (event.mouseWheel.delta == -1) {
-                    if (cameraZoom < 1) cameraZoom = 1;
-                    cameraZoom += 0.1f;
+                    camera.zoom(1.2);
+                    cameraZoom *= 0.8;
                 }
-                camera.zoom(cameraZoom);
                 window.setView(camera);
             }
         }
@@ -310,8 +311,6 @@ int main() {
                 }
                 if (!GameManager::isPlayingGame) {
                     if (ImGui::Button("Play Game")) {
-                        save(projectTitle); // TODO
-
                         GameManager::SaveEditorState(window);
                         //std::cout << "[PLAYER] Editor data saved. Starting game..." << std::endl;
                         GameManager::ConsoleWrite("[PLAYER] Editor data saved. Starting game...");
@@ -327,6 +326,26 @@ int main() {
                         GameManager::isPlayingGame = false;
                     }
                 }
+                ImGui::Separator();
+                ImGui::BeginTabBar("EngineItems");
+                    ImGui::BeginTabItem("Camera");
+                        float cameraPos[] = {camera.getCenter().x, camera.getCenter().y};
+                        ImGui::Text("Position");
+                        if (ImGui::InputFloat2("##", cameraPos)) {
+                            camera.setCenter(sf::Vector2f(cameraPos[0], cameraPos[1]));
+                            window.setView(camera);
+                        }
+
+                        float oldZoom = cameraZoom;
+                        ImGui::Text("Zoom");
+                        if (ImGui::InputFloat("##", &cameraZoom)) {
+                            float zoomFactor = oldZoom / cameraZoom;
+                            camera.zoom(zoomFactor);
+                            window.setView(camera);
+                        }
+                    ImGui::EndTabItem();
+                ImGui::EndTabBar();
+
             ImGui::End();
         }
 
