@@ -19,6 +19,8 @@ Entity::Entity(sf::Vector2f position) {
 
     this->showDetailMenu = false;
     this->isPlayer = false;
+    this->isSolid = false;
+    this->physicsObject = false;
 
     GameManager::Entities.push_back(this);
 }
@@ -66,5 +68,13 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
 }
 
 void Entity::UpdateRect() {
-    this->rect = this->sprite.getGlobalBounds();
+    int boundarySize = 5; // Adjust if needed. Maybe make this a class variable?
+
+    // We want our collision rect (hitbox) to be slightly larger than the boundary of our sprite
+    // This way we are colliding before our sprite clips through the intersecting Entity  
+    sf::Rect<float> basic = this->sprite.getGlobalBounds();
+    sf::Vector2f newPos = sf::Vector2f(basic.getPosition().x - boundarySize, basic.getPosition().y - boundarySize);
+    sf::Vector2f newSize = sf::Vector2f(basic.getSize().x + boundarySize, basic.getSize().y + boundarySize);
+    
+    this->rect = sf::Rect<float>(newPos, newSize);
 }

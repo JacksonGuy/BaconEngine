@@ -32,6 +32,9 @@ class GameManager {
         static void DrawText(sf::RenderWindow& window, std::string text, sf::Vector2f position);
 
         static bool MouseOnEntity(sf::Vector2f mousePos);
+        static bool checkCollision(const Entity& e1, const Entity& e2);
+        static bool checkCollision(const Entity& e1);
+        static std::vector<Entity*> getCollidingWith(const Entity& e1);
 
         static void SaveEditorState(sf::RenderWindow& window);
         static void RestoreEditorState(sf::RenderWindow& window);

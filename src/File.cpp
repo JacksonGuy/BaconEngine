@@ -21,7 +21,9 @@ void save(std::string filename) {
             {"width", e->width},
             {"height", e->height},
             {"rotation", e->rotation},
-            {"isPlayer", e->isPlayer}
+            {"isPlayer", e->isPlayer},
+            {"isSolid", e->isSolid},
+            {"physicsObject", e->physicsObject}
         };
     }
 
@@ -44,28 +46,20 @@ bool load(std::string filename) {
 
     GameManager::ConsoleWrite("[DEBUG] Creating Entities...");
     for (auto& entity : level_data) {
-        std::string name = entity["name"];
-        std::string texturePath = entity["texturePath"];
-        sf::Vector2f position = {entity["position"][0], entity["position"][1]};
-        sf::Vector2f scale = {entity["scale"][0], entity["scale"][1]};
-        int width = entity["width"];
-        int height = entity["height"];
-        float rotation = entity["rotation"];
-        bool isPlayer = entity["isPlayer"];
-
-        Entity* e = new Entity(position);
-        e->name = name;
-        e->scale = scale;
-        e->width = width;
-        e->height = height;
-        e->rotation = rotation;
+        Entity* e = new Entity(sf::Vector2f(entity["position"][0], entity["position"][1]));
+        e->name = entity["name"];
+        e->scale = sf::Vector2f(entity["scale"][0], entity["scale"][1]);
+        e->width = entity["width"];
+        e->height = entity["height"];
+        e->rotation = entity["rotation"];
         e->UpdateRect();
-        e->SetSprite(texturePath, false);
-        e->isPlayer = isPlayer;
-
-        if (isPlayer) {
+        e->SetSprite(entity["texturePath"], false);
+        e->isPlayer = entity["isPlayer"];
+        if (e->isPlayer) {
             GameManager::player = e;
         }
+        e->isSolid = entity["isSolid"];
+        e->physicsObject = entity["physicsObject"];
     }
 
     return true;

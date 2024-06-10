@@ -16,7 +16,10 @@ class Entity {
         int width, height; 
         float rotation;
         sf::Sprite sprite;
-        sf::Rect<float> rect;
+        
+        sf::Rect<float> rect;       // Whole sprite
+        bool isSolid;           // Can collide with things
+        bool physicsObject;     // Is affected by gravity
 
         bool showDetailMenu;
         bool isPlayer;

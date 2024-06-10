@@ -62,6 +62,41 @@ bool GameManager::MouseOnEntity(sf::Vector2f mousePos) {
     return false;
 }
 
+// Check for collision between two specific Entities
+bool GameManager::checkCollision(const Entity& e1, const Entity& e2) {
+    if (!e1.isSolid || !e2.isSolid) return false;
+    return e1.rect.intersects(e2.rect);
+}
+
+// Check if an object is colliding with any entity
+bool GameManager::checkCollision(const Entity& e1) {
+    if (!e1.isSolid) return false;
+    for (Entity* e2 : GameManager::Entities) {
+        if (!e2->isSolid) continue;
+        if (e1.ID == e2->ID) continue;
+        if (e1.rect.intersects(e2->rect)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Get a list of entities that the object is colliding with
+std::vector<Entity*> GameManager::getCollidingWith(const Entity& e1) {
+    std::vector<Entity*> collidingWith;
+    
+    if (!e1.isSolid) return collidingWith;
+
+    for (Entity* e2 : GameManager::Entities) {
+        if (!e2->isSolid) continue;
+        if (e1.ID == e2->ID) continue;
+        if (e1.rect.intersects(e2->rect)) {
+            collidingWith.push_back(e2);
+        }
+    }
+    return collidingWith;
+}
+
 void GameManager::SaveEditorState(sf::RenderWindow& window) {
     // Clear saveState
     for (Entity* e : saveState.Entities) {

@@ -114,6 +114,9 @@ int main() {
     // Player Things
     bool playerExists = false; 
     
+    // DEBUG
+    load("Game.json");
+
     while (window.isOpen())
     {
         float currentTime = fpsClock.restart().asSeconds();
@@ -375,6 +378,10 @@ int main() {
                     ImGui::EndDisabled();
                 }
 
+                ImGui::Checkbox("Solid", &e->isSolid);
+                ImGui::SameLine();
+                ImGui::Checkbox("Physics Object", &e->physicsObject);
+
                 ImGui::Separator();
                 ImGui::InputText("Texture", e->texturePath.data(), 64);
                 if (ImGui::Button("Change Texture")) {
@@ -485,16 +492,39 @@ int main() {
         float speed = 0.1f;
         if (GameManager::isPlayingGame && GameManager::player != nullptr) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-                GameManager::player->position.y -= speed;
+                if (!GameManager::checkCollision(*GameManager::player)) { 
+                    GameManager::player->position.y -= speed;
+                }
+                else {
+                    GameManager::player->position.y += 0.1;
+                }
             }
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-                GameManager::player->position.y += speed;
+                if (!GameManager::checkCollision(*GameManager::player)) { 
+                    GameManager::player->position.y += speed;
+                }
+                else {
+                    GameManager::player->position.y -= 0.1;
+                }
             }
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-                GameManager::player->position.x -= speed;
+                if (!GameManager::checkCollision(*GameManager::player)) { 
+                    GameManager::player->position.x -= speed;
+                }
+                else {
+                    GameManager::player->position.x += 0.1;
+                }
             }
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-                GameManager::player->position.x += speed;
+                if (!GameManager::checkCollision(*GameManager::player)) { 
+                    GameManager::player->position.x += speed;
+                }
+                else {
+                    GameManager::player->position.x -= 0.1;
+                }
             }
 
             GameManager::player->UpdateRect();
