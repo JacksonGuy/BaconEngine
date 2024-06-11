@@ -61,7 +61,8 @@ int main() {
     std::string projectTitle = "Untitled Project";
     bool loadedProject = false;
 
-    sf::RenderWindow window(sf::VideoMode(GameManager::screenWidth, GameManager::screenHeight), "Bacon - " + projectTitle);
+    sf::RenderWindow window(sf::VideoMode(GameManager::screenWidth, GameManager::screenHeight), 
+        "Bacon - " + projectTitle, sf::Style::Default);
     if (!ImGui::SFML::Init(window)) {
         std::cout << "[ERROR] Failed to initialize ImGui\n";
         return -1;
@@ -116,6 +117,7 @@ int main() {
     
     // DEBUG
     load("Game.json");
+    //window.setFramerateLimit(250);
 
     while (window.isOpen())
     {
@@ -309,9 +311,6 @@ int main() {
             ImGui::Begin("Game Details", &showTestMenu);
                 ImGui::Text(Settings::EngineVersion.c_str());
                 ImGui::Text( ("FPS: " + std::to_string((int)fps)).c_str() );
-                if (ImGui::Button("This is a button")) {
-                    GameManager::ConsoleWrite("This is some text");
-                }
                 if (!GameManager::isPlayingGame) {
                     if (ImGui::Button("Play Game")) {
                         GameManager::SaveEditorState(window);
@@ -331,7 +330,7 @@ int main() {
                 }
                 ImGui::Separator();
                 ImGui::BeginTabBar("EngineItems");
-                    ImGui::BeginTabItem("Camera");
+                    if (ImGui::BeginTabItem("Camera")) {
                         float cameraPos[] = {camera.getCenter().x, camera.getCenter().y};
                         ImGui::Text("Position");
                         if (ImGui::InputFloat2("##", cameraPos)) {
@@ -346,9 +345,16 @@ int main() {
                             camera.zoom(zoomFactor);
                             window.setView(camera);
                         }
-                    ImGui::EndTabItem();
-                ImGui::EndTabBar();
+                        ImGui::EndTabItem();
+                    }
 
+                    if (ImGui::BeginTabItem("Testing")) {
+                        if (ImGui::Button("This is a button")) {
+                            GameManager::ConsoleWrite("Test");
+                        }
+                        ImGui::EndTabItem();
+                    }
+                ImGui::EndTabBar();
             ImGui::End();
         }
 
@@ -492,43 +498,31 @@ int main() {
         float speed = 0.1f;
         if (GameManager::isPlayingGame && GameManager::player != nullptr) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-                if (!GameManager::checkCollision(*GameManager::player)) { 
+                if (!GameManager::checkCollisionSide(GameManager::player->topRect)) { 
                     GameManager::player->position.y -= speed;
-                }
-                else {
-                    GameManager::player->position.y += 0.1;
                 }
             }
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-                if (!GameManager::checkCollision(*GameManager::player)) { 
+                if (!GameManager::checkCollisionSide(GameManager::player->bottomRect)) { 
                     GameManager::player->position.y += speed;
-                }
-                else {
-                    GameManager::player->position.y -= 0.1;
                 }
             }
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-                if (!GameManager::checkCollision(*GameManager::player)) { 
+                if (!GameManager::checkCollisionSide(GameManager::player->leftRect)) { 
                     GameManager::player->position.x -= speed;
-                }
-                else {
-                    GameManager::player->position.x += 0.1;
                 }
             }
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-                if (!GameManager::checkCollision(*GameManager::player)) { 
+                if (!GameManager::checkCollisionSide(GameManager::player->rightRect)) { 
                     GameManager::player->position.x += speed;
-                }
-                else {
-                    GameManager::player->position.x -= 0.1;
                 }
             }
 
-            GameManager::player->UpdateRect();
             GameManager::player->sprite.setPosition(GameManager::player->position);
+            GameManager::player->UpdateRect();
             camera.setCenter(GameManager::player->position);
             window.setView(camera);
         }

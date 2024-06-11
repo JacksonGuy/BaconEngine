@@ -18,6 +18,11 @@ class Entity {
         sf::Sprite sprite;
         
         sf::Rect<float> rect;       // Whole sprite
+        sf::Rect<float> topRect;    // Sides (for collision)
+        sf::Rect<float> bottomRect;
+        sf::Rect<float> leftRect;
+        sf::Rect<float> rightRect;
+        float collisionBorder;
         bool isSolid;           // Can collide with things
         bool physicsObject;     // Is affected by gravity
 
@@ -31,6 +36,7 @@ class Entity {
         void SetPosition(sf::Vector2f position);
         void SetSpriteScale(sf::Vector2f scale);
         void UpdateRect();
+        void UpdateCollisionRects();
 };
 
 #endif

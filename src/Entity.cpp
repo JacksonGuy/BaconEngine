@@ -21,6 +21,7 @@ Entity::Entity(sf::Vector2f position) {
     this->isPlayer = false;
     this->isSolid = false;
     this->physicsObject = false;
+    this->collisionBorder = 2.0f;
 
     GameManager::Entities.push_back(this);
 }
@@ -36,6 +37,7 @@ Entity::Entity(Entity& e) {
 
     this->showDetailMenu = false;
     this->isPlayer = e.isPlayer;
+    this->collisionBorder = 2.0f; // DEBUG
 
     this->SetSprite(e.texturePath, false);
     this->SetPosition(this->position);
@@ -68,13 +70,38 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
 }
 
 void Entity::UpdateRect() {
-    int boundarySize = 5; // Adjust if needed. Maybe make this a class variable?
-
     // We want our collision rect (hitbox) to be slightly larger than the boundary of our sprite
     // This way we are colliding before our sprite clips through the intersecting Entity  
-    sf::Rect<float> basic = this->sprite.getGlobalBounds();
-    sf::Vector2f newPos = sf::Vector2f(basic.getPosition().x - boundarySize, basic.getPosition().y - boundarySize);
-    sf::Vector2f newSize = sf::Vector2f(basic.getSize().x + boundarySize, basic.getSize().y + boundarySize);
+    // sf::Rect<float> basic = this->sprite.getGlobalBounds();
+    // sf::Vector2f newPos = sf::Vector2f(basic.getPosition().x - this->collisionBorder, basic.getPosition().y - this->collisionBorder);
+    // sf::Vector2f newSize = sf::Vector2f(basic.getSize().x + this->collisionBorder, basic.getSize().y + this->collisionBorder);
+    // 
+    // this->rect = sf::Rect<float>(newPos, newSize);
     
-    this->rect = sf::Rect<float>(newPos, newSize);
+    this->rect = this->sprite.getGlobalBounds();
+    this->UpdateCollisionRects();
+}
+
+void Entity::UpdateCollisionRects() {
+    sf::Vector2f rectPos = this->rect.getPosition();
+
+    this->topRect = sf::Rect<float>(
+        sf::Vector2f(rectPos.x, rectPos.y - this->collisionBorder),
+        sf::Vector2f(this->rect.width, this->collisionBorder)
+    );
+
+    this->bottomRect = sf::Rect<float>(
+        sf::Vector2f(rectPos.x, rectPos.y + this->rect.height),
+        sf::Vector2f(this->rect.width, this->collisionBorder)
+    );
+
+    this->leftRect = sf::Rect<float>(
+        sf::Vector2f(rectPos.x - this->collisionBorder, rectPos.y),
+        sf::Vector2f(this->collisionBorder, this->rect.height)
+    );
+
+    this->rightRect = sf::Rect<float>(
+        sf::Vector2f(rectPos.x + this->rect.width, rectPos.y),
+        sf::Vector2f(this->collisionBorder, this->rect.height)
+    );
 }

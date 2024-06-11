@@ -35,6 +35,7 @@ class GameManager {
         static bool checkCollision(const Entity& e1, const Entity& e2);
         static bool checkCollision(const Entity& e1);
         static std::vector<Entity*> getCollidingWith(const Entity& e1);
+        static bool checkCollisionSide(const sf::Rect<float> rect);
 
         static void SaveEditorState(sf::RenderWindow& window);
         static void RestoreEditorState(sf::RenderWindow& window);

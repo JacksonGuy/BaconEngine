@@ -97,6 +97,17 @@ std::vector<Entity*> GameManager::getCollidingWith(const Entity& e1) {
     return collidingWith;
 }
 
+bool GameManager::checkCollisionSide(const sf::Rect<float> side) {
+    for (Entity* e : GameManager::Entities) {
+        if (e->ID == GameManager::player->ID) continue;
+        if (!e->isSolid) continue;
+        if (side.intersects(e->rect)) {
+            return true;
+        }
+    } 
+    return false;
+}
+
 void GameManager::SaveEditorState(sf::RenderWindow& window) {
     // Clear saveState
     for (Entity* e : saveState.Entities) {
