@@ -13,12 +13,15 @@
 struct EditorSaveState {
     std::vector<Entity*> Entities;
     sf::Vector2f CameraPos;
+    sf::Vector2f CameraSize;
 };
 
 class GameManager {
     public:
         static unsigned int screenWidth;
         static unsigned int screenHeight;
+        static unsigned int framerateLimit;
+
         static std::map<std::string, sf::Texture*> Textures;
         static std::vector<Entity*> Entities;
         static sf::Font font;

@@ -6,7 +6,7 @@ CFLAGS += -DSFML_STATIC
 CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 
 ifeq ($(target), editor)
-	SOURCES += editor.cpp
+	SOURCES += Program.cpp
 else
 	SOURCES += player.cpp
 endif

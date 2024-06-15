@@ -10,6 +10,7 @@ Entity* GameManager::player = nullptr;
 bool GameManager::isPlayingGame;
 EditorSaveState GameManager::saveState;
 ImGuiTextBuffer GameManager::ConsoleLog;
+unsigned int GameManager::framerateLimit = 500;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
@@ -121,6 +122,7 @@ void GameManager::SaveEditorState(sf::RenderWindow& window) {
         saveState.Entities.push_back(copy);
     }
     saveState.CameraPos = window.getView().getCenter();
+    saveState.CameraSize = window.getView().getSize();
 }
 
 void GameManager::RestoreEditorState(sf::RenderWindow& window) {
@@ -136,7 +138,7 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window) {
         }
         GameManager::Entities.push_back(copy);
     }
-    sf::View camera(saveState.CameraPos, sf::Vector2f(screenWidth, screenHeight));
+    sf::View camera(saveState.CameraPos, saveState.CameraSize);
     window.setView(camera);
 }
 
