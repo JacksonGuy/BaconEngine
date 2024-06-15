@@ -23,7 +23,10 @@ void save(std::string filename) {
             {"rotation", e->rotation},
             {"isPlayer", e->isPlayer},
             {"isSolid", e->isSolid},
-            {"physicsObject", e->physicsObject}
+            {"physicsObject", e->physicsObject},
+            {"hitboxSize", e->hitboxSize},
+            {"speed", e->speed},
+            {"mass", e->mass}
         };
     }
 
@@ -60,6 +63,9 @@ bool load(std::string filename) {
         }
         e->isSolid = entity["isSolid"];
         e->physicsObject = entity["physicsObject"];
+        e->hitboxSize = entity["hitboxSize"];
+        e->speed = entity["speed"];
+        e->mass = entity["mass"];
     }
 
     return true;

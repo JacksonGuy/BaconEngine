@@ -22,12 +22,15 @@ class Entity {
         sf::Rect<float> bottomRect;
         sf::Rect<float> leftRect;
         sf::Rect<float> rightRect;
-        float collisionBorder;
+        float hitboxSize;
         bool isSolid;           // Can collide with things
         bool physicsObject;     // Is affected by gravity
+        float mass;
 
         bool showDetailMenu;
+        bool showHitbox;
         bool isPlayer;
+        float speed;
 
         Entity(sf::Vector2f position = sf::Vector2f(0,0));
         Entity(Entity& e);

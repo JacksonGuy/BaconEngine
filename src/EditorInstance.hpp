@@ -41,14 +41,14 @@ class EditorInstance {
 
         // Save and Load project variables
         bool showLoadPopup;
-        std::string loadProjectName;
+        char loadProjectName[64];
         bool showSaveAsPopup;
-        std::string saveAsProjectName;
+        char saveAsProjectName[64];
 
         // Create Entity Variables
-        std::string createNameBuffer;
+        char createNameBuffer[64];
         float createPosition[2];
-        std::string createImagePath;
+        char createImagePath[64];
 
         // Functions
         EditorInstance();

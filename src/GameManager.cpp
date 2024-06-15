@@ -11,6 +11,7 @@ bool GameManager::isPlayingGame;
 EditorSaveState GameManager::saveState;
 ImGuiTextBuffer GameManager::ConsoleLog;
 unsigned int GameManager::framerateLimit = 500;
+float GameManager::gravity = 9.8f;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
@@ -38,6 +39,25 @@ void GameManager::LoadFont(std::string path) {
 void GameManager::DrawEntities(sf::RenderWindow& window) {
     for (Entity* e : Entities) {
         window.draw(e->sprite);
+
+        if (e->showHitbox) {
+            sf::Vector2f pos = e->rect.getPosition();
+            sf::Vector2f size = e->rect.getSize();
+            float x = pos.x - e->hitboxSize;
+            float y = pos.y - e->hitboxSize;
+            float width = size.x + (e->hitboxSize * 2);
+            float height = size.y + (e->hitboxSize * 2);
+
+            sf::Vertex lines[] = {
+                sf::Vertex(sf::Vector2f(x, y), sf::Color::Red),
+                sf::Vertex(sf::Vector2f(x + width, y), sf::Color::Red),
+                sf::Vertex(sf::Vector2f(x + width, y + height), sf::Color::Red),
+                sf::Vertex(sf::Vector2f(x, y + height), sf::Color::Red),
+                sf::Vertex(sf::Vector2f(x, y), sf::Color::Red)
+            };
+
+            window.draw(lines, 5, sf::LinesStrip);
+        }
     }
 }
 

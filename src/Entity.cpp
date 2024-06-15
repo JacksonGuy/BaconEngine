@@ -18,10 +18,14 @@ Entity::Entity(sf::Vector2f position) {
     this->rotation = 0.0f;
 
     this->showDetailMenu = false;
+    this->showHitbox = false;
     this->isPlayer = false;
     this->isSolid = false;
     this->physicsObject = false;
-    this->collisionBorder = 2.0f;
+    this->hitboxSize = 2.0f;
+
+    this->mass = 1.f;
+    this->speed = 0.f;
 
     GameManager::Entities.push_back(this);
 }
@@ -35,9 +39,13 @@ Entity::Entity(Entity& e) {
     this->height = e.height;
     this->rotation = e.rotation;
 
-    this->showDetailMenu = false;
+    this->showDetailMenu = e.showDetailMenu;
+    this->showHitbox = e.showHitbox;
     this->isPlayer = e.isPlayer;
-    this->collisionBorder = 2.0f; // DEBUG
+    this->hitboxSize = e.hitboxSize;
+    
+    this->mass = e.mass;
+    this->speed = e.speed;
 
     this->SetSprite(e.texturePath, false);
     this->SetPosition(this->position);
@@ -70,14 +78,6 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
 }
 
 void Entity::UpdateRect() {
-    // We want our collision rect (hitbox) to be slightly larger than the boundary of our sprite
-    // This way we are colliding before our sprite clips through the intersecting Entity  
-    // sf::Rect<float> basic = this->sprite.getGlobalBounds();
-    // sf::Vector2f newPos = sf::Vector2f(basic.getPosition().x - this->collisionBorder, basic.getPosition().y - this->collisionBorder);
-    // sf::Vector2f newSize = sf::Vector2f(basic.getSize().x + this->collisionBorder, basic.getSize().y + this->collisionBorder);
-    // 
-    // this->rect = sf::Rect<float>(newPos, newSize);
-    
     this->rect = this->sprite.getGlobalBounds();
     this->UpdateCollisionRects();
 }
@@ -86,22 +86,22 @@ void Entity::UpdateCollisionRects() {
     sf::Vector2f rectPos = this->rect.getPosition();
 
     this->topRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x, rectPos.y - this->collisionBorder),
-        sf::Vector2f(this->rect.width, this->collisionBorder)
+        sf::Vector2f(rectPos.x, rectPos.y - this->hitboxSize),
+        sf::Vector2f(this->rect.width, this->hitboxSize)
     );
 
     this->bottomRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x, rectPos.y + this->rect.height),
-        sf::Vector2f(this->rect.width, this->collisionBorder)
+        sf::Vector2f(this->rect.width, this->hitboxSize)
     );
 
     this->leftRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x - this->collisionBorder, rectPos.y),
-        sf::Vector2f(this->collisionBorder, this->rect.height)
+        sf::Vector2f(rectPos.x - this->hitboxSize, rectPos.y),
+        sf::Vector2f(this->hitboxSize, this->rect.height)
     );
 
     this->rightRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x + this->rect.width, rectPos.y),
-        sf::Vector2f(this->collisionBorder, this->rect.height)
+        sf::Vector2f(this->hitboxSize, this->rect.height)
     );
 }

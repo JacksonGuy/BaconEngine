@@ -28,6 +28,7 @@ class GameManager {
         static Entity* player;
         static bool isPlayingGame;
         static ImGuiTextBuffer ConsoleLog;
+        static float gravity;
 
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);

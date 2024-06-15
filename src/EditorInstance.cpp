@@ -82,31 +82,31 @@ EditorInstance::EditorInstance() {
     this->cameraZoom = 1.0f;
 
     // Set Engine UI Variables
-    this->cameraMove = false;                           // Is the Camera Moving?
-    this->showEntityCreate = false;                     // Entity Create Menu
-    this->showMainMenu = true;                          // General Main Menu
-    this->showEntityList = false;                       // List of Entities
-    this->showConsole = false;                          // Debug Console
-    this->showSettingsMenu = false;                     // Editor Settings
+    this->cameraMove = false;                                       // Is the Camera Moving?
+    this->showEntityCreate = false;                                 // Entity Create Menu
+    this->showMainMenu = true;                                      // General Main Menu
+    this->showEntityList = false;                                   // List of Entities
+    this->showConsole = false;                                      // Debug Console
+    this->showSettingsMenu = false;                                 // Editor Settings
 
-    this->showFailedPopup = false;                      // Used for displaying errors with saving/loading
-    this->failedMessage = "";                           // What error to display
+    this->showFailedPopup = false;                                  // Used for displaying errors with saving/loading
+    this->failedMessage = "";                                       // What error to display
 
     // Save and Load project Variables
-    this->showLoadPopup = false;                        // Load Project Popup
-    this->loadProjectName = "";                         // Placeholder for Project Name
-    this->showSaveAsPopup = false;                      // Save Project As Popup
-    this->saveAsProjectName = this->projectTitle;       // Placeholder for Project Name
+    this->showLoadPopup = false;                                    // Load Project Popup
+    strcpy(this->loadProjectName, "");                              // Placeholder for Project Name
+    this->showSaveAsPopup = false;                                  // Save Project As Popup
+    strcpy(this->saveAsProjectName, this->projectTitle.data());     // Placeholder for Project Name
 
     // Create Entity Variables
-    this->createPosition[0] = 0.f;                      // Default Position
+    this->createPosition[0] = 0.f;                                  // Default Position
     this->createPosition[1] = 0.f;
-    this->createNameBuffer = "Entity";                  // Default Name
-    this->createImagePath = "";                         // Default Image Path
+    strcpy(this->createNameBuffer, "Entity");                       // Default Name
+    strcpy(this->createImagePath, "");                              // Default Image Path
 
     // Other
     this->lastFixedUpdate = sf::Time::Zero;
-    this->frameLimit = 60;                              // Change if necessary
+    this->frameLimit = 60;                                          // Change if necessary
     this->TimePerFrame = sf::seconds(1.f / frameLimit);
 }
 
@@ -217,18 +217,22 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         if (ImGui::BeginPopupModal("Load Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Load Project");
             ImGui::Separator();
-            ImGui::InputText("##", loadProjectName.data(), 64);
+            ImGui::InputText("##", loadProjectName, 64);
             if (ImGui::Button("Load")) {
                 ImGui::CloseCurrentPopup();
                 showLoadPopup = false;
+
+                // Save Editor State in case of failure
+                GameManager::SaveEditorState(*this->window);
+
                 if (load(loadProjectName)) {
-                    //std::cout << "[DEBUG] Successfully Loaded Project" << std::endl;
                     GameManager::ConsoleWrite("[DEBUG] Successfully Loaded Project");
                     loadedProject = true;
                     projectTitle = loadProjectName;
                     window->setTitle("Bacon - " + projectTitle);
                 }
                 else {
+                    GameManager::RestoreEditorState(*this->window);
                     showFailedPopup = true;
                     failedMessage = "Error: Failed to load project (Project doesn't exist).";
                     showLoadPopup = false;
@@ -245,7 +249,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         if (ImGui::BeginPopupModal("Save As Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Save Project");
             ImGui::Separator();
-            ImGui::InputText("##", saveAsProjectName.data(), 64);
+            ImGui::InputText("##", saveAsProjectName, 64);
             if (ImGui::Button("Save")) {
                 ImGui::CloseCurrentPopup();
                 showSaveAsPopup = false;
@@ -319,6 +323,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     if (ImGui::Button("This is a button")) {
                         GameManager::ConsoleWrite("Test");
                     }
+                    ImGui::InputFloat("Gravity", &GameManager::gravity);
                     ImGui::EndTabItem();
                 }
             ImGui::EndTabBar();
@@ -351,59 +356,86 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 ImGui::EndDisabled();
             }
 
-            ImGui::Checkbox("Solid", &e->isSolid);
-            ImGui::SameLine();
-            ImGui::Checkbox("Physics Object", &e->physicsObject);
-
             ImGui::Separator();
-            ImGui::InputText("Texture", e->texturePath.data(), 64);
-            if (ImGui::Button("Change Texture")) {
-                e->SetSprite(e->texturePath);
-            }
-            ImGui::Separator();
-            
-            // Temporary Conversion to float array for input
-            float e_pos[] = {e->position.x, e->position.y};
-            if (ImGui::InputFloat2("Position", e_pos)) {
-                e->SetPosition({e_pos[0], e_pos[1]});
-            }
 
-            if (ImGui::InputInt("Width", &e->width)) {
-                e->UpdateRect();
-                e->SetSprite(e->texturePath);
-            }
-            if (ImGui::InputInt("Height", &e->height)) {
-                e->UpdateRect();
-                e->SetSprite(e->texturePath);
-            }
-
-            if (ImGui::InputFloat("Rotation", &e->rotation)) {
-                // Adjust rotation angle if necessary
-                if (e->rotation > 360) {
-                    e->rotation -= 360;
+            ImGui::BeginTabBar("EntityDetails");
+            if (ImGui::BeginTabItem("Details")) {
+                ImGui::InputText("Texture", e->texturePath.data(), 64);
+                if (ImGui::Button("Change Texture")) {
+                    e->SetSprite(e->texturePath);
                 }
-                if (e->rotation < -360) {
-                    e->rotation += 360;
+                ImGui::Separator();
+                
+                // Temporary Conversion to float array for input
+                float e_pos[] = {e->position.x, e->position.y};
+                if (ImGui::InputFloat2("Position", e_pos)) {
+                    e->SetPosition({e_pos[0], e_pos[1]});
                 }
 
-                // Rotate
-                e->sprite.setRotation(e->rotation);
-                e->UpdateRect();
+                if (ImGui::InputInt("Width", &e->width)) {
+                    e->UpdateRect();
+                    e->SetSprite(e->texturePath);
+                }
+                if (ImGui::InputInt("Height", &e->height)) {
+                    e->UpdateRect();
+                    e->SetSprite(e->texturePath);
+                }
+
+                if (ImGui::InputFloat("Rotation", &e->rotation)) {
+                    // Adjust rotation angle if necessary
+                    if (e->rotation > 360) {
+                        e->rotation -= 360;
+                    }
+                    if (e->rotation < -360) {
+                        e->rotation += 360;
+                    }
+
+                    // Rotate
+                    e->sprite.setRotation(e->rotation);
+                    e->UpdateRect();
+                }
+
+                if (ImGui::Button("Delete")) {
+                    free(GameManager::Entities[i]);
+                    GameManager::Entities.erase(GameManager::Entities.begin() + i);
+                }
+
+                ImGui::EndTabItem();
             }
 
-            if (ImGui::Button("Delete")) {
-                free(GameManager::Entities[i]);
-                GameManager::Entities.erase(GameManager::Entities.begin() + i);
+            if (ImGui::BeginTabItem("Physics")) {
+                ImGui::Checkbox("Solid", &e->isSolid);
+                ImGui::SameLine();
+                ImGui::Checkbox("Physics Object", &e->physicsObject);
+
+                if (e->isSolid) {
+                    ImGui::InputFloat("Hitbox Size", &e->hitboxSize);
+                    ImGui::Checkbox("Show Hitbox", &e->showHitbox);
+                }
+
+                if (e->physicsObject) {
+                    ImGui::InputFloat("Mass", &e->mass);
+                }
+                ImGui::EndTabItem();
             }
+
+            if (e->isPlayer) {
+                if (ImGui::BeginTabItem("Player Details")) {
+                    ImGui::InputFloat("Speed", &e->speed);
+                    ImGui::EndTabItem();
+                }
+            }
+
+            ImGui::EndTabBar();
         ImGui::End();
     }
 
     if (showEntityCreate) {
         ImGui::Begin("Create new entity", &showEntityCreate);
             // Displays
-            ImGui::InputText("Name", createNameBuffer.data(), 32);
+            ImGui::InputText("Name", createNameBuffer, 32);
             ImGui::InputFloat2("Position", createPosition);
-            ImGui::InputText("Image Path", createImagePath.data(), 32);
+            ImGui::InputText("Image Path", createImagePath, 32);
 
             // Create Button
             if (ImGui::Button("Create")) {
@@ -538,8 +570,10 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     lastFixedUpdate += deltaTime;
 
     if (lastFixedUpdate > TimePerFrame) {
+        lastFixedUpdate -= TimePerFrame;
+
         // Player Input
-        float speed = 0.3f;
+        float speed = GameManager::player->speed;
         if (GameManager::player != nullptr && GameManager::isPlayingGame) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
                 if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
