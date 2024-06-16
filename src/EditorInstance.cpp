@@ -405,8 +405,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
             if (ImGui::BeginTabItem("Physics")) {
                 ImGui::Checkbox("Solid", &e->isSolid);
-                ImGui::SameLine();
-                ImGui::Checkbox("Physics Object", &e->physicsObject);
+                if (e->isSolid) {
+                    ImGui::SameLine();
+                    ImGui::Checkbox("Physics Object", &e->physicsObject);
+                }
 
                 if (e->isSolid) {
                     ImGui::InputFloat("Hitbox Size", &e->hitboxSize);
@@ -415,7 +417,18 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (e->physicsObject) {
                     ImGui::InputFloat("Mass", &e->mass);
+
+                    float velocity[] = {e->velocity.x, e->velocity.y};
+                    float acceleration[] = {e->acceleration.x, e->acceleration.y};
+                    if (ImGui::InputFloat2("Velocity", velocity)) {
+                        e->velocity = sf::Vector2f(velocity[0], velocity[1]);
+                    }
+                    if (ImGui::InputFloat2("Acceleration", acceleration)) {
+                        e->acceleration = sf::Vector2f(acceleration[0], acceleration[1]);
+                    }
+                    ImGui::Checkbox("Grounded", &e->grounded);
                 }
+                
                 ImGui::EndTabItem();
             }
 
@@ -430,6 +443,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::End();
     }
 
+    // Create new Entity menu
     if (showEntityCreate) {
         ImGui::Begin("Create new entity", &showEntityCreate);
             // Displays
@@ -446,6 +460,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::End();
     }
 
+    // List all Entities
     if (showEntityList) {
         ImGui::Begin("Entities", &showEntityList);
             auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -458,6 +473,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::End();
     }
 
+    // Show Debug Console
     if (showConsole) {
         ImGui::Begin("Console", &showConsole);
             if (ImGui::Button("Clear")) {
@@ -468,6 +484,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::End();
     }
 
+    // Editor Settings
     if (showSettingsMenu) {
         ImGui::Begin("Settings", &showSettingsMenu);
             ImGui::BeginTabBar("SettingsMenus", ImGuiTabBarFlags_None);
@@ -573,8 +590,9 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
         lastFixedUpdate -= TimePerFrame;
 
         // Player Input
-        float speed = GameManager::player->speed;
         if (GameManager::player != nullptr && GameManager::isPlayingGame) {
+            float speed = GameManager::player->speed;
+            /*
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
                 if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
                     GameManager::player->position.y -= speed;
@@ -584,6 +602,13 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
                 if (!GameManager::checkCollisionSide(GameManager::player->bottomRect)) {
                     GameManager::player->position.y += speed;
+                }
+            }
+            */
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+                if (GameManager::player->grounded) {
+                    GameManager::player->velocity.y = -10;
                 }
             }
 
@@ -603,6 +628,45 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             GameManager::player->UpdateRect();
             camera->setCenter(GameManager::player->position);
             window->setView(*camera);
+        }
+
+        // Physics
+        if (GameManager::isPlayingGame) {            
+            for (Entity* e : GameManager::Entities) {
+                if (!e->physicsObject) continue;
+
+                // Gravity
+                bool collision = false;
+                for (Entity* other : GameManager::Entities) {
+                    if (e->ID == other->ID) continue;
+                    if (!other->isSolid) continue;
+
+                    if (e->bottomRect.intersects(other->rect)) {
+                        collision = true;
+                        break; // Only need to be touching a single floor
+                    }
+                }
+
+                // Landed on ground
+                if (collision) {
+                    // Not already on ground
+                    if (!e->grounded) {
+                        // Stop Moving
+                        e->grounded = true;
+                        e->acceleration.y = 0;
+                        e->velocity.y = 0;
+                    }
+                }
+                // Free Fall
+                else {
+                    e->acceleration.y = GameManager::gravity;
+                    e->grounded = false;
+                }
+
+                // Apply Velocity
+                e->velocity += e->acceleration;
+                e->position += e->velocity;
+            }
         }
     }
     else {

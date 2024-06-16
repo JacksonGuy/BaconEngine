@@ -11,7 +11,7 @@ bool GameManager::isPlayingGame;
 EditorSaveState GameManager::saveState;
 ImGuiTextBuffer GameManager::ConsoleLog;
 unsigned int GameManager::framerateLimit = 500;
-float GameManager::gravity = 9.8f;
+float GameManager::gravity = 0.2f;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {

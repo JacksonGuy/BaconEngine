@@ -26,6 +26,9 @@ class Entity {
         bool isSolid;           // Can collide with things
         bool physicsObject;     // Is affected by gravity
         float mass;
+        bool grounded;
+        sf::Vector2f velocity;
+        sf::Vector2f acceleration;
 
         bool showDetailMenu;
         bool showHitbox;

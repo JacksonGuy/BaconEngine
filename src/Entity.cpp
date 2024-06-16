@@ -22,10 +22,13 @@ Entity::Entity(sf::Vector2f position) {
     this->isPlayer = false;
     this->isSolid = false;
     this->physicsObject = false;
-    this->hitboxSize = 2.0f;
+    this->hitboxSize = 5.0f;
 
     this->mass = 1.f;
     this->speed = 0.f;
+    this->grounded = false;
+    this->velocity = sf::Vector2f(0, 0);
+    this->acceleration = sf::Vector2f(0, 0);
 
     GameManager::Entities.push_back(this);
 }
@@ -40,12 +43,17 @@ Entity::Entity(Entity& e) {
     this->rotation = e.rotation;
 
     this->showDetailMenu = e.showDetailMenu;
+    this->isSolid = e.isSolid;
+    this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
     this->isPlayer = e.isPlayer;
     this->hitboxSize = e.hitboxSize;
     
     this->mass = e.mass;
     this->speed = e.speed;
+    this->grounded = false; // DEBUG
+    this->velocity = sf::Vector2f(0, 0); // DEBUG
+    this->acceleration = sf::Vector2f(0, 0); // DEBUG
 
     this->SetSprite(e.texturePath, false);
     this->SetPosition(this->position);
@@ -84,6 +92,7 @@ void Entity::UpdateRect() {
 
 void Entity::UpdateCollisionRects() {
     sf::Vector2f rectPos = this->rect.getPosition();
+    float gap = 5; // DEBUG
 
     this->topRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x, rectPos.y - this->hitboxSize),
@@ -97,11 +106,11 @@ void Entity::UpdateCollisionRects() {
 
     this->leftRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x - this->hitboxSize, rectPos.y),
-        sf::Vector2f(this->hitboxSize, this->rect.height)
+        sf::Vector2f(this->hitboxSize, this->rect.height - gap)
     );
 
     this->rightRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x + this->rect.width, rectPos.y),
-        sf::Vector2f(this->hitboxSize, this->rect.height)
+        sf::Vector2f(this->hitboxSize, this->rect.height - gap)
     );
 }
