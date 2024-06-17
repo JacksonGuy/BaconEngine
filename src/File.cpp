@@ -11,8 +11,10 @@ void save(std::string filename) {
     std::ofstream outfile("./Projects/" + filename);
     json level_data;
 
+    level_data["Version"] = GameManager::config.version;
+
     for (Entity* e : GameManager::Entities) {
-        level_data[e->ID] = {
+        level_data["Entities"][e->ID] = {
             {"id", e->ID},
             {"name", e->name},
             {"texturePath", e->texturePath},
@@ -29,6 +31,9 @@ void save(std::string filename) {
             {"mass", e->mass}
         };
     }
+
+    level_data["Settings"]["Gravity"] = GameManager::gravity;
+    level_data["Settings"]["InputMode"] = GameManager::PlayerInputMode;
 
     outfile << std::setw(4) << level_data;
 }
@@ -48,7 +53,7 @@ bool load(std::string filename) {
     json level_data = json::parse(infile);
 
     GameManager::ConsoleWrite("[DEBUG] Creating Entities...");
-    for (auto& entity : level_data) {
+    for (auto& entity : level_data["Entities"]) {
         Entity* e = new Entity(sf::Vector2f(entity["position"][0], entity["position"][1]));
         e->name = entity["name"];
         e->scale = sf::Vector2f(entity["scale"][0], entity["scale"][1]);
@@ -68,6 +73,9 @@ bool load(std::string filename) {
         e->mass = entity["mass"];
     }
 
+    GameManager::gravity = level_data["Settings"]["Gravity"];
+    GameManager::PlayerInputMode = level_data["Settings"]["InputMode"];
+
     return true;
 }
 
@@ -79,6 +87,8 @@ void saveConfig(ConfigState state) {
     settings["resolution"] = state.resolution;
 
     outfile << std::setw(4) << settings;
+
+    GameManager::config = state;
 }
 
 ConfigState loadConfig() {
@@ -94,5 +104,6 @@ ConfigState loadConfig() {
         settings["resolution"]
     };
 
+    GameManager::config = state;
     return state;
 }

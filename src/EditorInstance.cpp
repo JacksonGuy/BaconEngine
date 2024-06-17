@@ -118,7 +118,7 @@ void EditorInstance::Run() {
     originDot.setPosition(0.0f, 0.0f);
     
     // DEBUG
-    load("Game.json");
+    load("Demo.json");
 
     while(window->isOpen()) {
         sf::Time deltaTime = clock.restart();
@@ -148,6 +148,7 @@ void EditorInstance::Run() {
     ImGui::SFML::Shutdown();
 }
 
+// Draw UI
 void EditorInstance::DrawUI(sf::Time deltaTime) {
     float currentTime = deltaTime.asSeconds();
     float fps = 1.0f / currentTime;
@@ -191,12 +192,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
         if (ImGui::BeginMenu("Create")) {
                 ImGui::MenuItem("Entity", NULL, &showEntityCreate);
+                ImGui::MenuItem("Text", NULL, &showTextCreate);
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("View")) {
             if (ImGui::MenuItem("Entity List", NULL, &showEntityList));
-            if (ImGui::MenuItem("Test Menu", NULL, &showMainMenu));
+            if (ImGui::MenuItem("Game Details", NULL, &showMainMenu));
             if (ImGui::MenuItem("Console", NULL, &showConsole));
             if (ImGui::MenuItem("Editor Settings", NULL, &showSettingsMenu));
             ImGui::EndMenu();
@@ -279,7 +281,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::EndMainMenuBar();
     }
 
-    // General Test Menu
+    // General Menu
     if (showMainMenu) {
         ImGui::Begin("Game Details", &showMainMenu);
             ImGui::Text(Settings::EngineVersion.c_str());
@@ -319,11 +321,30 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     ImGui::EndTabItem();
                 }
 
+                if (ImGui::BeginTabItem("Game Settings")) {
+                    ImGui::InputFloat("Gravity", &GameManager::gravity);
+
+                    const char* preview = GameManager::InputsModes[GameManager::PlayerInputMode];
+                    if (ImGui::BeginCombo("Player Input", preview)) {
+                        for (int i = 0; i < 2; i++) {
+                            bool isSelected = (GameManager::PlayerInputMode == i);
+
+                            if (ImGui::Selectable(GameManager::InputsModes[i], isSelected)) {
+                                GameManager::PlayerInputMode = i;
+                            }
+                            if (isSelected) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    } 
+
+                    ImGui::EndTabItem();
+                }
+
                 if (ImGui::BeginTabItem("Testing")) {
                     if (ImGui::Button("This is a button")) {
-                        GameManager::ConsoleWrite("Test");
+                        std::string mode = GameManager::InputsModes[GameManager::PlayerInputMode];
+                        GameManager::ConsoleWrite("Current input mode: " + mode);
                     }
-                    ImGui::InputFloat("Gravity", &GameManager::gravity);
                     ImGui::EndTabItem();
                 }
             ImGui::EndTabBar();
@@ -404,7 +425,17 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             }
 
             if (ImGui::BeginTabItem("Physics")) {
-                ImGui::Checkbox("Solid", &e->isSolid);
+                if (ImGui::Checkbox("Solid", &e->isSolid)) {
+                    // Can't be a physics objects without being solid
+                    if (!e->isSolid) {
+                        e->physicsObject = false;
+                        e->showHitbox = false;
+                        e->velocity = sf::Vector2f(0, 0);
+                        e->acceleration = sf::Vector2f(0, 0);
+                        e->grounded = false;
+                    }
+                }
+
                 if (e->isSolid) {
                     ImGui::SameLine();
                     ImGui::Checkbox("Physics Object", &e->physicsObject);
@@ -417,7 +448,8 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (e->physicsObject) {
                     ImGui::InputFloat("Mass", &e->mass);
-
+                    ImGui::SetItemTooltip("This doesn't do anything currently");
+                    
                     float velocity[] = {e->velocity.x, e->velocity.y};
                     float acceleration[] = {e->acceleration.x, e->acceleration.y};
                     if (ImGui::InputFloat2("Velocity", velocity)) {
@@ -457,6 +489,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 entity->name = createNameBuffer;
                 entity->SetSprite(createImagePath);
             }
+        ImGui::End();
+    }
+
+    // Create new Text Object
+    if (showTextCreate) {
+        ImGui::Begin("Create Text Object", &showTextCreate);
+        
         ImGui::End();
     }
 
@@ -592,23 +631,29 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
         // Player Input
         if (GameManager::player != nullptr && GameManager::isPlayingGame) {
             float speed = GameManager::player->speed;
-            /*
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-                if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
-                    GameManager::player->position.y -= speed;
+            
+            // Top Down
+            if (GameManager::PlayerInputMode == 0) {
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+                    if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
+                        GameManager::player->position.y -= speed;
+                    }
+                }
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                    if (!GameManager::checkCollisionSide(GameManager::player->bottomRect)) {
+                        GameManager::player->position.y += speed;
+                    }
                 }
             }
-
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-                if (!GameManager::checkCollisionSide(GameManager::player->bottomRect)) {
-                    GameManager::player->position.y += speed;
-                }
-            }
-            */
-
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-                if (GameManager::player->grounded) {
-                    GameManager::player->velocity.y = -10;
+            // Platformer
+            else if (GameManager::PlayerInputMode == 1) {
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+                    if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
+                        if (GameManager::player->grounded) {
+                            GameManager::player->velocity.y = -10;
+                        }
+                    }
                 }
             }
 
@@ -637,24 +682,40 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
 
                 // Gravity
                 bool collision = false;
+                bool bottomCollision = false;
+                bool topCollision = false;
                 for (Entity* other : GameManager::Entities) {
                     if (e->ID == other->ID) continue;
                     if (!other->isSolid) continue;
 
                     if (e->bottomRect.intersects(other->rect)) {
                         collision = true;
-                        break; // Only need to be touching a single floor
+                        bottomCollision = true;
+                    }
+
+                    if (e->topRect.intersects(other->rect)) {
+                        collision = true;
+                        topCollision = true;
                     }
                 }
 
-                // Landed on ground
+                // We hit something
                 if (collision) {
-                    // Not already on ground
-                    if (!e->grounded) {
-                        // Stop Moving
-                        e->grounded = true;
-                        e->acceleration.y = 0;
-                        e->velocity.y = 0;
+                    // Landed on ground
+                    if (bottomCollision) {
+                        // weren't already on ground
+                        if (!e->grounded) {
+                            // Stop Moving
+                            e->grounded = true;
+                            e->acceleration.y = 0;
+                            e->velocity.y = 0;
+                        }
+                        // Else, do nothing
+                    }
+
+                    // We bonked our head jumping
+                    if (topCollision) {
+                        e->velocity.y = 1; // DEBUG
                     }
                 }
                 // Free Fall

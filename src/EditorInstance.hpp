@@ -37,6 +37,7 @@ class EditorInstance {
         bool showConsole;
         bool showSettingsMenu;
         bool showFailedPopup;
+        bool showTextCreate;
         std::string failedMessage;
 
         // Save and Load project variables
@@ -49,6 +50,9 @@ class EditorInstance {
         char createNameBuffer[64];
         float createPosition[2];
         char createImagePath[64];
+
+        // Create Text Variables
+        
 
         // Functions
         EditorInstance();

@@ -1,6 +1,7 @@
 #include "GameManager.hpp"
 #include <iostream>
 
+ConfigState GameManager::config;
 std::map<std::string, sf::Texture*> GameManager::Textures;
 std::vector<Entity*> GameManager::Entities;
 sf::Font GameManager::font;
@@ -12,6 +13,8 @@ EditorSaveState GameManager::saveState;
 ImGuiTextBuffer GameManager::ConsoleLog;
 unsigned int GameManager::framerateLimit = 500;
 float GameManager::gravity = 0.2f;
+unsigned int GameManager::PlayerInputMode = 0;
+char* GameManager::InputsModes[2] = {"Top Down", "Platformer"};
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {

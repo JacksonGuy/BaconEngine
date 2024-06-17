@@ -9,6 +9,7 @@
 #include "imgui.h"
 
 #include "Entity.hpp"
+#include "File.hpp"
 
 struct EditorSaveState {
     std::vector<Entity*> Entities;
@@ -18,6 +19,7 @@ struct EditorSaveState {
 
 class GameManager {
     public:
+        static ConfigState config;
         static unsigned int screenWidth;
         static unsigned int screenHeight;
         static unsigned int framerateLimit;
@@ -28,7 +30,10 @@ class GameManager {
         static Entity* player;
         static bool isPlayingGame;
         static ImGuiTextBuffer ConsoleLog;
+        
         static float gravity;
+        static unsigned int PlayerInputMode;
+        static char* InputsModes[2];
 
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);
