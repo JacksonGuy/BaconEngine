@@ -4,6 +4,7 @@
 ConfigState GameManager::config;
 std::map<std::string, sf::Texture*> GameManager::Textures;
 std::vector<Entity*> GameManager::Entities;
+std::vector<TextObj*> GameManager::TextObjects;
 sf::Font GameManager::font;
 unsigned int GameManager::screenWidth = 1280;
 unsigned int GameManager::screenHeight = 720;
@@ -64,17 +65,27 @@ void GameManager::DrawEntities(sf::RenderWindow& window) {
     }
 }
 
-void GameManager::DrawText(sf::RenderWindow& window, std::string text, sf::Vector2f position) {
-    sf::Text renderText;
-    renderText.setFont(GameManager::font);
-    renderText.setString(text);
-    renderText.setPosition(position);
+void GameManager::DrawText(sf::RenderWindow& window) {
+    for (TextObj* text : GameManager::TextObjects) {
+        // Draw text relative to some entity
+        // (0,0) is the entity position
+        if (text->mode == Relative) {
+            sf::Vector2f pos = text->position;
+            pos += text->entity.position;
+            text->text.setPosition(pos);
+        }
 
-    // TODO other rendering options (size, color)
-    renderText.setCharacterSize(24);
-    renderText.setColor(sf::Color::Black);
+        // Draw text relative to the screen
+        // (0,0) is the top left corner of the camera
+        else if (text->mode == Screen) {
+            sf::View camera = window.getView();
+            sf::FloatRect rect = camera.getViewport();
+            sf::Vector2f pos = text->position;
+            text->text.setPosition(pos.x + rect.left, pos.y + rect.top);
+        }
 
-    window.draw(renderText);
+        window.draw(text->text);
+    }
 }
 
 bool GameManager::MouseOnEntity(sf::Vector2f mousePos) {
@@ -168,4 +179,11 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window) {
 void GameManager::ConsoleWrite(std::string text) {
     std::string newText = text + "\n";
     GameManager::ConsoleLog.append(newText.c_str());
+}
+
+Entity* GameManager::FindEntityByID(unsigned int id) {
+    for (Entity* e : GameManager::Entities) {
+        if (e->ID == id) return e;
+    }
+    return nullptr;
 }

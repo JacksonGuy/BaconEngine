@@ -81,6 +81,9 @@ EditorInstance::EditorInstance() {
     window->setView(*camera);
     this->cameraZoom = 1.0f;
 
+    // Default Font
+    GameManager::font.loadFromFile("./assets/fonts/arial.ttf");
+
     // Set Engine UI Variables
     this->cameraMove = false;                                       // Is the Camera Moving?
     this->showEntityCreate = false;                                 // Entity Create Menu
@@ -104,6 +107,14 @@ EditorInstance::EditorInstance() {
     strcpy(this->createNameBuffer, "Entity");                       // Default Name
     strcpy(this->createImagePath, "");                              // Default Image Path
 
+    // Create Text Variables
+    this->createTextPosition[0] = 0.f;
+    this->createTextPosition[1] = 0.f;
+    strcpy(this->createTextName, "Text");
+    strcpy(this->createTextDetails, "");
+    this->createTextMode = 0;
+    this->createTextEntityId = -1;
+
     // Other
     this->lastFixedUpdate = sf::Time::Zero;
     this->frameLimit = 60;                                          // Change if necessary
@@ -116,7 +127,7 @@ void EditorInstance::Run() {
     sf::CircleShape originDot(5);
     originDot.setFillColor(sf::Color::White);
     originDot.setPosition(0.0f, 0.0f);
-    
+
     // DEBUG
     load("Demo.json");
 
@@ -127,11 +138,12 @@ void EditorInstance::Run() {
         this->FixedUpdate(deltaTime);    // Physics
         this->DrawUI(deltaTime);         // ImGui Frames
 
-        this->window->clear(sf::Color(40, 40, 40));
+        window->clear(sf::Color(40, 40, 40));
         if (!GameManager::isPlayingGame) {
             window->draw(originDot);
         }
         GameManager::DrawEntities(*this->window);
+        GameManager::DrawText(*this->window);
         ImGui::SFML::Render(*this->window);
         this->window->display();
     }
@@ -358,8 +370,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         if (!e->showDetailMenu) continue;
         std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
         ImGui::Begin(name.c_str(), &(e->showDetailMenu));
-            ImGui::Text("ID: %d", e->ID);
-
             ImGui::InputText("Name", e->name.data(), sizeof(e->name.data()));
 
             if (GameManager::player != nullptr && GameManager::player != e) {
@@ -381,7 +391,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
             ImGui::BeginTabBar("EntityDetails");
             if (ImGui::BeginTabItem("Details")) {
-                ImGui::InputText("Texture", e->texturePath.data(), 64);
+                ImGui::InputText("Texture", e->texturePath.data(), 256);
                 if (ImGui::Button("Change Texture")) {
                     e->SetSprite(e->texturePath);
                 }
@@ -475,13 +485,61 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::End();
     }
 
+    // Show Text Detail
+    for (size_t i = 0; i < GameManager::TextObjects.size(); i++) {
+        TextObj* text = GameManager::TextObjects[i];
+        if (!text->showDetails) continue;
+
+        std::string name = "Text Details (ID: " + std::to_string(text->ID) + ")";
+        ImGui::Begin(name.c_str(), &text->showDetails);
+            ImGui::InputText("Name", text->name.data(), 256);
+
+            float text_pos[] = {text->position.x, text->position.y};
+            if (ImGui::InputFloat2("Position", text_pos)) {
+                text->position = sf::Vector2f(text_pos[0], text_pos[1]);
+            }
+
+            float text_rotation = text->text.getRotation();
+            if (ImGui::InputFloat("Rotation", &text_rotation)) {
+                text->text.setRotation(text_rotation);
+            }
+
+            int text_size = text->text.getCharacterSize();
+            if (ImGui::InputInt("Size", &text_size)) {
+                text->text.setCharacterSize(text_size);
+            }
+
+            // Cursed conversions
+            sf::Color color = text->text.getFillColor();
+            float color_arr[] = {color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f};
+            if (ImGui::ColorEdit4("Color", color_arr)) {
+                text->text.setFillColor(sf::Color(
+                    color_arr[0] * 255,
+                    color_arr[1] * 255,
+                    color_arr[2] * 255,
+                    color_arr[3] * 255));
+            }
+
+            ImGui::Separator();
+
+            std::string textString = text->text.getString();
+            int buffer_size = 1024 * 16;
+            char text_buffer[buffer_size];
+            strcpy(text_buffer, textString.c_str()); 
+            if (ImGui::InputTextMultiline("Text:", text_buffer, buffer_size)) {
+                text->text.setString(text_buffer);
+            }
+            
+        ImGui::End();
+    }
+
     // Create new Entity menu
     if (showEntityCreate) {
         ImGui::Begin("Create new entity", &showEntityCreate);
             // Displays
-            ImGui::InputText("Name", createNameBuffer, 32);
+            ImGui::InputText("Name", createNameBuffer, 256);
             ImGui::InputFloat2("Position", createPosition);
-            ImGui::InputText("Image Path", createImagePath, 32);
+            ImGui::InputText("Image Path", createImagePath, 256);
 
             // Create Button
             if (ImGui::Button("Create")) {
@@ -495,7 +553,42 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     // Create new Text Object
     if (showTextCreate) {
         ImGui::Begin("Create Text Object", &showTextCreate);
-        
+            ImGui::InputText("Name", createTextName, 256);
+            ImGui::InputFloat2("Position", createTextPosition);
+            ImGui::InputText("Text", createTextDetails, 8*256);
+
+            ImGui::RadioButton("Absolute", &createTextMode, 0);
+            ImGui::SameLine();
+            ImGui::RadioButton("Relative", &createTextMode, 1);
+            ImGui::SameLine();
+            ImGui::RadioButton("Screen", &createTextMode, 2);
+
+            if (createTextMode == 1) {
+                ImGui::InputInt("Entity ID", &createTextEntityId);
+            }
+
+            if (ImGui::Button("Create")) {
+                TextObj* text = new TextObj();
+
+                text->name = createTextName;
+                text->position = sf::Vector2f(createTextPosition[0], createTextPosition[1]);
+                text->text.setString(createTextDetails);
+
+                switch (createTextMode) {
+                    case 0: text->mode = Absolute;
+                    case 1: text->mode = Relative;
+                    case 2: text->mode = Screen;
+                }
+
+                if (text->mode == Relative) {
+                    text->entity = *GameManager::FindEntityByID(createTextEntityId);
+                }
+                else{
+                    text->entity = *GameManager::player;
+                }
+
+                GameManager::TextObjects.push_back(text);
+            }
         ImGui::End();
     }
 
@@ -575,10 +668,17 @@ void EditorInstance::Update(sf::Time deltaTime) {
             // Right Mouse
             else if (event.mouseButton.button == 1) {
                 sf::Vector2f converted = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+                
                 for (Entity* e : GameManager::Entities) {
                     if (e->rect.contains(converted.x, converted.y)) {
                         // Toggle details menu visability
                         e->showDetailMenu = !e->showDetailMenu;
+                    }
+                }
+
+                for (TextObj* text : GameManager::TextObjects) {
+                    if (text->text.getGlobalBounds().contains(converted.x, converted.y)) {
+                        text->showDetails = !text->showDetails;
                     }
                 }
             }

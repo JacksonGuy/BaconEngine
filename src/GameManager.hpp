@@ -10,6 +10,7 @@
 
 #include "Entity.hpp"
 #include "File.hpp"
+#include "Text.hpp"
 
 struct EditorSaveState {
     std::vector<Entity*> Entities;
@@ -26,6 +27,8 @@ class GameManager {
 
         static std::map<std::string, sf::Texture*> Textures;
         static std::vector<Entity*> Entities;
+        static std::vector<TextObj*> TextObjects;
+        
         static sf::Font font;
         static Entity* player;
         static bool isPlayingGame;
@@ -38,7 +41,7 @@ class GameManager {
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);
         static void DrawEntities(sf::RenderWindow& window);
-        static void DrawText(sf::RenderWindow& window, std::string text, sf::Vector2f position);
+        static void DrawText(sf::RenderWindow& window);
 
         static bool MouseOnEntity(sf::Vector2f mousePos);
         static bool checkCollision(const Entity& e1, const Entity& e2);
@@ -48,6 +51,8 @@ class GameManager {
 
         static void SaveEditorState(sf::RenderWindow& window);
         static void RestoreEditorState(sf::RenderWindow& window);
+
+        static Entity* FindEntityByID(unsigned int id);
 
         static void ConsoleWrite(std::string text);
 

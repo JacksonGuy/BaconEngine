@@ -9,7 +9,8 @@
 
 #include "GameManager.hpp"
 #include "Entity.hpp"
-#include "File.hpp" 
+#include "File.hpp"
+#include "Text.hpp"
 
 namespace Settings {};
 
@@ -42,17 +43,21 @@ class EditorInstance {
 
         // Save and Load project variables
         bool showLoadPopup;
-        char loadProjectName[64];
+        char loadProjectName[256];
         bool showSaveAsPopup;
-        char saveAsProjectName[64];
+        char saveAsProjectName[256];
 
         // Create Entity Variables
-        char createNameBuffer[64];
+        char createNameBuffer[256];
         float createPosition[2];
-        char createImagePath[64];
+        char createImagePath[256];
 
         // Create Text Variables
-        
+        char createTextName[256];
+        char createTextDetails[1024 * 16];
+        float createTextPosition[2];
+        int createTextMode;
+        int createTextEntityId;
 
         // Functions
         EditorInstance();
