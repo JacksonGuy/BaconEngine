@@ -71,7 +71,7 @@ void GameManager::DrawText(sf::RenderWindow& window) {
         // (0,0) is the entity position
         if (text->mode == Relative) {
             sf::Vector2f pos = text->position;
-            pos += text->entity.position;
+            pos += text->entity->position;
             text->text.setPosition(pos);
         }
 

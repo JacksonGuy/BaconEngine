@@ -4,9 +4,8 @@
 #include <SFML/Graphics.hpp>
 
 class Entity {
-    static unsigned int IDNum;
-
     public:
+        static unsigned int IDNum;
         unsigned int ID;
         std::string name;
         std::string texturePath;

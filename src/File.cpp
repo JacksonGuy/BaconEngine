@@ -13,8 +13,9 @@ void save(std::string filename) {
 
     level_data["Version"] = GameManager::config.version;
 
+    int index = 0;
     for (Entity* e : GameManager::Entities) {
-        level_data["Entities"][e->ID] = {
+        level_data["Entities"][index++] = {
             {"id", e->ID},
             {"name", e->name},
             {"texturePath", e->texturePath},
@@ -32,6 +33,36 @@ void save(std::string filename) {
         };
     }
 
+    index = 0;
+    for (TextObj* obj : GameManager::TextObjects) {
+        int entity_id = obj->entity->ID;
+        sf::Color color = obj->text.getFillColor();
+        std::string mode;
+        switch (obj->mode) {
+            case Absolute: 
+                mode = "Absolute";
+                break;
+            case Relative:
+                mode = "Relative";
+                break;
+            case Screen:
+                mode = "Screen";
+                break;
+        }
+
+        level_data["Text"][index++] = {
+            {"id", obj->ID},
+            {"name", obj->name},
+            {"position", {obj->position.x, obj->position.y}},
+            {"size", obj->text.getCharacterSize()},
+            {"rotation", obj->text.getRotation()},
+            {"color", {color.r, color.g, color.b, color.a}},
+            {"mode", mode},
+            {"entity_id", entity_id},
+            {"text", obj->text.getString()}
+        };
+    }
+
     level_data["Settings"]["Gravity"] = GameManager::gravity;
     level_data["Settings"]["InputMode"] = GameManager::PlayerInputMode;
 
@@ -40,12 +71,10 @@ void save(std::string filename) {
 
 bool load(std::string filename) {
     std::string projectName = "./Projects/" + filename;
-    //std::cout << "[DEBUG] Loading Project " << projectName << std::endl;
     GameManager::ConsoleWrite("[DEBUG] Loading Project: " + projectName);
 
     std::ifstream infile(projectName);
     if (!infile.is_open()) {
-        //std::cout << "[ERROR] Project " << filename << " does not exist" << std::endl;
         GameManager::ConsoleWrite("[ERROR] Failed to load project (Project doesn't exist)");
         return false;
     }
@@ -55,6 +84,8 @@ bool load(std::string filename) {
     GameManager::ConsoleWrite("[DEBUG] Creating Entities...");
     for (auto& entity : level_data["Entities"]) {
         Entity* e = new Entity(sf::Vector2f(entity["position"][0], entity["position"][1]));
+        e->ID = entity["id"];
+        Entity::IDNum = e->ID; // Set to max to preserve IDs
         e->name = entity["name"];
         e->scale = sf::Vector2f(entity["scale"][0], entity["scale"][1]);
         e->width = entity["width"];
@@ -72,6 +103,32 @@ bool load(std::string filename) {
         e->speed = entity["speed"];
         e->mass = entity["mass"];
     }
+
+    GameManager::ConsoleWrite("[DEBUG] Creating Text...");
+    for (auto& obj : level_data["Text"]) {
+        TextObj* text = new TextObj();
+        text->ID = obj["id"];
+        TextObj::IDNum = text->ID; // Set to max to preserve IDs
+        text->name = obj["name"];
+        text->position = sf::Vector2f(obj["position"][0], obj["position"][1]);
+        text->text.setPosition(text->position);
+        text->text.setCharacterSize(obj["size"]);
+        text->text.setRotation(obj["rotation"]);
+        text->text.setFillColor(sf::Color(
+            obj["color"][0], obj["color"][1], obj["color"][2], obj["color"][3])
+        );
+        std::string str = obj["text"];
+        text->text.setString(str);
+
+        if (obj["mode"] == "Absolute") text->mode = Absolute;
+        else if (obj["mode"] == "Relative") text->mode = Relative;
+        else if (obj["mode"] == "Screen") text->mode = Screen;
+
+        text->entity = GameManager::FindEntityByID(obj["entity_id"]);
+    }
+
+    GameManager::ConsoleWrite("[DEBUG] Text Count: " + GameManager::TextObjects.size());
+    GameManager::ConsoleWrite("[DEBUG] First Text Object: " + GameManager::TextObjects[0]->name);
 
     GameManager::gravity = level_data["Settings"]["Gravity"];
     GameManager::PlayerInputMode = level_data["Settings"]["InputMode"];

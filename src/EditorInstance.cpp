@@ -209,7 +209,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Entity List", NULL, &showEntityList));
+            if (ImGui::MenuItem("Object List", NULL, &showEntityList));
             if (ImGui::MenuItem("Game Details", NULL, &showMainMenu));
             if (ImGui::MenuItem("Console", NULL, &showConsole));
             if (ImGui::MenuItem("Editor Settings", NULL, &showSettingsMenu));
@@ -497,6 +497,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             float text_pos[] = {text->position.x, text->position.y};
             if (ImGui::InputFloat2("Position", text_pos)) {
                 text->position = sf::Vector2f(text_pos[0], text_pos[1]);
+                text->text.setPosition(text->position);
             }
 
             float text_rotation = text->text.getRotation();
@@ -526,8 +527,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             int buffer_size = 1024 * 16;
             char text_buffer[buffer_size];
             strcpy(text_buffer, textString.c_str()); 
-            if (ImGui::InputTextMultiline("Text:", text_buffer, buffer_size)) {
+            if (ImGui::InputTextMultiline("Text", text_buffer, buffer_size)) {
                 text->text.setString(text_buffer);
+            }
+
+            if (ImGui::Button("Delete")) {
+                free(GameManager::TextObjects[i]);
+                GameManager::TextObjects.erase(GameManager::TextObjects.begin() + i);
             }
             
         ImGui::End();
@@ -575,33 +581,53 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 text->text.setString(createTextDetails);
 
                 switch (createTextMode) {
-                    case 0: text->mode = Absolute;
-                    case 1: text->mode = Relative;
-                    case 2: text->mode = Screen;
+                    case 0: 
+                        text->mode = Absolute;
+                        break;
+                    case 1: 
+                        text->mode = Relative;
+                        break;
+                    case 2: 
+                        text->mode = Screen;
+                        break;
                 }
 
                 if (text->mode == Relative) {
-                    text->entity = *GameManager::FindEntityByID(createTextEntityId);
+                    text->entity = GameManager::FindEntityByID(createTextEntityId);
                 }
                 else{
-                    text->entity = *GameManager::player;
+                    text->entity = GameManager::player;
                 }
-
-                GameManager::TextObjects.push_back(text);
             }
         ImGui::End();
     }
 
-    // List all Entities
+    // List all Objects
     if (showEntityList) {
-        ImGui::Begin("Entities", &showEntityList);
+        ImGui::Begin("Objects", &showEntityList);
             auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            for (Entity* e : GameManager::Entities) {
-                ImGui::TreeNodeEx(e->name.data(), flags);
-                if (ImGui::IsItemClicked()) {
-                    e->showDetailMenu = !e->showDetailMenu;
+            
+            ImGui::BeginTabBar("Lists");
+                if (ImGui::BeginTabItem("Entities")) {
+                    for (Entity* e : GameManager::Entities) {
+                        ImGui::TreeNodeEx(e->name.data(), flags);
+                        if (ImGui::IsItemClicked()) {
+                            e->showDetailMenu = !e->showDetailMenu;
+                        }
+                    }
+                    ImGui::EndTabItem();
                 }
-            }
+                if (ImGui::BeginTabItem("Text")) {
+                    for (TextObj* obj : GameManager::TextObjects) {
+                        ImGui::TreeNodeEx(obj->name.data(), flags);
+                        if (ImGui::IsItemClicked()) {
+                            obj->showDetails = !obj->showDetails;
+                        }
+                    }
+                    ImGui::EndTabItem();
+                }
+            ImGui::EndTabBar();
+            
         ImGui::End();
     }
 
