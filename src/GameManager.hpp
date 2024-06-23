@@ -14,6 +14,7 @@
 
 struct EditorSaveState {
     std::vector<Entity*> Entities;
+    std::vector<TextObj*> TextObjects;
     sf::Vector2f CameraPos;
     sf::Vector2f CameraSize;
 };
@@ -52,7 +53,7 @@ class GameManager {
         static void SaveEditorState(sf::RenderWindow& window);
         static void RestoreEditorState(sf::RenderWindow& window);
 
-        static Entity* FindEntityByID(unsigned int id);
+        static Entity* FindEntityByID(int id);
 
         static void ConsoleWrite(std::string text);
 

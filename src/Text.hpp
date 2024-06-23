@@ -19,7 +19,8 @@ class TextObj {
         std::string name;
         sf::Text text;
         sf::Vector2f position;
-        Entity* entity;
+        Entity* target;
+        int target_id;
         TextRenderMode mode;
         bool showDetails;
 

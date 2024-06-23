@@ -12,8 +12,8 @@ Entity::Entity(sf::Vector2f position) {
 
     this->position = position;
     this->scale = {1.0f, 1.0f};
-    width = 256;
-    height = 256;
+    width = 64;
+    height = 64;
     this->rotation = 0.0f;
 
     this->showDetailMenu = false;
@@ -34,7 +34,6 @@ Entity::Entity(sf::Vector2f position) {
 
 Entity::Entity(Entity& e) {
     this->ID = e.ID;
-    //Entity::IDNum = this->ID;
     this->name = e.name;
     this->position = e.position;
     this->scale = e.scale;

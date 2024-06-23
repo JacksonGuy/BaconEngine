@@ -354,8 +354,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (ImGui::BeginTabItem("Testing")) {
                     if (ImGui::Button("This is a button")) {
-                        std::string mode = GameManager::InputsModes[GameManager::PlayerInputMode];
-                        GameManager::ConsoleWrite("Current input mode: " + mode);
+                        
                     }
                     ImGui::EndTabItem();
                 }
@@ -521,6 +520,33 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     color_arr[3] * 255));
             }
 
+            int text_mode = 0;
+            if (text->mode == Absolute) text_mode = 0;
+            else if (text->mode == Relative) text_mode = 1;
+            else if (text->mode == Screen) text_mode = 2;
+
+            if (ImGui::RadioButton("Absolute", &text_mode, 0)) {
+                text->mode = Absolute;
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Relative", &text_mode, 1)) {
+                text->mode = Relative;
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Screen", &text_mode, 2)) {
+                text->mode = Screen;
+            }
+
+            if (text->mode == Relative) {
+                int entity_id = text->target->ID;
+                if (ImGui::InputInt("Entity ID", &entity_id)) {
+                    Entity* e = GameManager::FindEntityByID(entity_id);
+                    if (e != nullptr) {
+                        text->target = e;
+                    }
+                }
+            }
+
             ImGui::Separator();
 
             std::string textString = text->text.getString();
@@ -593,10 +619,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (text->mode == Relative) {
-                    text->entity = GameManager::FindEntityByID(createTextEntityId);
+                    text->target = GameManager::FindEntityByID(createTextEntityId);
                 }
                 else{
-                    text->entity = GameManager::player;
+                    text->target = nullptr;
                 }
             }
         ImGui::End();

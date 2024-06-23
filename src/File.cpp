@@ -35,7 +35,7 @@ void save(std::string filename) {
 
     index = 0;
     for (TextObj* obj : GameManager::TextObjects) {
-        int entity_id = obj->entity->ID;
+        int entity_id = -1;
         sf::Color color = obj->text.getFillColor();
         std::string mode;
         switch (obj->mode) {
@@ -44,6 +44,7 @@ void save(std::string filename) {
                 break;
             case Relative:
                 mode = "Relative";
+                entity_id = obj->target->ID;
                 break;
             case Screen:
                 mode = "Screen";
@@ -120,15 +121,15 @@ bool load(std::string filename) {
         std::string str = obj["text"];
         text->text.setString(str);
 
+        text->target = nullptr;
         if (obj["mode"] == "Absolute") text->mode = Absolute;
-        else if (obj["mode"] == "Relative") text->mode = Relative;
+        else if (obj["mode"] == "Relative") {
+            text->mode = Relative;
+            text->target_id = obj["entity_id"];
+            text->target = GameManager::FindEntityByID(obj["entity_id"]);
+        }
         else if (obj["mode"] == "Screen") text->mode = Screen;
-
-        text->entity = GameManager::FindEntityByID(obj["entity_id"]);
     }
-
-    GameManager::ConsoleWrite("[DEBUG] Text Count: " + GameManager::TextObjects.size());
-    GameManager::ConsoleWrite("[DEBUG] First Text Object: " + GameManager::TextObjects[0]->name);
 
     GameManager::gravity = level_data["Settings"]["Gravity"];
     GameManager::PlayerInputMode = level_data["Settings"]["InputMode"];

@@ -70,9 +70,16 @@ void GameManager::DrawText(sf::RenderWindow& window) {
         // Draw text relative to some entity
         // (0,0) is the entity position
         if (text->mode == Relative) {
-            sf::Vector2f pos = text->position;
-            pos += text->entity->position;
-            text->text.setPosition(pos);
+            if (text->target != nullptr) {
+                sf::Vector2f pos = text->position;
+                pos += text->target->position;
+                text->text.setPosition(pos);
+            }
+            else {
+                std::cout << "Text Name: " << text->name << std::endl;
+                std::cout << "Text ID: " << text->ID << std::endl;
+                std::cout << "Text Target: " << text->target_id << std::endl;
+            }
         }
 
         // Draw text relative to the screen
@@ -148,12 +155,20 @@ void GameManager::SaveEditorState(sf::RenderWindow& window) {
     for (Entity* e : saveState.Entities) {
         delete e;
     }
+    for (TextObj* text : saveState.TextObjects) {
+        delete text;
+    }
     saveState.Entities.clear();
+    saveState.TextObjects.clear();
 
     // Copy entities 
     for (Entity* e : GameManager::Entities) {
         Entity* copy = new Entity(*e);
         saveState.Entities.push_back(copy);
+    }
+    for (TextObj* text : GameManager::TextObjects) {
+        TextObj* copy = new TextObj(*text);
+        saveState.TextObjects.push_back(copy);
     }
     saveState.CameraPos = window.getView().getCenter();
     saveState.CameraSize = window.getView().getSize();
@@ -162,8 +177,12 @@ void GameManager::SaveEditorState(sf::RenderWindow& window) {
 void GameManager::RestoreEditorState(sf::RenderWindow& window) {
     for (Entity* e : GameManager::Entities) {
         delete e;
+    }
+    for (TextObj* text : GameManager::TextObjects) {
+        delete text;
     } 
     GameManager::Entities.clear();
+    GameManager::TextObjects.clear();
 
     for (Entity* e : saveState.Entities) {
         Entity* copy = new Entity(*e);
@@ -171,6 +190,10 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window) {
             GameManager::player = copy;
         }
         GameManager::Entities.push_back(copy);
+    }
+    for (TextObj* text : saveState.TextObjects) {
+        TextObj* copy = new TextObj(*text);
+        GameManager::TextObjects.push_back(copy);
     }
     sf::View camera(saveState.CameraPos, saveState.CameraSize);
     window.setView(camera);
@@ -181,7 +204,7 @@ void GameManager::ConsoleWrite(std::string text) {
     GameManager::ConsoleLog.append(newText.c_str());
 }
 
-Entity* GameManager::FindEntityByID(unsigned int id) {
+Entity* GameManager::FindEntityByID(int id) {
     for (Entity* e : GameManager::Entities) {
         if (e->ID == id) return e;
     }
