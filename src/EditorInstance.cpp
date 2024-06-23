@@ -119,6 +119,7 @@ EditorInstance::EditorInstance() {
     this->lastFixedUpdate = sf::Time::Zero;
     this->frameLimit = 60;                                          // Change if necessary
     this->TimePerFrame = sf::seconds(1.f / frameLimit);
+    this->window->setFramerateLimit(165);
 }
 
 // Main Game Loop
@@ -142,6 +143,7 @@ void EditorInstance::Run() {
         if (!GameManager::isPlayingGame) {
             window->draw(originDot);
         }
+        
         GameManager::DrawEntities(*this->window);
         GameManager::DrawText(*this->window);
         ImGui::SFML::Render(*this->window);
@@ -354,7 +356,14 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (ImGui::BeginTabItem("Testing")) {
                     if (ImGui::Button("This is a button")) {
-                        
+                        sf::View cam = window->getView();
+                        sf::Vector2f center = cam.getCenter();
+                        sf::Vector2u win_size = window->getSize();
+                        sf::Vector2f corner = sf::Vector2f(center.x - (win_size.x/2), center.y - (win_size.y/2)); 
+
+                        std::string str = "[DEBUG] Top Left: (" + std::to_string(corner.x)
+                            + ", " + std::to_string(corner.y) + ")";
+                        GameManager::ConsoleWrite(str);
                     }
                     ImGui::EndTabItem();
                 }

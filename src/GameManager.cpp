@@ -85,10 +85,11 @@ void GameManager::DrawText(sf::RenderWindow& window) {
         // Draw text relative to the screen
         // (0,0) is the top left corner of the camera
         else if (text->mode == Screen) {
-            sf::View camera = window.getView();
-            sf::FloatRect rect = camera.getViewport();
-            sf::Vector2f pos = text->position;
-            text->text.setPosition(pos.x + rect.left, pos.y + rect.top);
+            sf::View cam = window.getView();
+            sf::FloatRect rect = cam.getViewport();
+            sf::Vector2f point = sf::Vector2f(text->position.x + rect.left, text->position.y + rect.top);
+            point = window.mapPixelToCoords((sf::Vector2i)point);
+            text->text.setPosition(point);
         }
 
         window.draw(text->text);
