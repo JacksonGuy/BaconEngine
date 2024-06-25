@@ -1,0 +1,1 @@
+ConsoleWrite("[GAME LOG] Test");

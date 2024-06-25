@@ -4,6 +4,7 @@ CLFAGS += -Iinclude/SFML/include/
 CFLAGS += -Linclude/SFML/lib
 CFLAGS += -DSFML_STATIC
 CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
+CFLAGS += -Iinclude/lua -Linclude/lua
 
 ifeq ($(target), editor)
 	SOURCES += Program.cpp
@@ -33,7 +34,7 @@ ifeq ($(UNAME), Linux)
 endif
 
 ifeq ($(OS), Windows_NT)
-	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype 
+	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua
 	ifeq ($(target), editor)
 		EXE = editor.exe
 	else

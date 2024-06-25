@@ -1,6 +1,7 @@
 #include "EditorInstance.hpp"
 
 #include <iostream>
+#include "LuaApi.hpp"
 
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution
@@ -114,6 +115,10 @@ EditorInstance::EditorInstance() {
     strcpy(this->createTextDetails, "");
     this->createTextMode = 0;
     this->createTextEntityId = -1;
+
+    // Setup Lua API
+    luaL_openlibs(GameManager::LuaState);
+    lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
 
     // Other
     this->lastFixedUpdate = sf::Time::Zero;
@@ -434,6 +439,40 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     e->UpdateRect();
                 }
 
+                ImGui::Separator();
+
+                ImGui::Text("Scripts");
+                auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+                for (ScriptItem script : e->lua_scripts) {
+                    ImGui::TreeNodeEx(script.path.data(), flags);
+                    if (ImGui::IsItemClicked()) {
+                        script.showDetails = !script.showDetails;
+                    }
+                }
+
+                if (ImGui::Button("Add Lua Script")) {
+                    AddAttributeEntity = e;
+                    ImGui::OpenPopup("AddScriptEntity");
+                }
+
+                if (ImGui::BeginPopupModal("AddScriptEntity", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                    ImGui::Text("Add Script");
+                    ImGui::Separator();
+                    ImGui::InputText("Path", AddScriptName, 256);
+
+                    if (ImGui::Button("Add")) {
+                        ScriptItem script;
+                        script.path = AddScriptName;
+                        script.showDetails = false;
+                        AddAttributeEntity->lua_scripts.push_back(script);
+
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+
+                ImGui::Separator();
+
                 if (ImGui::Button("Delete")) {
                     free(GameManager::Entities[i]);
                     GameManager::Entities.erase(GameManager::Entities.begin() + i);
@@ -705,6 +744,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 }
 
 void EditorInstance::Update(sf::Time deltaTime) {
+    // Process events
     sf::Event event;
     while (window->pollEvent(event)) {
         ImGui::SFML::ProcessEvent(*window, event);
@@ -780,6 +820,11 @@ void EditorInstance::Update(sf::Time deltaTime) {
                 window->setView(*camera);
             }
         }
+    }
+
+    // Run Lua Scripts
+    if (GameManager::isPlayingGame) {
+        GameManager::RunLuaUpdates();
     }
 }
 

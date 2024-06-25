@@ -2,6 +2,7 @@
 #define ENTITY_H
 
 #include <SFML/Graphics.hpp>
+#include "ScriptItem.hpp"
 
 class Entity {
     public:
@@ -28,6 +29,16 @@ class Entity {
         bool grounded;
         sf::Vector2f velocity;
         sf::Vector2f acceleration;
+
+        std::vector<ScriptItem> lua_scripts;
+
+        // We can also have users type out lua code directly
+        // into the editor, then save that code as a string,
+        // and use L.do_string(str) to run the code.
+        // It could be faster in certain scenarios, but adds an
+        // extra layer of complexity to running/saving that
+        // information, so we won't do that just yet.
+        // std::vector<std::string> lua_strings;
 
         bool showDetailMenu;
         bool showHitbox;

@@ -41,6 +41,9 @@ class EditorInstance {
         bool showTextCreate;
         std::string failedMessage;
 
+        Entity* AddAttributeEntity;
+        char AddScriptName[256];
+
         // Save and Load project variables
         bool showLoadPopup;
         char loadProjectName[256];

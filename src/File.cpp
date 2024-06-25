@@ -15,7 +15,7 @@ void save(std::string filename) {
 
     int index = 0;
     for (Entity* e : GameManager::Entities) {
-        level_data["Entities"][index++] = {
+        level_data["Entities"][index] = {
             {"id", e->ID},
             {"name", e->name},
             {"texturePath", e->texturePath},
@@ -31,6 +31,13 @@ void save(std::string filename) {
             {"speed", e->speed},
             {"mass", e->mass}
         };
+
+        int i = 0;
+        for (ScriptItem script : e->lua_scripts) {
+            level_data["Entities"][index]["scripts"][i] = script.path;
+        }
+
+        index++;
     }
 
     index = 0;
@@ -103,6 +110,13 @@ bool load(std::string filename) {
         e->hitboxSize = entity["hitboxSize"];
         e->speed = entity["speed"];
         e->mass = entity["mass"];
+
+        for (json::iterator it = entity["scripts"].begin(); it != entity["scripts"].end(); ++it) {
+            ScriptItem script;
+            script.path = *it;
+            script.showDetails = false;
+            e->lua_scripts.push_back(script);
+        }
     }
 
     GameManager::ConsoleWrite("[DEBUG] Creating Text...");

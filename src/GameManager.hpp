@@ -12,6 +12,12 @@
 #include "File.hpp"
 #include "Text.hpp"
 
+extern "C" {
+    #include <lauxlib.h>
+    #include <lua.h>
+    #include <lualib.h>
+}
+
 struct EditorSaveState {
     std::vector<Entity*> Entities;
     std::vector<TextObj*> TextObjects;
@@ -39,6 +45,8 @@ class GameManager {
         static unsigned int PlayerInputMode;
         static char* InputsModes[2];
 
+        static lua_State* LuaState;
+
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);
         static void DrawEntities(sf::RenderWindow& window);
@@ -56,6 +64,8 @@ class GameManager {
         static Entity* FindEntityByID(int id);
 
         static void ConsoleWrite(std::string text);
+
+        static void RunLuaUpdates();
 
     private:
         static EditorSaveState saveState;
