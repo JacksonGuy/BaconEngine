@@ -54,6 +54,11 @@ Entity::Entity(Entity& e) {
     this->velocity = sf::Vector2f(0, 0); // DEBUG
     this->acceleration = sf::Vector2f(0, 0); // DEBUG
 
+    this->lua_scripts = e.lua_scripts;
+    this->entity_variables = e.entity_variables;
+    this->entity_numbers = e.entity_numbers;
+    this->entity_strings = e.entity_strings;
+
     this->SetSprite(e.texturePath, false);
     this->SetPosition(this->position);
 }

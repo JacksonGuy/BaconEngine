@@ -118,6 +118,8 @@ EditorInstance::EditorInstance() {
 
     // Setup Lua API
     luaL_openlibs(GameManager::LuaState);
+    lua_register(GameManager::LuaState, "change_variable", change_variable);
+    lua_register(GameManager::LuaState, "get_variable", get_variable);
     lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
 
     // Other
@@ -466,6 +468,58 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         script.showDetails = false;
                         AddAttributeEntity->lua_scripts.push_back(script);
 
+                        ImGui::CloseCurrentPopup();
+                    }
+                    if (ImGui::Button("Cancel")) {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+
+                ImGui::Separator();
+
+                ImGui::Text("Custom Variables");
+
+                for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
+                    std::string key = it->second;
+                    if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
+                        ImGui::InputDouble(key.c_str(), &e->entity_numbers[key]);
+                    }
+                    else if (e->entity_strings.find(key) != e->entity_strings.end()) {
+                        ImGui::InputText(key.c_str(), e->entity_strings[key].data(), 256);
+                    }
+                }
+
+                if (ImGui::Button("Add new variable")) {
+                    AddAttributeEntity = e;
+                    ImGui::OpenPopup("AddVariableEntity");
+                }
+
+                if (ImGui::BeginPopupModal("AddVariableEntity", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                    ImGui::Text("Add Variable");
+                    ImGui::Separator();
+                    ImGui::InputText("Name", AddVariableName, 256);
+                    
+                    ImGui::RadioButton("Number", &AddVariableType, 0);
+                    ImGui::SameLine();
+                    ImGui::RadioButton("String", &AddVariableType, 1);
+
+                    if (AddVariableType == 0) {
+                        ImGui::InputDouble("Value", &AddVariableNumber);
+                    }
+                    else if (AddVariableType == 1) {
+                        ImGui::InputText("Value", AddVariableString, 256);
+                    }
+
+                    if (ImGui::Button("Add")) {
+                        int count = e->entity_variables.size();
+                        e->entity_variables[count] = AddVariableName;
+                        if (AddVariableType == 0) {
+                            e->entity_numbers[AddVariableName] = AddVariableNumber;
+                        }
+                        else {
+                            e->entity_strings[AddVariableName] = AddVariableString;
+                        }
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::EndPopup();

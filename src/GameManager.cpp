@@ -17,6 +17,7 @@ float GameManager::gravity = 0.2f;
 unsigned int GameManager::PlayerInputMode = 0;
 char* GameManager::InputsModes[2] = {"Top Down", "Platformer"};
 lua_State* GameManager::LuaState = luaL_newstate();
+Entity* GameManager::current_lua_object = nullptr;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
@@ -215,8 +216,10 @@ Entity* GameManager::FindEntityByID(int id) {
 
 void GameManager::RunLuaUpdates() {
     for (Entity* e : GameManager::Entities) {
+        GameManager::current_lua_object = e;
         for (ScriptItem script : e->lua_scripts) {
             luaL_dofile(GameManager::LuaState, script.path.c_str());
         }
     }
+    GameManager::current_lua_object = nullptr;
 }

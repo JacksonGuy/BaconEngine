@@ -1,1 +1,1 @@
-ConsoleWrite("[GAME LOG] Test");
+ConsoleWrite(get_variable("Something"))

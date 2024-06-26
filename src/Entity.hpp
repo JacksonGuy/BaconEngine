@@ -31,6 +31,9 @@ class Entity {
         sf::Vector2f acceleration;
 
         std::vector<ScriptItem> lua_scripts;
+        std::map<int, std::string> entity_variables;
+        std::map<std::string, double> entity_numbers;
+        std::map<std::string, std::string> entity_strings;
 
         // We can also have users type out lua code directly
         // into the editor, then save that code as a string,

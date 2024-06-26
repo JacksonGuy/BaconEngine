@@ -46,6 +46,7 @@ class GameManager {
         static char* InputsModes[2];
 
         static lua_State* LuaState;
+        static Entity* current_lua_object;
 
         static sf::Texture* LoadTexture(std::string path);
         static void LoadFont(std::string path);

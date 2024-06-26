@@ -34,7 +34,29 @@ void save(std::string filename) {
 
         int i = 0;
         for (ScriptItem script : e->lua_scripts) {
-            level_data["Entities"][index]["scripts"][i] = script.path;
+            level_data["Entities"][index]["scripts"][i++] = script.path;
+        }
+
+        i = 0;
+        for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
+            //int entity_order = it->first;
+            std::string key = it->second;
+            if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
+                level_data["Entities"][index]["variables"][i++] = {
+                    //{"order", entity_order},
+                    {"name", key},
+                    {"type", "number"},
+                    {"value", e->entity_numbers[key]}
+                };
+            }
+            else if (e->entity_strings.find(key) != e->entity_strings.end()) {
+                level_data["Entities"][index]["variables"][i++] = {
+                    //{"order", entity_order},
+                    {"name", key},
+                    {"type", "string"},
+                    {"value", e->entity_strings[key]}
+                };
+            }
         }
 
         index++;
@@ -116,6 +138,23 @@ bool load(std::string filename) {
             script.path = *it;
             script.showDetails = false;
             e->lua_scripts.push_back(script);
+        }
+
+        //json::iterator it = entity["variables"].begin(); it != entity["variables"].end(); ++it
+        for (auto& it : entity["variables"].items()) {
+            int order = stoi(it.key());
+            std::string name = it.value()["name"];
+            std::string type = it.value()["type"];
+
+            e->entity_variables[order] = name;
+            if (type == "number") {
+                double value = it.value()["value"];
+                e->entity_numbers[name] = value;
+            }
+            else if (type == "string") {
+                std::string value = it.value()["value"];
+                e->entity_strings[name] = value.data();
+            }
         }
     }
 

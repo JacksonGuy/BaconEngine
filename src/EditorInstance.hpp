@@ -43,6 +43,10 @@ class EditorInstance {
 
         Entity* AddAttributeEntity;
         char AddScriptName[256];
+        char AddVariableName[256];
+        int AddVariableType;
+        double AddVariableNumber;
+        char AddVariableString[256];
 
         // Save and Load project variables
         bool showLoadPopup;
