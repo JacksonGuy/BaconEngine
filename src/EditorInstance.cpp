@@ -120,6 +120,7 @@ EditorInstance::EditorInstance() {
     luaL_openlibs(GameManager::LuaState);
     lua_register(GameManager::LuaState, "change_variable", change_variable);
     lua_register(GameManager::LuaState, "get_variable", get_variable);
+    lua_register(GameManager::LuaState, "change_text", change_text);
     lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
 
     // Other

@@ -37,3 +37,17 @@ int get_variable(lua_State* L) {
 
     return 1;
 }
+
+int change_text(lua_State* L) {
+    const char* name = lua_tostring(L, 1);
+    const char* newtext = lua_tostring(L, 2);
+
+    for (TextObj* text : GameManager::TextObjects) {
+        if (text->name == name) {
+            text->text.setString(newtext);
+            return 0;
+        }
+    }
+
+    return 0;
+}

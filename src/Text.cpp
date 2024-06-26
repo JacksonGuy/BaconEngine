@@ -20,13 +20,6 @@ TextObj::TextObj() {
 TextObj::TextObj(TextObj& obj) {
     this->ID = obj.ID;
     this->name = obj.name;
-    
-    //this->entity = obj.entity;
-    
-    //this->entity = nullptr;
-    //if (obj.entity != nullptr) {
-    //    this->entity = GameManager::FindEntityByID(obj.entity->ID);
-    //}
 
     this->target_id = obj.target_id;
     this->target = GameManager::FindEntityByID(this->target_id);

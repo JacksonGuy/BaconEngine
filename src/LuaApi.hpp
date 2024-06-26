@@ -10,5 +10,6 @@ extern "C" {
 int ConsoleWrite(lua_State* L);
 int change_variable(lua_State* L);
 int get_variable(lua_State* L);
+int change_text(lua_State* L);
 
 #endif

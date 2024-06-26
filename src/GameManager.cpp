@@ -218,7 +218,10 @@ void GameManager::RunLuaUpdates() {
     for (Entity* e : GameManager::Entities) {
         GameManager::current_lua_object = e;
         for (ScriptItem script : e->lua_scripts) {
-            luaL_dofile(GameManager::LuaState, script.path.c_str());
+            if (luaL_dofile(GameManager::LuaState, script.path.c_str()) != LUA_OK) {
+                std::string error = lua_tostring(GameManager::LuaState, -1);
+                GameManager::ConsoleWrite("[ERROR] Lua Script failed: " + error);
+            }
         }
     }
     GameManager::current_lua_object = nullptr;
