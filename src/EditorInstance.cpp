@@ -385,7 +385,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         if (!e->showDetailMenu) continue;
         std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
         ImGui::Begin(name.c_str(), &(e->showDetailMenu));
-            ImGui::InputText("Name", e->name.data(), sizeof(e->name.data()));
+            char nameBuff[256];
+            strcpy(nameBuff, e->name.data());
+            if (ImGui::InputText("Name", nameBuff, 256)) {
+                e->name = nameBuff;
+            }
 
             if (GameManager::player != nullptr && GameManager::player != e) {
                 ImGui::BeginDisabled();
@@ -406,9 +410,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
             ImGui::BeginTabBar("EntityDetails");
             if (ImGui::BeginTabItem("Details")) {
-                ImGui::InputText("Texture", e->texturePath.data(), 256);
+                char textBuff[256];
+                strcpy(textBuff, e->texturePath.data());
+                ImGui::InputText("Texture", textBuff, 256);
                 if (ImGui::Button("Change Texture")) {
-                    e->SetSprite(e->texturePath);
+                    e->SetSprite(textBuff);
                 }
                 ImGui::Separator();
                 
@@ -470,6 +476,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                         ImGui::CloseCurrentPopup();
                     }
+                    ImGui::SameLine();
                     if (ImGui::Button("Cancel")) {
                         ImGui::CloseCurrentPopup();
                     }
@@ -486,7 +493,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         ImGui::InputDouble(key.c_str(), &e->entity_numbers[key]);
                     }
                     else if (e->entity_strings.find(key) != e->entity_strings.end()) {
-                        ImGui::InputText(key.c_str(), e->entity_strings[key].data(), 256);
+                        char textBuff[256];
+                        strcpy(textBuff, e->entity_strings[key].data());
+                        if (ImGui::InputText(key.c_str(), textBuff, 256)) {
+                            e->entity_strings[key] = textBuff;
+                        }
                     }
                 }
 
@@ -520,6 +531,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         else {
                             e->entity_strings[AddVariableName] = AddVariableString;
                         }
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel")) {
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::EndPopup();
