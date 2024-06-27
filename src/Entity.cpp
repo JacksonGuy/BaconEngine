@@ -24,7 +24,6 @@ Entity::Entity(sf::Vector2f position) {
     this->hitboxSize = 5.0f;
 
     this->mass = 1.f;
-    this->speed = 0.f;
     this->grounded = false;
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
@@ -49,7 +48,6 @@ Entity::Entity(Entity& e) {
     this->hitboxSize = e.hitboxSize;
     
     this->mass = e.mass;
-    this->speed = e.speed;
     this->grounded = false; // DEBUG
     this->velocity = sf::Vector2f(0, 0); // DEBUG
     this->acceleration = sf::Vector2f(0, 0); // DEBUG

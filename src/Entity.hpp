@@ -46,7 +46,6 @@ class Entity {
         bool showDetailMenu;
         bool showHitbox;
         bool isPlayer;
-        float speed;
 
         Entity(sf::Vector2f position = sf::Vector2f(0,0));
         Entity(Entity& e);

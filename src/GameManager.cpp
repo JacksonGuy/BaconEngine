@@ -18,6 +18,8 @@ unsigned int GameManager::PlayerInputMode = 0;
 char* GameManager::InputsModes[2] = {"Top Down", "Platformer"};
 lua_State* GameManager::LuaState = luaL_newstate();
 Entity* GameManager::current_lua_object = nullptr;
+sf::Keyboard::Key GameManager::lastinput;
+std::map<std::string, sf::Keyboard::Key> GameManager::key_map;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {

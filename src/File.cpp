@@ -28,7 +28,6 @@ void save(std::string filename) {
             {"isSolid", e->isSolid},
             {"physicsObject", e->physicsObject},
             {"hitboxSize", e->hitboxSize},
-            {"speed", e->speed},
             {"mass", e->mass}
         };
 
@@ -130,7 +129,6 @@ bool load(std::string filename) {
         e->isSolid = entity["isSolid"];
         e->physicsObject = entity["physicsObject"];
         e->hitboxSize = entity["hitboxSize"];
-        e->speed = entity["speed"];
         e->mass = entity["mass"];
 
         for (json::iterator it = entity["scripts"].begin(); it != entity["scripts"].end(); ++it) {

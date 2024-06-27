@@ -39,6 +39,8 @@ class GameManager {
         static sf::Font font;
         static Entity* player;
         static bool isPlayingGame;
+        static std::map<std::string, sf::Keyboard::Key> key_map;
+        static sf::Keyboard::Key lastinput;
         static ImGuiTextBuffer ConsoleLog;
         
         static float gravity;

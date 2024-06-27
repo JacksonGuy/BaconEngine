@@ -118,16 +118,53 @@ EditorInstance::EditorInstance() {
 
     // Setup Lua API
     luaL_openlibs(GameManager::LuaState);
-    lua_register(GameManager::LuaState, "change_variable", change_variable);
-    lua_register(GameManager::LuaState, "get_variable", get_variable);
-    lua_register(GameManager::LuaState, "change_text", change_text);
     lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
+    lua_register(GameManager::LuaState, "set_variable", set_variable);
+    lua_register(GameManager::LuaState, "get_variable", get_variable);
+    lua_register(GameManager::LuaState, "set_text", set_text);
+    lua_register(GameManager::LuaState, "get_input", get_input);
+    lua_register(GameManager::LuaState, "get_position", get_position);
+    lua_register(GameManager::LuaState, "set_position", set_position);
+    lua_register(GameManager::LuaState, "check_collision", check_collision);
+    lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
+    lua_register(GameManager::LuaState, "get_velocity", get_velocity);
+    lua_register(GameManager::LuaState, "set_velocity", set_velocity);
+    lua_register(GameManager::LuaState, "get_acceleration", get_acceleration);
+    lua_register(GameManager::LuaState, "get_grounded", get_grounded);
 
     // Other
     this->lastFixedUpdate = sf::Time::Zero;
     this->frameLimit = 60;                                          // Change if necessary
     this->TimePerFrame = sf::seconds(1.f / frameLimit);
     this->window->setFramerateLimit(165);
+
+    // Keys
+    for (int i = 0; i < 26; i++) {
+        // I'm sorry Dennis Ritchie...
+        char ch = 'A' + i;
+        std::string index;
+        index.push_back(ch);
+        GameManager::key_map[index] = sf::Keyboard::Key(i);
+    }
+    GameManager::key_map["ESC"] = sf::Keyboard::Escape;
+    GameManager::key_map["LCONTROL"] = sf::Keyboard::LControl;
+    GameManager::key_map["LSHIFT"] = sf::Keyboard::LShift;
+    GameManager::key_map["LALT"] = sf::Keyboard::LAlt;
+    GameManager::key_map["RCONTROL"] = sf::Keyboard::RControl;
+    GameManager::key_map["RSHIFT"] = sf::Keyboard::RShift;
+    GameManager::key_map["RALT"] = sf::Keyboard::RAlt;
+    GameManager::key_map["SPACE"] = sf::Keyboard::Space;
+    GameManager::key_map["TAB"] = sf::Keyboard::Tab;
+    GameManager::key_map["UP"] = sf::Keyboard::Up;
+    GameManager::key_map["DOWN"] = sf::Keyboard::Down;
+    GameManager::key_map["LEFT"] = sf::Keyboard::Left;
+    GameManager::key_map["RIGHT"] = sf::Keyboard::Right;
+    GameManager::key_map["LBRACKET"] = sf::Keyboard::LBracket;
+    GameManager::key_map["RBRACKET"] = sf::Keyboard::RBracket;
+
+    // for (auto it =  GameManager::key_map.begin(); it != GameManager::key_map.end(); it++) {
+    //     std::cout << it->first << " = " << it->second << std::endl;
+    // }
 }
 
 // Main Game Loop
@@ -452,10 +489,16 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 ImGui::Text("Scripts");
                 auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-                for (ScriptItem script : e->lua_scripts) {
+                for (size_t i = 0; i < e->lua_scripts.size(); i++) {
+                    ScriptItem script = e->lua_scripts[i];
                     ImGui::TreeNodeEx(script.path.data(), flags);
                     if (ImGui::IsItemClicked()) {
                         script.showDetails = !script.showDetails;
+                    }
+                    
+                    ImGui::SameLine(ImGui::GetWindowWidth() - 20);
+                    if (ImGui::Button("X")) {
+                        e->lua_scripts.erase(e->lua_scripts.begin() + i);
                     }
                 }
 
@@ -492,6 +535,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     std::string key = it->second;
                     if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
                         ImGui::InputDouble(key.c_str(), &e->entity_numbers[key]);
+                        ImGui::SameLine(ImGui::GetWindowWidth() - 20);
+                        if (ImGui::Button("X")) {
+                            e->entity_numbers.erase(key);
+                            e->entity_variables.erase(it);
+                        }
                     }
                     else if (e->entity_strings.find(key) != e->entity_strings.end()) {
                         char textBuff[256];
@@ -499,10 +547,15 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         if (ImGui::InputText(key.c_str(), textBuff, 256)) {
                             e->entity_strings[key] = textBuff;
                         }
+                        ImGui::SameLine(ImGui::GetWindowWidth() - 20);
+                        if (ImGui::Button("X")) {
+                            e->entity_strings.erase(key);
+                            e->entity_variables.erase(it);
+                        }
                     }
                 }
 
-                if (ImGui::Button("Add new variable")) {
+                if (ImGui::Button("Add variable")) {
                     AddAttributeEntity = e;
                     ImGui::OpenPopup("AddVariableEntity");
                 }
@@ -589,13 +642,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
                 
                 ImGui::EndTabItem();
-            }
-
-            if (e->isPlayer) {
-                if (ImGui::BeginTabItem("Player Details")) {
-                    ImGui::InputFloat("Speed", &e->speed);
-                    ImGui::EndTabItem();
-                }
             }
 
             ImGui::EndTabBar();
@@ -820,6 +866,8 @@ void EditorInstance::Update(sf::Time deltaTime) {
         ImGui::SFML::ProcessEvent(*window, event);
         auto& io = ImGui::GetIO();
 
+        GameManager::lastinput = event.key.code;
+
         // Close Window
         if (event.type == sf::Event::Closed) {
             window->close();
@@ -891,11 +939,6 @@ void EditorInstance::Update(sf::Time deltaTime) {
             }
         }
     }
-
-    // Run Lua Scripts
-    if (GameManager::isPlayingGame) {
-        GameManager::RunLuaUpdates();
-    }
 }
 
 void EditorInstance::FixedUpdate(sf::Time deltaTime) {
@@ -904,47 +947,13 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     if (lastFixedUpdate > TimePerFrame) {
         lastFixedUpdate -= TimePerFrame;
 
-        // Player Input
+        // Run Lua Scripts
+        if (GameManager::isPlayingGame) {
+            GameManager::RunLuaUpdates();
+        }
+
+        // Player position update
         if (GameManager::player != nullptr && GameManager::isPlayingGame) {
-            float speed = GameManager::player->speed;
-            
-            // Top Down
-            if (GameManager::PlayerInputMode == 0) {
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-                    if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
-                        GameManager::player->position.y -= speed;
-                    }
-                }
-
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-                    if (!GameManager::checkCollisionSide(GameManager::player->bottomRect)) {
-                        GameManager::player->position.y += speed;
-                    }
-                }
-            }
-            // Platformer
-            else if (GameManager::PlayerInputMode == 1) {
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-                    if (!GameManager::checkCollisionSide(GameManager::player->topRect)) {
-                        if (GameManager::player->grounded) {
-                            GameManager::player->velocity.y = -10;
-                        }
-                    }
-                }
-            }
-
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-                if (!GameManager::checkCollisionSide(GameManager::player->leftRect)) {
-                    GameManager::player->position.x -= speed;
-                }
-            }
-
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-                if (!GameManager::checkCollisionSide(GameManager::player->rightRect)) {
-                    GameManager::player->position.x += speed;
-                }
-            }
-
             GameManager::player->sprite.setPosition(GameManager::player->position);
             GameManager::player->UpdateRect();
             camera->setCenter(GameManager::player->position);
