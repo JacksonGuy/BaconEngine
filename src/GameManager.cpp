@@ -14,12 +14,11 @@ EditorSaveState GameManager::saveState;
 ImGuiTextBuffer GameManager::ConsoleLog;
 unsigned int GameManager::framerateLimit = 500;
 float GameManager::gravity = 0.2f;
-unsigned int GameManager::PlayerInputMode = 0;
-char* GameManager::InputsModes[2] = {"Top Down", "Platformer"};
 lua_State* GameManager::LuaState = luaL_newstate();
 Entity* GameManager::current_lua_object = nullptr;
 sf::Keyboard::Key GameManager::lastinput;
 std::map<std::string, sf::Keyboard::Key> GameManager::key_map;
+std::map<std::string, sf::Mouse::Button> GameManager::mouse_map;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
@@ -216,6 +215,25 @@ Entity* GameManager::FindEntityByID(int id) {
     return nullptr;
 }
 
+Entity* GameManager::FindEntityByName(std::string name) {
+    for (Entity* e : GameManager::Entities) {
+        if (e->name == name) {
+            return e;
+        }
+    }
+    return nullptr;
+}
+
+std::vector<Entity*> GameManager::FindEntitiesByType(std::string type) {
+    std::vector<Entity*> found;
+    for (Entity* e : GameManager::Entities) {
+        if (e->entity_type == type) {
+            found.push_back(e);
+        }
+    }
+    return found;
+}
+ 
 void GameManager::RunLuaUpdates() {
     for (Entity* e : GameManager::Entities) {
         GameManager::current_lua_object = e;

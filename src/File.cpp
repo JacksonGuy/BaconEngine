@@ -18,6 +18,7 @@ void save(std::string filename) {
         level_data["Entities"][index] = {
             {"id", e->ID},
             {"name", e->name},
+            {"entity_type", e->entity_type},
             {"texturePath", e->texturePath},
             {"position", {e->position.x, e->position.y}},
             {"scale", {e->scale.x, e->scale.y}},
@@ -93,7 +94,6 @@ void save(std::string filename) {
     }
 
     level_data["Settings"]["Gravity"] = GameManager::gravity;
-    level_data["Settings"]["InputMode"] = GameManager::PlayerInputMode;
 
     outfile << std::setw(4) << level_data;
 }
@@ -116,6 +116,7 @@ bool load(std::string filename) {
         e->ID = entity["id"];
         Entity::IDNum = e->ID; // Set to max to preserve IDs
         e->name = entity["name"];
+        e->entity_type = entity["entity_type"];
         e->scale = sf::Vector2f(entity["scale"][0], entity["scale"][1]);
         e->width = entity["width"];
         e->height = entity["height"];
@@ -183,7 +184,6 @@ bool load(std::string filename) {
     }
 
     GameManager::gravity = level_data["Settings"]["Gravity"];
-    GameManager::PlayerInputMode = level_data["Settings"]["InputMode"];
 
     return true;
 }

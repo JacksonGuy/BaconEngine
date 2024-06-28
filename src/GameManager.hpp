@@ -40,12 +40,11 @@ class GameManager {
         static Entity* player;
         static bool isPlayingGame;
         static std::map<std::string, sf::Keyboard::Key> key_map;
+        static std::map<std::string, sf::Mouse::Button> mouse_map;
         static sf::Keyboard::Key lastinput;
         static ImGuiTextBuffer ConsoleLog;
         
         static float gravity;
-        static unsigned int PlayerInputMode;
-        static char* InputsModes[2];
 
         static lua_State* LuaState;
         static Entity* current_lua_object;
@@ -65,6 +64,8 @@ class GameManager {
         static void RestoreEditorState(sf::RenderWindow& window);
 
         static Entity* FindEntityByID(int id);
+        static Entity* FindEntityByName(std::string name);
+        static std::vector<Entity*> FindEntitiesByType(std::string type);
 
         static void ConsoleWrite(std::string text);
 

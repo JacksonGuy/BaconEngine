@@ -13,6 +13,7 @@ int set_variable(lua_State* L);
 int get_variable(lua_State* L);
 int set_text(lua_State* L);
 int get_input(lua_State* L);
+int get_mouse_input(lua_State* L);
 
 int get_position(lua_State* L);
 int set_position(lua_State* L);

@@ -8,6 +8,7 @@ class Entity {
     public:
         static unsigned int IDNum;
         unsigned int ID;
+        std::string entity_type;
         std::string name;
         std::string texturePath;
 

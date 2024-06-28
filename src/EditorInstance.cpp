@@ -123,6 +123,7 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_variable", get_variable);
     lua_register(GameManager::LuaState, "set_text", set_text);
     lua_register(GameManager::LuaState, "get_input", get_input);
+    lua_register(GameManager::LuaState, "get_mouse_input", get_mouse_input);
     lua_register(GameManager::LuaState, "get_position", get_position);
     lua_register(GameManager::LuaState, "set_position", set_position);
     lua_register(GameManager::LuaState, "check_collision", check_collision);
@@ -165,6 +166,12 @@ EditorInstance::EditorInstance() {
     // for (auto it =  GameManager::key_map.begin(); it != GameManager::key_map.end(); it++) {
     //     std::cout << it->first << " = " << it->second << std::endl;
     // }
+
+    GameManager::mouse_map["MOUSE_LEFT"] = sf::Mouse::Button::Left;
+    GameManager::mouse_map["MOUSE_RIGHT"] = sf::Mouse::Button::Right;
+    GameManager::mouse_map["MOUSE_MIDDLE"] = sf::Mouse::Button::Middle;
+    GameManager::mouse_map["MOUSE_BUTTON_4"] = sf::Mouse::Button::XButton1;
+    GameManager::mouse_map["MOUSE_BUTTON_5"] = sf::Mouse::Button::XButton2;
 }
 
 // Main Game Loop
@@ -382,20 +389,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (ImGui::BeginTabItem("Game Settings")) {
                     ImGui::InputFloat("Gravity", &GameManager::gravity);
-
-                    const char* preview = GameManager::InputsModes[GameManager::PlayerInputMode];
-                    if (ImGui::BeginCombo("Player Input", preview)) {
-                        for (int i = 0; i < 2; i++) {
-                            bool isSelected = (GameManager::PlayerInputMode == i);
-
-                            if (ImGui::Selectable(GameManager::InputsModes[i], isSelected)) {
-                                GameManager::PlayerInputMode = i;
-                            }
-                            if (isSelected) ImGui::SetItemDefaultFocus();
-                        }
-                        ImGui::EndCombo();
-                    } 
-
                     ImGui::EndTabItem();
                 }
 
@@ -427,6 +420,12 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             strcpy(nameBuff, e->name.data());
             if (ImGui::InputText("Name", nameBuff, 256)) {
                 e->name = nameBuff;
+            }
+
+            char typeBuff[256];
+            strcpy(typeBuff, e->entity_type.data());
+            if (ImGui::InputText("Type", typeBuff, 256)) {
+                e->entity_type = typeBuff;
             }
 
             if (GameManager::player != nullptr && GameManager::player != e) {
@@ -496,7 +495,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         script.showDetails = !script.showDetails;
                     }
                     
-                    ImGui::SameLine(ImGui::GetWindowWidth() - 20);
+                    ImGui::SameLine(ImGui::GetWindowWidth() - 30);
                     if (ImGui::Button("X")) {
                         e->lua_scripts.erase(e->lua_scripts.begin() + i);
                     }
@@ -535,7 +534,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     std::string key = it->second;
                     if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
                         ImGui::InputDouble(key.c_str(), &e->entity_numbers[key]);
-                        ImGui::SameLine(ImGui::GetWindowWidth() - 20);
+                        ImGui::SameLine(ImGui::GetWindowWidth() - 30);
                         if (ImGui::Button("X")) {
                             e->entity_numbers.erase(key);
                             e->entity_variables.erase(it);
@@ -547,7 +546,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         if (ImGui::InputText(key.c_str(), textBuff, 256)) {
                             e->entity_strings[key] = textBuff;
                         }
-                        ImGui::SameLine(ImGui::GetWindowWidth() - 20);
+                        ImGui::SameLine(ImGui::GetWindowWidth() - 30);
                         if (ImGui::Button("X")) {
                             e->entity_strings.erase(key);
                             e->entity_variables.erase(it);

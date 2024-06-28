@@ -8,6 +8,7 @@ unsigned int Entity::IDNum = 0;
 Entity::Entity(sf::Vector2f position) {
     this->ID = Entity::IDNum++;
     this->name = "Entity " + std::to_string(this->ID);
+    this->entity_type = "Default";
     this->texturePath = "";
 
     this->position = position;
@@ -34,6 +35,7 @@ Entity::Entity(sf::Vector2f position) {
 Entity::Entity(Entity& e) {
     this->ID = e.ID;
     this->name = e.name;
+    this->entity_type = e.entity_type;
     this->position = e.position;
     this->scale = e.scale;
     this->width = e.width;

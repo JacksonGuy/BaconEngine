@@ -64,6 +64,22 @@ int get_input(lua_State* L) {
     return 1;
 }
 
+int get_mouse_input(lua_State* L) {
+    const char* input = lua_tostring(L, 1);
+    if (sf::Mouse::isButtonPressed(GameManager::mouse_map[input])) {
+        lua_pushboolean(L, 1);
+    }
+    else {
+        // if (input == "MOUSE_SCROLL_UP") {
+        //     // Something?
+        // }
+
+        lua_pushboolean(L, 0);
+    }
+
+    return 1;
+}
+
 int get_position(lua_State* L) {
     sf::Vector2f pos = GameManager::current_lua_object->position;
     lua_pushinteger(L, pos.x);
