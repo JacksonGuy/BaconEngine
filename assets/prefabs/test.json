@@ -1,0 +1,21 @@
+{
+    "entity_type": "Default",
+    "height": 128,
+    "hitboxSize": 5.0,
+    "isPlayer": false,
+    "isSolid": true,
+    "mass": 1.0,
+    "name": "Entity",
+    "physicsObject": false,
+    "position": [
+        300.0,
+        0.0
+    ],
+    "rotation": 0.0,
+    "scale": [
+        1.0,
+        1.0
+    ],
+    "texturePath": "./assets/test.png",
+    "width": 128
+}

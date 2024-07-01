@@ -157,6 +157,8 @@ bool load(std::string filename) {
         }
     }
 
+    Entity::IDNum++; // For the next Entity we create 
+
     GameManager::ConsoleWrite("[DEBUG] Creating Text...");
     for (auto& obj : level_data["Text"]) {
         TextObj* text = new TextObj();
@@ -215,4 +217,102 @@ ConfigState loadConfig() {
 
     GameManager::config = state;
     return state;
+}
+
+void savePrefab(std::string filename, Entity* e) {
+    std::ofstream outfile(filename);
+    json data;
+
+    data["name"] = e->name;
+    data["entity_type"] = e->entity_type;
+    data["texturePath"] = e->texturePath;
+    data["position"] = {e->position.x, e->position.y};
+    data["scale"] = {e->scale.x, e->scale.y};
+    data["width"] = e->width;
+    data["height"] = e->height;
+    data["rotation"] = e->rotation;
+    data["isPlayer"] = e->isPlayer;
+    data["isSolid"] = e->isSolid;
+    data["physicsObject"] = e->physicsObject;
+    data["hitboxSize"] = e->hitboxSize;
+    data["mass"] = e->mass;
+
+    for (size_t i = 0; i < e->lua_scripts.size(); i++) {
+        data["scripts"][i] = e->lua_scripts[i].path;
+    }
+
+    int i = 0;
+    for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
+        std::string key = it->second;
+        if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
+            data["variables"][i++] = {
+                {"name", key},
+                {"type", "number"},
+                {"value", e->entity_numbers[key]}
+            };
+        }
+        else if (e->entity_strings.find(key) != e->entity_strings.end()) {
+            data["variables"][i++] = {
+                {"name", key},
+                {"type", "string"},
+                {"value", e->entity_strings[key]}
+            };
+        }
+    }
+
+    outfile << std::setw(4) << data;
+}
+
+int loadPrefab(std::string filename) {
+    std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        GameManager::ConsoleWrite("[ERROR] Failed to open prefab");
+        return -1;
+    }
+
+    json data = json::parse(infile);
+    Entity* e = new Entity();
+    e->position = sf::Vector2f(data["position"][0], data["position"][1]);
+    e->name = data["name"];
+    e->entity_type = data["entity_type"];
+    e->scale = sf::Vector2f(data["scale"][0], data["scale"][1]);
+    e->width = data["width"];
+    e->height = data["height"];
+    e->rotation = data["rotation"];
+    e->texturePath = data["texturePath"];
+    e->SetSprite(data["texturePath"]);
+    e->SetPosition(e->position);
+    e->isPlayer = data["isPlayer"];
+    if (e->isPlayer) {
+        GameManager::player = e;
+    }
+    e->isSolid = data["isSolid"];
+    e->physicsObject = data["physicsObject"];
+    e->hitboxSize = data["hitboxSize"];
+    e->mass = data["mass"];
+
+    for (json::iterator it = data["scripts"].begin(); it != data["scripts"].end(); ++it) {
+        ScriptItem script;
+        script.path = *it;
+        script.showDetails = false;
+        e->lua_scripts.push_back(script);
+    }
+
+    int index = 0;
+    for (auto& it : data["variables"].items()) {
+        std::string name = it.value()["name"];
+        std::string type = it.value()["type"];
+
+        e->entity_variables[index] = name;
+        if (type == "number") {
+            double value = it.value()["value"];
+            e->entity_numbers[name] = value;
+        }
+        else if (type == "string") {
+            std::string value = it.value()["value"];
+            e->entity_strings[name] = value;
+        }
+    }
+
+    return e->ID;
 }

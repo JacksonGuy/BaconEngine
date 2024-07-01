@@ -8,6 +8,8 @@ CFLAGS += -Iinclude/lua -Linclude/lua
 
 ifeq ($(target), editor)
 	SOURCES += Program.cpp
+else ifeq ($(target), test)
+	SOURCES += Test.cpp
 else
 	SOURCES += player.cpp
 endif
@@ -18,6 +20,7 @@ SOURCES += include/imgui/imgui_draw.cpp
 SOURCES += include/imgui/imgui_tables.cpp 
 SOURCES += include/imgui/imgui_widgets.cpp
 SOURCES += include/imgui/imgui-SFML.cpp
+SOURCES += include/imgui/imgui_demo.cpp
 OBJS = $(addsuffix .o, $(basename $(SOURCES)))
 
 UNAME = $(shell uname -s)
@@ -28,6 +31,8 @@ ifeq ($(UNAME), Linux)
 	LIBS += -lGL -lglfw -lsfml-graphics -lsfml-window -lsfml-system
 	ifeq ($(target), editor)
 		EXE = editor
+	else ifeq ($(target), test)
+		EXE = test
 	else
 		EXE = player
 	endif
@@ -37,6 +42,8 @@ ifeq ($(OS), Windows_NT)
 	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua
 	ifeq ($(target), editor)
 		EXE = editor.exe
+	else ifeq ($(target), test)
+		EXE = test.exe
 	else
 		EXE = player.exe
 	endif

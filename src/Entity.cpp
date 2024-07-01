@@ -2,6 +2,10 @@
 #include "GameManager.hpp"
 
 #include <iostream>
+#include <fstream>
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 unsigned int Entity::IDNum = 0;
 
@@ -80,8 +84,8 @@ void Entity::SetSprite(std::string path, bool autoScale) {
 
 void Entity::SetPosition(sf::Vector2f position) {
     this->position = position;
-    this->UpdateRect();
     this->sprite.setPosition(this->position);
+    this->UpdateRect();
 }
 
 void Entity::SetSpriteScale(sf::Vector2f scale) {

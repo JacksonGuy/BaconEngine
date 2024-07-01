@@ -2,6 +2,7 @@
 #define FILE_H
 
 #include <string>
+#include "Entity.hpp"
 
 struct ConfigState {
     std::string version;
@@ -13,5 +14,8 @@ bool load(std::string filename);
 
 void saveConfig(ConfigState state);
 ConfigState loadConfig();
+
+void savePrefab(std::string filename, Entity* e);
+int loadPrefab(std::string filename);
 
 #endif

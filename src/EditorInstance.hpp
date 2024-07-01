@@ -31,6 +31,7 @@ class EditorInstance {
         sf::Time TimePerFrame;
 
         // UI Variables
+        bool showDockSpace;
         bool cameraMove;
         bool showEntityCreate;
         bool showMainMenu;
@@ -47,6 +48,8 @@ class EditorInstance {
         int AddVariableType;
         double AddVariableNumber;
         char AddVariableString[256];
+
+        char PrefabPath[256];
 
         // Save and Load project variables
         bool showLoadPopup;

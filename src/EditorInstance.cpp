@@ -71,6 +71,8 @@ EditorInstance::EditorInstance() {
         std::cout << "[ERROR] Failed to initialize ImGui" << std::endl;
         return;
     }
+    auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     // Load Editor Settings
     ConfigState settings = loadConfig();
@@ -86,6 +88,7 @@ EditorInstance::EditorInstance() {
     GameManager::font.loadFromFile("./assets/fonts/arial.ttf");
 
     // Set Engine UI Variables
+    this->showDockSpace = false;
     this->cameraMove = false;                                       // Is the Camera Moving?
     this->showEntityCreate = false;                                 // Entity Create Menu
     this->showMainMenu = true;                                      // General Main Menu
@@ -119,19 +122,34 @@ EditorInstance::EditorInstance() {
     // Setup Lua API
     luaL_openlibs(GameManager::LuaState);
     lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
+
     lua_register(GameManager::LuaState, "set_variable", set_variable);
     lua_register(GameManager::LuaState, "get_variable", get_variable);
+    lua_register(GameManager::LuaState, "get_entity_variable", get_entity_variable);
+    lua_register(GameManager::LuaState, "set_entity_variable", set_entity_variable);
+
     lua_register(GameManager::LuaState, "set_text", set_text);
+    
     lua_register(GameManager::LuaState, "get_input", get_input);
     lua_register(GameManager::LuaState, "get_mouse_input", get_mouse_input);
+    
     lua_register(GameManager::LuaState, "get_position", get_position);
     lua_register(GameManager::LuaState, "set_position", set_position);
-    lua_register(GameManager::LuaState, "check_collision", check_collision);
-    lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
     lua_register(GameManager::LuaState, "get_velocity", get_velocity);
     lua_register(GameManager::LuaState, "set_velocity", set_velocity);
     lua_register(GameManager::LuaState, "get_acceleration", get_acceleration);
     lua_register(GameManager::LuaState, "get_grounded", get_grounded);
+
+    lua_register(GameManager::LuaState, "check_collision", check_collision);
+    lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
+    
+    lua_register(GameManager::LuaState, "get_entity_by_name", get_entity_by_name);
+    lua_register(GameManager::LuaState, "get_entities_by_type", get_entities_by_type);
+
+    lua_register(GameManager::LuaState, "get_entity_position", get_entity_position);
+    lua_register(GameManager::LuaState, "set_entity_position", set_entity_position);
+
+    lua_register(GameManager::LuaState, "create_entity", create_entity);
 
     // Other
     this->lastFixedUpdate = sf::Time::Zero;
@@ -187,9 +205,9 @@ void EditorInstance::Run() {
     while(window->isOpen()) {
         sf::Time deltaTime = clock.restart();
 
+        this->DrawUI(deltaTime);         // ImGui Frames
         this->Update(deltaTime);         // Input
         this->FixedUpdate(deltaTime);    // Physics
-        this->DrawUI(deltaTime);         // ImGui Frames
 
         window->clear(sf::Color(40, 40, 40));
         if (!GameManager::isPlayingGame) {
@@ -220,6 +238,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     float fps = 1.0f / currentTime;
 
     ImGui::SFML::Update(*window, deltaTime);
+    if (showDockSpace) ImGui::DockSpaceOverViewport();
 
     // Top menu bar
     if (ImGui::BeginMainMenuBar()) {
@@ -266,6 +285,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             if (ImGui::MenuItem("Object List", NULL, &showEntityList));
             if (ImGui::MenuItem("Game Details", NULL, &showMainMenu));
             if (ImGui::MenuItem("Console", NULL, &showConsole));
+            if (ImGui::MenuItem("Menu Docking", NULL, &showDockSpace));
             if (ImGui::MenuItem("Editor Settings", NULL, &showSettingsMenu));
             ImGui::EndMenu();
         }
@@ -595,6 +615,28 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 ImGui::Separator();
 
+                if (ImGui::Button("Save as prefab")) {
+                    ImGui::OpenPopup("SaveAsPrefab");
+                }
+
+                if (ImGui::BeginPopupModal("SaveAsPrefab", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                    ImGui::Text("Save as prefab");
+                    ImGui::Separator();
+                    ImGui::InputText("Path", PrefabPath, 256);
+
+                    if (ImGui::Button("Save")) {
+                        savePrefab(PrefabPath, e);
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel")) {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+
+                ImGui::SameLine();
+
                 if (ImGui::Button("Delete")) {
                     free(GameManager::Entities[i]);
                     GameManager::Entities.erase(GameManager::Entities.begin() + i);
@@ -738,7 +780,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
             // Create Button
             if (ImGui::Button("Create")) {
-                Entity* entity = new Entity({createPosition[0], createPosition[1]});
+                Entity* entity = new Entity(sf::Vector2f(createPosition[0], createPosition[1]));
                 entity->name = createNameBuffer;
                 entity->SetSprite(createImagePath);
             }
