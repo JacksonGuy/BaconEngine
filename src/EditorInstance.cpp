@@ -132,6 +132,7 @@ EditorInstance::EditorInstance() {
     
     lua_register(GameManager::LuaState, "get_input", get_input);
     lua_register(GameManager::LuaState, "get_mouse_input", get_mouse_input);
+    lua_register(GameManager::LuaState, "get_input_single", get_input_single);
     
     lua_register(GameManager::LuaState, "get_position", get_position);
     lua_register(GameManager::LuaState, "set_position", set_position);
@@ -211,7 +212,7 @@ void EditorInstance::Run() {
 
         this->DrawUI(deltaTime);         // ImGui Frames
         this->Update(deltaTime);         // Input
-        this->FixedUpdate(deltaTime);    // Physics
+        this->FixedUpdate(deltaTime);    // Physics and Lua
 
         window->clear(sf::Color(40, 40, 40));
         if (!GameManager::isPlayingGame) {
@@ -914,14 +915,16 @@ void EditorInstance::Update(sf::Time deltaTime) {
         ImGui::SFML::ProcessEvent(*window, event);
         auto& io = ImGui::GetIO();
 
-        GameManager::lastinput = event.key.code;
-
         // Close Window
         if (event.type == sf::Event::Closed) {
             window->close();
         }
 
         // Keyboard and Mouse input
+        if (event.type == sf::Event::KeyPressed) {
+            GameManager::lastinput = event.key.code;
+        }
+
         // Mouse Button Pressed
         if (event.type == sf::Event::MouseButtonPressed) {
             // If left mouse buttton is pressed, and we aren't clicking on an ImGui window

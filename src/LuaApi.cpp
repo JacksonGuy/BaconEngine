@@ -110,6 +110,20 @@ int get_input(lua_State* L) {
     return 1;
 }
 
+int get_input_single(lua_State* L) {
+    const char* input = lua_tostring(L, 1);
+    sf::Keyboard::Key key = GameManager::key_map[input];
+
+    if (key == GameManager::lastinput) {
+        lua_pushboolean(L, 1);
+        GameManager::lastinput = sf::Keyboard::Key(-1);
+    }
+    else {
+        lua_pushboolean(L, 0);
+    }
+    return 1;
+}
+
 int get_mouse_input(lua_State* L) {
     const char* input = lua_tostring(L, 1);
     if (sf::Mouse::isButtonPressed(GameManager::mouse_map[input])) {
