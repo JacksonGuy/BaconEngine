@@ -23,6 +23,7 @@ class TextObj {
         int target_id;
         TextRenderMode mode;
         bool showDetails;
+        bool isVisible;
 
         TextObj();
         TextObj(TextObj& obj);

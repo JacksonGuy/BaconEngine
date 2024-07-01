@@ -45,7 +45,9 @@ void GameManager::LoadFont(std::string path) {
 
 void GameManager::DrawEntities(sf::RenderWindow& window) {
     for (Entity* e : Entities) {
-        window.draw(e->sprite);
+        if (e->isVisible) {
+            window.draw(e->sprite);
+        }
 
         if (e->showHitbox) {
             sf::Vector2f pos = e->rect.getPosition();
@@ -95,7 +97,9 @@ void GameManager::DrawText(sf::RenderWindow& window) {
             text->text.setPosition(point);
         }
 
-        window.draw(text->text);
+        if (text->isVisible) {
+            window.draw(text->text);
+        }
     }
 }
 

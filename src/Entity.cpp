@@ -17,9 +17,10 @@ Entity::Entity(sf::Vector2f position) {
 
     this->position = position;
     this->scale = {1.0f, 1.0f};
-    width = 64;
-    height = 64;
+    this->width = 64;
+    this->height = 64;
     this->rotation = 0.0f;
+    this->isVisible = true;
 
     this->showDetailMenu = false;
     this->showHitbox = false;
@@ -45,6 +46,7 @@ Entity::Entity(Entity& e) {
     this->width = e.width;
     this->height = e.height;
     this->rotation = e.rotation;
+    this->isVisible = e.isVisible;
 
     this->showDetailMenu = e.showDetailMenu;
     this->isSolid = e.isSolid;

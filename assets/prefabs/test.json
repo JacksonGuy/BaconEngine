@@ -17,5 +17,6 @@
         1.0
     ],
     "texturePath": "./assets/test.png",
-    "width": 128
+    "width": 128,
+    "isVisible": true
 }

@@ -277,3 +277,34 @@ int get_entities_by_type(lua_State* L) {
         return 0;
     }
 }
+
+int set_visible(lua_State* L) {
+    bool v = lua_toboolean(L, 1);
+    GameManager::current_lua_object->isVisible = v;
+    return 0;
+}
+
+int get_visible(lua_State* L) {
+    bool v = GameManager::current_lua_object->isVisible;
+    lua_pushboolean(L, v);
+    return 1;
+}
+
+int set_entity_visible(lua_State* L) {
+    int id = lua_tonumber(L, 1);
+    bool val = lua_toboolean(L, 2);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    e->isVisible = val;
+
+    return 0;
+}
+
+int get_entity_visible(lua_State* L) {
+    int id = lua_tonumber(L, 1);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    lua_pushboolean(L, e->isVisible);
+
+    return 1;
+}

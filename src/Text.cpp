@@ -10,6 +10,7 @@ TextObj::TextObj() {
     this->text.setFillColor(sf::Color::Black);
 
     this->showDetails = false;
+    this->isVisible = true;
 
     this->target = nullptr;
     this->target_id = -1;
@@ -28,4 +29,5 @@ TextObj::TextObj(TextObj& obj) {
     this->position = obj.position;
     this->mode = obj.mode;
     this->showDetails = obj.showDetails;
+    this->isVisible = obj.isVisible;
 }

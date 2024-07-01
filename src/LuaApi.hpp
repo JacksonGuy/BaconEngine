@@ -30,9 +30,13 @@ int get_velocity(lua_State* L);
 int set_velocity(lua_State* L);
 int get_acceleration(lua_State* L);
 int get_grounded(lua_State* L);
+int set_visible(lua_State* L);
+int get_visible(lua_State* L);
 
 int get_entity_position(lua_State* L);
 int set_entity_position(lua_State* L);
+int get_entity_visible(lua_State* L);
+int set_entity_visible(lua_State* L);
 
 // Get Entity
 int get_entity_by_name(lua_State* L);

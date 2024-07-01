@@ -29,7 +29,8 @@ void save(std::string filename) {
             {"isSolid", e->isSolid},
             {"physicsObject", e->physicsObject},
             {"hitboxSize", e->hitboxSize},
-            {"mass", e->mass}
+            {"mass", e->mass},
+            {"isVisible", e->isVisible}
         };
 
         int i = 0;
@@ -89,7 +90,8 @@ void save(std::string filename) {
             {"color", {color.r, color.g, color.b, color.a}},
             {"mode", mode},
             {"entity_id", entity_id},
-            {"text", obj->text.getString()}
+            {"text", obj->text.getString()},
+            {"isVisible", obj->isVisible}
         };
     }
 
@@ -131,6 +133,7 @@ bool load(std::string filename) {
         e->physicsObject = entity["physicsObject"];
         e->hitboxSize = entity["hitboxSize"];
         e->mass = entity["mass"];
+        e->isVisible = entity["isVisible"];
 
         for (json::iterator it = entity["scripts"].begin(); it != entity["scripts"].end(); ++it) {
             ScriptItem script;
@@ -172,6 +175,7 @@ bool load(std::string filename) {
         text->text.setFillColor(sf::Color(
             obj["color"][0], obj["color"][1], obj["color"][2], obj["color"][3])
         );
+        text->isVisible = obj["isVisible"];
         std::string str = obj["text"];
         text->text.setString(str);
 
@@ -236,6 +240,7 @@ void savePrefab(std::string filename, Entity* e) {
     data["physicsObject"] = e->physicsObject;
     data["hitboxSize"] = e->hitboxSize;
     data["mass"] = e->mass;
+    data["isVisible"] = e->isVisible;
 
     for (size_t i = 0; i < e->lua_scripts.size(); i++) {
         data["scripts"][i] = e->lua_scripts[i].path;
@@ -290,6 +295,7 @@ int loadPrefab(std::string filename) {
     e->physicsObject = data["physicsObject"];
     e->hitboxSize = data["hitboxSize"];
     e->mass = data["mass"];
+    e->isVisible = data["isVisible"];
 
     for (json::iterator it = data["scripts"].begin(); it != data["scripts"].end(); ++it) {
         ScriptItem script;

@@ -139,6 +139,8 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "set_velocity", set_velocity);
     lua_register(GameManager::LuaState, "get_acceleration", get_acceleration);
     lua_register(GameManager::LuaState, "get_grounded", get_grounded);
+    lua_register(GameManager::LuaState, "set_visible", set_visible);
+    lua_register(GameManager::LuaState, "get_visible", get_visible);
 
     lua_register(GameManager::LuaState, "check_collision", check_collision);
     lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
@@ -148,6 +150,8 @@ EditorInstance::EditorInstance() {
 
     lua_register(GameManager::LuaState, "get_entity_position", get_entity_position);
     lua_register(GameManager::LuaState, "set_entity_position", set_entity_position);
+    lua_register(GameManager::LuaState, "get_entity_visible", get_entity_visible);
+    lua_register(GameManager::LuaState, "set_entity_visible", set_entity_visible);
 
     lua_register(GameManager::LuaState, "create_entity", create_entity);
 
@@ -473,6 +477,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 if (ImGui::Button("Change Texture")) {
                     e->SetSprite(textBuff);
                 }
+                ImGui::Checkbox("Visible", &e->isVisible);
                 ImGui::Separator();
                 
                 // Temporary Conversion to float array for input
@@ -751,6 +756,8 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
                 }
             }
+
+            ImGui::Checkbox("Visible", &text->isVisible);
 
             ImGui::Separator();
 
