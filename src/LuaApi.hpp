@@ -17,6 +17,7 @@ int set_text(lua_State* L);
 int get_input(lua_State* L);
 int get_input_single(lua_State* L);
 int get_mouse_input(lua_State* L);
+int get_mouse_input_single(lua_State* L);
 
 // Entity Custom Variables
 int set_variable(lua_State* L);
@@ -34,6 +35,8 @@ int get_acceleration(lua_State* L);
 int get_grounded(lua_State* L);
 int set_visible(lua_State* L);
 int get_visible(lua_State* L);
+int get_clicked(lua_State* L);
+int get_clicked_single(lua_State* L);
 
 // Other
 int get_entity_position(lua_State* L);

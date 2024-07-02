@@ -133,6 +133,7 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_input", get_input);
     lua_register(GameManager::LuaState, "get_mouse_input", get_mouse_input);
     lua_register(GameManager::LuaState, "get_input_single", get_input_single);
+    lua_register(GameManager::LuaState, "get_mouse_input)single", get_mouse_input_single);
     
     lua_register(GameManager::LuaState, "get_position", get_position);
     lua_register(GameManager::LuaState, "set_position", set_position);
@@ -142,6 +143,8 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_grounded", get_grounded);
     lua_register(GameManager::LuaState, "set_visible", set_visible);
     lua_register(GameManager::LuaState, "get_visible", get_visible);
+    lua_register(GameManager::LuaState, "get_clicked", get_clicked);
+    lua_register(GameManager::LuaState, "get_clicked_single", get_clicked_single);
 
     lua_register(GameManager::LuaState, "check_collision", check_collision);
     lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
@@ -908,7 +911,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     }
 }
 
-void EditorInstance::Update(sf::Time deltaTime) {
+void EditorInstance::Update(sf::Time deltaTime) {    
+    GameManager::windowHasFocus = window->hasFocus();
+
     // Process events
     sf::Event event;
     while (window->pollEvent(event)) {
@@ -922,17 +927,23 @@ void EditorInstance::Update(sf::Time deltaTime) {
 
         // Keyboard and Mouse input
         if (event.type == sf::Event::KeyPressed) {
-            GameManager::lastinput = event.key.code;
+            GameManager::lastKeyboardInput = event.key.code;
         }
+        if (event.type == sf::Event::MouseButtonPressed) {
+            GameManager::lastMouseInput = event.mouseButton.button;
+        } else GameManager::lastMouseInput = sf::Mouse::Button(-1);
+
 
         // Mouse Button Pressed
         if (event.type == sf::Event::MouseButtonPressed) {
             // If left mouse buttton is pressed, and we aren't clicking on an ImGui window
             if (event.mouseButton.button == 0 && !io.WantCaptureMouse) {
-                // Camera drag move
-                // Get starting position as reference for movement
-                mousePos = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
-                cameraMove = true;
+                if (!GameManager::isPlayingGame) {
+                    // Camera drag move
+                    // Get starting position as reference for movement
+                    mousePos = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+                    cameraMove = true;
+                }
             }
 
             // Right Mouse
@@ -973,7 +984,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
 
         // Mouse Wheel
         if (event.type == sf::Event::MouseWheelMoved) {
-            if (!GameManager::isPlayingGame) {
+            if (!GameManager::isPlayingGame && !io.WantCaptureMouse) {
                 // Mouse wheel moved forwards
                 if (event.mouseWheel.delta == 1) {
                     camera->zoom(0.8);
@@ -997,6 +1008,9 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
 
     if (lastFixedUpdate > TimePerFrame) {
         lastFixedUpdate -= TimePerFrame;
+
+        // Get info
+        GameManager::mousePos = window->mapPixelToCoords(sf::Mouse::getPosition());
 
         // Run Lua Scripts
         if (GameManager::isPlayingGame) {

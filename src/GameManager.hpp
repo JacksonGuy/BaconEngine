@@ -39,9 +39,12 @@ class GameManager {
         static sf::Font font;
         static Entity* player;
         static bool isPlayingGame;
+        static bool windowHasFocus;
         static std::map<std::string, sf::Keyboard::Key> key_map;
         static std::map<std::string, sf::Mouse::Button> mouse_map;
-        static sf::Keyboard::Key lastinput;
+        static sf::Keyboard::Key lastKeyboardInput;
+        static sf::Mouse::Button lastMouseInput;
+        static sf::Vector2f mousePos;
         static ImGuiTextBuffer ConsoleLog;
         
         static float gravity;

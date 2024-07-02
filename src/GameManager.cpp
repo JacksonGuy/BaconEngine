@@ -16,9 +16,12 @@ unsigned int GameManager::framerateLimit = 500;
 float GameManager::gravity = 0.2f;
 lua_State* GameManager::LuaState = luaL_newstate();
 Entity* GameManager::current_lua_object = nullptr;
-sf::Keyboard::Key GameManager::lastinput;
+sf::Keyboard::Key GameManager::lastKeyboardInput;
+sf::Mouse::Button GameManager::lastMouseInput;
 std::map<std::string, sf::Keyboard::Key> GameManager::key_map;
 std::map<std::string, sf::Mouse::Button> GameManager::mouse_map;
+sf::Vector2f GameManager::mousePos = sf::Vector2f(0,0);
+bool GameManager::windowHasFocus = true;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {

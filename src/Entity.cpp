@@ -56,9 +56,9 @@ Entity::Entity(Entity& e) {
     this->hitboxSize = e.hitboxSize;
     
     this->mass = e.mass;
-    this->grounded = false; // DEBUG
-    this->velocity = sf::Vector2f(0, 0); // DEBUG
-    this->acceleration = sf::Vector2f(0, 0); // DEBUG
+    this->grounded = false;
+    this->velocity = sf::Vector2f(0, 0);
+    this->acceleration = sf::Vector2f(0, 0);
 
     this->lua_scripts = e.lua_scripts;
     this->entity_variables = e.entity_variables;
