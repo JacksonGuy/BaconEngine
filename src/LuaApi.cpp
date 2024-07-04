@@ -381,3 +381,14 @@ int get_clicked_single(lua_State* L) {
     lua_pushboolean(L, 0);
     return 1;
 }
+
+int get_sprite(lua_State* L) {
+    lua_pushstring(L, GameManager::current_lua_object->texturePath.data());
+    return 1;
+}
+
+int set_sprite(lua_State* L) {
+    std::string path = lua_tostring(L, 1);
+    GameManager::current_lua_object->SetSprite(path);
+    return 0;
+}

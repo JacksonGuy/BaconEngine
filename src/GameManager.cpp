@@ -25,11 +25,9 @@ bool GameManager::windowHasFocus = true;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
-        //std::cout << "[DEBUG] Loading New Texture" << std::endl;
         GameManager::ConsoleWrite("[DEBUG] Loading new texture...");
         sf::Texture* texture = new sf::Texture();
         if (!texture->loadFromFile(path)) {
-            //std::cout << "[ERROR] Couldn't load texture: " << path << std::endl;
             GameManager::ConsoleWrite("[ERROR] Couldn't load texture:" + path);
         }
         Textures[path] = texture;

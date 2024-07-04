@@ -145,6 +145,8 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_visible", get_visible);
     lua_register(GameManager::LuaState, "get_clicked", get_clicked);
     lua_register(GameManager::LuaState, "get_clicked_single", get_clicked_single);
+    lua_register(GameManager::LuaState, "get_sprite", get_sprite);
+    lua_register(GameManager::LuaState, "set_sprite", set_sprite);
 
     lua_register(GameManager::LuaState, "check_collision", check_collision);
     lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
@@ -517,25 +519,27 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 ImGui::Text("Scripts");
                 auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-                for (size_t i = 0; i < e->lua_scripts.size(); i++) {
-                    ScriptItem script = e->lua_scripts[i];
+                for (size_t index = 0; index < e->lua_scripts.size(); index++) {
+                    ScriptItem script = e->lua_scripts[index];
                     ImGui::TreeNodeEx(script.path.data(), flags);
                     if (ImGui::IsItemClicked()) {
                         script.showDetails = !script.showDetails;
                     }
                     
                     ImGui::SameLine(ImGui::GetWindowWidth() - 30);
+                    ImGui::PushID(index);
                     if (ImGui::Button("X")) {
                         e->lua_scripts.erase(e->lua_scripts.begin() + i);
                     }
+                    ImGui::PopID();
                 }
 
                 if (ImGui::Button("Add Lua Script")) {
                     AddAttributeEntity = e;
-                    ImGui::OpenPopup("AddScriptEntity");
+                    ImGui::OpenPopup("Add Script");
                 }
 
-                if (ImGui::BeginPopupModal("AddScriptEntity", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                if (ImGui::BeginPopupModal("Add Script", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
                     ImGui::Text("Add Script");
                     ImGui::Separator();
                     ImGui::InputText("Path", AddScriptName, 256);
@@ -564,10 +568,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
                         ImGui::InputDouble(key.c_str(), &e->entity_numbers[key]);
                         ImGui::SameLine(ImGui::GetWindowWidth() - 30);
+                        
+                        ImGui::PushID(key.c_str());
                         if (ImGui::Button("X")) {
                             e->entity_numbers.erase(key);
                             e->entity_variables.erase(it);
                         }
+                        ImGui::PopID();
                     }
                     else if (e->entity_strings.find(key) != e->entity_strings.end()) {
                         char textBuff[256];
@@ -576,10 +583,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                             e->entity_strings[key] = textBuff;
                         }
                         ImGui::SameLine(ImGui::GetWindowWidth() - 30);
+                        
+                        ImGui::PushID(key.c_str());
                         if (ImGui::Button("X")) {
                             e->entity_strings.erase(key);
                             e->entity_variables.erase(it);
                         }
+                        ImGui::PopID();
                     }
                 }
 

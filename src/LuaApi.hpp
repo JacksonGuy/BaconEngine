@@ -12,6 +12,18 @@ int ConsoleWrite(lua_State* L);
 
 // Text
 int set_text(lua_State* L);
+// TODO
+int get_text(lua_State* L);
+int set_text_position(lua_State* L);
+int get_text_position(lua_State* L);
+int set_text_target(lua_State* L);
+int get_text_target(lua_State* L);
+int set_text_visible(lua_State* L);
+int get_text_visible(lua_State* L);
+int set_text_color(lua_State* L);
+int get_text_color(lua_State* L);
+int set_text_size(lua_State* L);
+int get_text_size(lua_State* L);
 
 // Input
 int get_input(lua_State* L);
@@ -37,6 +49,8 @@ int set_visible(lua_State* L);
 int get_visible(lua_State* L);
 int get_clicked(lua_State* L);
 int get_clicked_single(lua_State* L);
+int get_sprite(lua_State* L);
+int set_sprite(lua_State* L);
 
 // Other
 int get_entity_position(lua_State* L);
