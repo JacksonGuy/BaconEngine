@@ -214,9 +214,28 @@ void GameManager::ConsoleWrite(std::string text) {
 }
 
 Entity* GameManager::FindEntityByID(int id) {
-    for (Entity* e : GameManager::Entities) {
-        if (e->ID == id) return e;
+    // for (Entity* e : GameManager::Entities) {
+    //     if (e->ID == id) return e;
+    // }
+    // return nullptr;
+
+    int low = 0;
+    int high = GameManager::Entities.size();
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+
+        if (GameManager::Entities[mid]->ID == id) {
+            return GameManager::Entities[mid];
+        }
+
+        if (GameManager::Entities[mid]->ID < id) {
+            low = mid + 1;
+        }
+        else {
+            high = mid - 1;
+        }
     }
+
     return nullptr;
 }
 

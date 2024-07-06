@@ -24,6 +24,7 @@ int set_text_color(lua_State* L);
 int get_text_color(lua_State* L);
 int set_text_size(lua_State* L);
 int get_text_size(lua_State* L);
+int create_text(lua_State* L);
 
 // Input
 int get_input(lua_State* L);

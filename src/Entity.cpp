@@ -102,7 +102,10 @@ void Entity::UpdateRect() {
 
 void Entity::UpdateCollisionRects() {
     sf::Vector2f rectPos = this->rect.getPosition();
-    float gap = 5; // DEBUG
+    // This fixes some issues we have with physics collisions occurring 
+    // with our left and right rects when jumping/falling.
+    // If it works, don't change it...
+    const float gap = 5;
 
     this->topRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x, rectPos.y - this->hitboxSize),
