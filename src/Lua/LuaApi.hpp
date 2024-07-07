@@ -12,7 +12,6 @@ int ConsoleWrite(lua_State* L);
 
 // Text
 int set_text(lua_State* L);
-// TODO
 int get_text(lua_State* L);
 int set_text_position(lua_State* L);
 int get_text_position(lua_State* L);
@@ -39,7 +38,6 @@ int set_entity_variable(lua_State* L);
 int get_entity_variable(lua_State* L);
 
 // Entity Standard Variables
-// Self
 int get_position(lua_State* L);
 int set_position(lua_State* L);
 int get_velocity(lua_State* L);
@@ -53,17 +51,14 @@ int get_clicked_single(lua_State* L);
 int get_sprite(lua_State* L);
 int set_sprite(lua_State* L);
 
-// Other
 int get_entity_position(lua_State* L);
 int set_entity_position(lua_State* L);
 int get_entity_visible(lua_State* L);
 int set_entity_visible(lua_State* L);
 
-// Find Entity
 int get_entity_by_name(lua_State* L);
 int get_entities_by_type(lua_State* L);
 
-// Entity Tools
 int create_entity(lua_State* L);
 int check_collision(lua_State* L);
 int check_collision_side(lua_State* L);

@@ -1,7 +1,7 @@
 #include "EditorInstance.hpp"
 
 #include <iostream>
-#include "LuaApi.hpp"
+#include "Lua/LuaApi.hpp"
 
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution

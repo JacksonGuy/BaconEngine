@@ -270,3 +270,24 @@ void GameManager::RunLuaUpdates() {
     }
     GameManager::current_lua_object = nullptr;
 }
+
+TextObj* GameManager::FindTextByID(int id) {
+    int low = 0;
+    int high = GameManager::TextObjects.size();
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+
+        if (GameManager::TextObjects[mid]->ID == id) {
+            return GameManager::TextObjects[mid];
+        }
+
+        if (GameManager::TextObjects[mid]->ID < id) {
+            low = mid + 1;
+        }
+        else {
+            high = mid - 1;
+        }
+    }
+
+    return nullptr;
+}

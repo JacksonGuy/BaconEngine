@@ -15,6 +15,7 @@ else
 endif
 
 SOURCES += $(wildcard src/*.cpp)
+SOURCES += $(wildcard src/Lua/*.cpp)
 SOURCES += include/imgui/imgui.cpp 
 SOURCES += include/imgui/imgui_draw.cpp
 SOURCES += include/imgui/imgui_tables.cpp 

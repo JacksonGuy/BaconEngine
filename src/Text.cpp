@@ -5,6 +5,7 @@ unsigned int TextObj::IDNum = 0;
 
 TextObj::TextObj() {
     this->ID = TextObj::IDNum++;
+    this->name = "Text";
     this->text.setFont(GameManager::font);
     this->text.setCharacterSize(24);
     this->text.setFillColor(sf::Color::Black);
@@ -12,8 +13,9 @@ TextObj::TextObj() {
     this->showDetails = false;
     this->isVisible = true;
 
+    this->mode = TextRenderMode::Absolute;
     this->target = nullptr;
-    this->target_id = -1;
+    this->target_id = 0;
 
     GameManager::TextObjects.push_back(this);
 }

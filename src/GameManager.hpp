@@ -69,6 +69,7 @@ class GameManager {
         static Entity* FindEntityByID(int id);
         static Entity* FindEntityByName(std::string name);
         static std::vector<Entity*> FindEntitiesByType(std::string type);
+        static TextObj* FindTextByID(int id);
 
         static void ConsoleWrite(std::string text);
 
