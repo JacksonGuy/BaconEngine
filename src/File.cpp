@@ -8,7 +8,7 @@
 using json = nlohmann::json;
 
 void save(std::string filename) {
-    std::ofstream outfile("./Projects/" + filename);
+    std::ofstream outfile(filename);
     json level_data;
 
     level_data["Version"] = GameManager::config.version;
@@ -101,10 +101,9 @@ void save(std::string filename) {
 }
 
 bool load(std::string filename) {
-    std::string projectName = "./Projects/" + filename;
-    GameManager::ConsoleWrite("[DEBUG] Loading Project: " + projectName);
+    GameManager::ConsoleWrite("[ENGINE] Loading Project: " + filename);
 
-    std::ifstream infile(projectName);
+    std::ifstream infile(filename);
     if (!infile.is_open()) {
         GameManager::ConsoleWrite("[ERROR] Failed to load project (Project doesn't exist)");
         return false;
@@ -268,11 +267,11 @@ void savePrefab(std::string filename, Entity* e) {
     outfile << std::setw(4) << data;
 }
 
-int loadPrefab(std::string filename) {
+Entity* loadPrefab(std::string filename) {
     std::ifstream infile(filename);
     if (!infile.is_open()) {
         GameManager::ConsoleWrite("[ERROR] Failed to open prefab");
-        return -1;
+        return nullptr;
     }
 
     json data = json::parse(infile);
@@ -320,5 +319,5 @@ int loadPrefab(std::string filename) {
         }
     }
 
-    return e->ID;
+    return e;
 }

@@ -1,7 +1,9 @@
 #include "EditorInstance.hpp"
 
 #include <iostream>
+#include <filesystem>
 #include "Lua/LuaApi.hpp"
+#include <nfd.h>
 
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution
@@ -96,13 +98,10 @@ EditorInstance::EditorInstance() {
     this->showConsole = false;                                      // Debug Console
     this->showSettingsMenu = false;                                 // Editor Settings
 
-    this->showFailedPopup = false;                                  // Used for displaying errors with saving/loading
     this->failedMessage = "";                                       // What error to display
 
     // Save and Load project Variables
-    this->showLoadPopup = false;                                    // Load Project Popup
     strcpy(this->loadProjectName, "");                              // Placeholder for Project Name
-    this->showSaveAsPopup = false;                                  // Save Project As Popup
     strcpy(this->saveAsProjectName, this->projectTitle.data());     // Placeholder for Project Name
 
     // Create Entity Variables
@@ -129,11 +128,23 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "set_entity_variable", set_entity_variable);
 
     lua_register(GameManager::LuaState, "set_text", set_text);
+    lua_register(GameManager::LuaState, "get_text", get_text);
+    lua_register(GameManager::LuaState, "set_text_position", set_text_position);
+    lua_register(GameManager::LuaState, "get_text_position", get_text_position);
+    lua_register(GameManager::LuaState, "set_text_target", set_text_target);
+    lua_register(GameManager::LuaState, "get_text_target", get_text_target);
+    lua_register(GameManager::LuaState, "set_text_visible", set_text_visible);
+    lua_register(GameManager::LuaState, "get_text_visible", get_text_visible);
+    lua_register(GameManager::LuaState, "set_text_color", set_text_color);
+    lua_register(GameManager::LuaState, "get_text_color", get_text_color);
+    lua_register(GameManager::LuaState, "set_text_size", set_text_size);
+    lua_register(GameManager::LuaState, "get_text_size", get_text_size);
+    lua_register(GameManager::LuaState, "create_text", create_text);
     
     lua_register(GameManager::LuaState, "get_input", get_input);
     lua_register(GameManager::LuaState, "get_mouse_input", get_mouse_input);
     lua_register(GameManager::LuaState, "get_input_single", get_input_single);
-    lua_register(GameManager::LuaState, "get_mouse_input)single", get_mouse_input_single);
+    lua_register(GameManager::LuaState, "get_mouse_input_single", get_mouse_input_single);
     
     lua_register(GameManager::LuaState, "get_position", get_position);
     lua_register(GameManager::LuaState, "set_position", set_position);
@@ -210,7 +221,9 @@ void EditorInstance::Run() {
     originDot.setPosition(0.0f, 0.0f);
 
     // DEBUG
-    load("Demo.json");
+    std::string demoPath = "C:/Users/Jackson/Desktop/projects/BaconEngine/Projects/Demo.json";
+    std::filesystem::path demo = std::filesystem::relative(demoPath);
+    load(demo.generic_string());
 
     while(window->isOpen()) {
         sf::Time deltaTime = clock.restart();
@@ -259,19 +272,58 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
             if (ImGui::MenuItem("Save")) {
                 if (!loadedProject) {
-                    showSaveAsPopup = true;
+                    nfdchar_t* savepath = NULL;
+                    nfdresult_t result = NFD_SaveDialog("json", NULL, &savepath);
+
+                    if (result == NFD_OKAY) {
+                        GameManager::ConsoleWrite("[ENGINE] Successfully Saved Project");
+                        std::string name = savepath;
+                        name += ".json";
+                        save(name);
+                        projectTitle = name;
+                        loadedProject = true;
+                        window->setTitle("Bacon - " + name);
+                    }
+                    free(savepath);
                 }
-                else {
+                else { 
                     save(projectTitle);
                 }
             }
             
             if (ImGui::MenuItem("Save as")) {
-                showSaveAsPopup = true;
+                nfdchar_t* savepath = NULL;
+                nfdresult_t result = NFD_SaveDialog("json", NULL, &savepath);
+
+                if (result == NFD_OKAY) {
+                    GameManager::ConsoleWrite("[ENGINE] Successfully Saved Project");
+                    std::string name = savepath;
+                    name += ".json";
+                    save(name);
+                    projectTitle = name;
+                    loadedProject = true;
+                    window->setTitle("Bacon - " + name);
+                }
+                free(savepath);
             }
             
             if (ImGui::MenuItem("Load")) {
-                showLoadPopup = true;
+                nfdchar_t* outpath = NULL;
+                nfdresult_t result = NFD_OpenDialog("json", NULL, &outpath);
+
+                if (result == NFD_OKAY) {
+                    if (load(outpath)) {
+                        GameManager::ConsoleWrite("[ENGINE] Successfully Loaded Project");
+                        loadedProject = true;
+                        projectTitle = outpath;
+                        window->setTitle("Bacon - " + projectTitle);
+                    }
+                    else {
+                        ImGui::OpenPopup("Failed");
+                        failedMessage = "Error: Failed to load project.";
+                    }
+                }
+                free(outpath);
             }
 
             if (GameManager::isPlayingGame) {
@@ -279,8 +331,8 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             }
 
             // Popups
-            ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            //ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+            //ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
             ImGui::EndMenu();
         }
@@ -300,74 +352,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::EndMenu();
         }
 
-        if (showLoadPopup) {
-            ImGui::OpenPopup("Load Project");
-        }
-
-        if (showSaveAsPopup) {
-            ImGui::OpenPopup("Save As Project");
-        }
-
-        if (showFailedPopup) {
-            ImGui::OpenPopup("Failed");
-        }
-
-        if (ImGui::BeginPopupModal("Load Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Load Project");
-            ImGui::Separator();
-            ImGui::InputText("##", loadProjectName, 64);
-            if (ImGui::Button("Load")) {
-                ImGui::CloseCurrentPopup();
-                showLoadPopup = false;
-
-                // Save Editor State in case of failure
-                GameManager::SaveEditorState(*this->window);
-
-                if (load(loadProjectName)) {
-                    GameManager::ConsoleWrite("[DEBUG] Successfully Loaded Project");
-                    loadedProject = true;
-                    projectTitle = loadProjectName;
-                    window->setTitle("Bacon - " + projectTitle);
-                }
-                else {
-                    GameManager::RestoreEditorState(*this->window);
-                    showFailedPopup = true;
-                    failedMessage = "Error: Failed to load project (Project doesn't exist).";
-                    showLoadPopup = false;
-                    ImGui::CloseCurrentPopup();
-                }
-            }
-            if (ImGui::Button("Cancel")) {
-                showLoadPopup = false;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-
-        if (ImGui::BeginPopupModal("Save As Project", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Save Project");
-            ImGui::Separator();
-            ImGui::InputText("##", saveAsProjectName, 64);
-            if (ImGui::Button("Save")) {
-                ImGui::CloseCurrentPopup();
-                showSaveAsPopup = false;
-
-                save(saveAsProjectName);
-                projectTitle = saveAsProjectName;
-                loadedProject = true;
-                window->setTitle("Bacon - " + projectTitle);
-            }
-            if (ImGui::Button("Cancel")) {
-                showSaveAsPopup = false;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-
         if (ImGui::BeginPopupModal("Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text(failedMessage.c_str());
             if (ImGui::Button("OK")) {
-                showFailedPopup = false;
                 failedMessage = "";
                 ImGui::CloseCurrentPopup();
             }
@@ -481,7 +468,14 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 strcpy(textBuff, e->texturePath.data());
                 ImGui::InputText("Texture", textBuff, 256);
                 if (ImGui::Button("Change Texture")) {
-                    e->SetSprite(textBuff);
+                    nfdchar_t* outpath = NULL;
+                    nfdresult_t result = NFD_OpenDialog("png,jpg", NULL, &outpath);
+
+                    if (result == NFD_OKAY) {
+                        std::string path = std::filesystem::relative(outpath).generic_string();
+                        e->SetSprite(path);
+                    }
+                    free(outpath);
                 }
                 ImGui::Checkbox("Visible", &e->isVisible);
                 ImGui::Separator();
@@ -517,6 +511,86 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 ImGui::Separator();
 
+                if (ImGui::Button("Save as prefab")) {
+                    nfdchar_t* savepath = NULL;
+                    nfdresult_t result = NFD_SaveDialog("json", NULL, &savepath);
+
+                    if (result == NFD_OKAY) {
+                        std::string rel = std::filesystem::relative(savepath).generic_string();
+                        savePrefab(rel, e);
+                    }
+
+                    free(savepath);
+                }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button("Load from prefab")) {
+                    nfdchar_t* loadpath = NULL;
+                    nfdresult_t result = NFD_OpenDialog("json", NULL, &loadpath);
+
+                    if (result == NFD_OKAY) {
+                        std::string rel = std::filesystem::relative(loadpath).generic_string();
+
+                        // This process is kinda slow but hey it works
+                        Entity* prefabEntity = loadPrefab(rel);
+                        e->Copy(*prefabEntity);
+                        GameManager::Entities.pop_back();
+                        delete(prefabEntity);
+                    }
+
+                    free(loadpath);
+                }
+
+                if (ImGui::Button("Delete")) {
+                    delete(GameManager::Entities[i]);
+                    GameManager::Entities.erase(GameManager::Entities.begin() + i);
+                }
+
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Physics")) {
+                if (ImGui::Checkbox("Solid", &e->isSolid)) {
+                    // Can't be a physics objects without being solid
+                    if (!e->isSolid) {
+                        e->physicsObject = false;
+                        e->showHitbox = false;
+                        e->velocity = sf::Vector2f(0, 0);
+                        e->acceleration = sf::Vector2f(0, 0);
+                        e->grounded = false;
+                    }
+                }
+
+                if (e->isSolid) {
+                    ImGui::SameLine();
+                    ImGui::Checkbox("Physics Object", &e->physicsObject);
+                }
+
+                if (e->isSolid) {
+                    ImGui::InputFloat("Hitbox Size", &e->hitboxSize);
+                    ImGui::Checkbox("Show Hitbox", &e->showHitbox);
+                }
+
+                if (e->physicsObject) {
+                    ImGui::InputFloat("Mass", &e->mass);
+                    ImGui::SetItemTooltip("This doesn't do anything currently");
+                    
+                    float velocity[] = {e->velocity.x, e->velocity.y};
+                    float acceleration[] = {e->acceleration.x, e->acceleration.y};
+                    if (ImGui::InputFloat2("Velocity", velocity)) {
+                        e->velocity = sf::Vector2f(velocity[0], velocity[1]);
+                    }
+                    if (ImGui::InputFloat2("Acceleration", acceleration)) {
+                        e->acceleration = sf::Vector2f(acceleration[0], acceleration[1]);
+                    }
+                    ImGui::Checkbox("Grounded", &e->grounded);
+                }
+                
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Scripting")) {
                 ImGui::Text("Scripts");
                 auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
                 for (size_t index = 0; index < e->lua_scripts.size(); index++) {
@@ -536,27 +610,18 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (ImGui::Button("Add Lua Script")) {
                     AddAttributeEntity = e;
-                    ImGui::OpenPopup("Add Script");
-                }
 
-                if (ImGui::BeginPopupModal("Add Script", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-                    ImGui::Text("Add Script");
-                    ImGui::Separator();
-                    ImGui::InputText("Path", AddScriptName, 256);
+                    nfdchar_t* scriptpath = NULL;
+                    nfdresult_t result = NFD_OpenDialog("lua", NULL, &scriptpath);
 
-                    if (ImGui::Button("Add")) {
+                    if (result == NFD_OKAY) {
                         ScriptItem script;
-                        script.path = AddScriptName;
+                        script.path = std::filesystem::relative(scriptpath).generic_string();
                         script.showDetails = false;
                         AddAttributeEntity->lua_scripts.push_back(script);
+                    }
 
-                        ImGui::CloseCurrentPopup();
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Cancel")) {
-                        ImGui::CloseCurrentPopup();
-                    }
-                    ImGui::EndPopup();
+                    free(scriptpath);
                 }
 
                 ImGui::Separator();
@@ -632,75 +697,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     ImGui::EndPopup();
                 }
 
-                ImGui::Separator();
-
-                if (ImGui::Button("Save as prefab")) {
-                    ImGui::OpenPopup("SaveAsPrefab");
-                }
-
-                if (ImGui::BeginPopupModal("SaveAsPrefab", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-                    ImGui::Text("Save as prefab");
-                    ImGui::Separator();
-                    ImGui::InputText("Path", PrefabPath, 256);
-
-                    if (ImGui::Button("Save")) {
-                        savePrefab(PrefabPath, e);
-                        ImGui::CloseCurrentPopup();
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Cancel")) {
-                        ImGui::CloseCurrentPopup();
-                    }
-                    ImGui::EndPopup();
-                }
-
-                ImGui::SameLine();
-
-                if (ImGui::Button("Delete")) {
-                    free(GameManager::Entities[i]);
-                    GameManager::Entities.erase(GameManager::Entities.begin() + i);
-                }
-
-                ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Physics")) {
-                if (ImGui::Checkbox("Solid", &e->isSolid)) {
-                    // Can't be a physics objects without being solid
-                    if (!e->isSolid) {
-                        e->physicsObject = false;
-                        e->showHitbox = false;
-                        e->velocity = sf::Vector2f(0, 0);
-                        e->acceleration = sf::Vector2f(0, 0);
-                        e->grounded = false;
-                    }
-                }
-
-                if (e->isSolid) {
-                    ImGui::SameLine();
-                    ImGui::Checkbox("Physics Object", &e->physicsObject);
-                }
-
-                if (e->isSolid) {
-                    ImGui::InputFloat("Hitbox Size", &e->hitboxSize);
-                    ImGui::Checkbox("Show Hitbox", &e->showHitbox);
-                }
-
-                if (e->physicsObject) {
-                    ImGui::InputFloat("Mass", &e->mass);
-                    ImGui::SetItemTooltip("This doesn't do anything currently");
-                    
-                    float velocity[] = {e->velocity.x, e->velocity.y};
-                    float acceleration[] = {e->acceleration.x, e->acceleration.y};
-                    if (ImGui::InputFloat2("Velocity", velocity)) {
-                        e->velocity = sf::Vector2f(velocity[0], velocity[1]);
-                    }
-                    if (ImGui::InputFloat2("Acceleration", acceleration)) {
-                        e->acceleration = sf::Vector2f(acceleration[0], acceleration[1]);
-                    }
-                    ImGui::Checkbox("Grounded", &e->grounded);
-                }
-                
                 ImGui::EndTabItem();
             }
 
@@ -798,6 +794,17 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::InputText("Name", createNameBuffer, 256);
             ImGui::InputFloat2("Position", createPosition);
             ImGui::InputText("Image Path", createImagePath, 256);
+            if (ImGui::Button("Select Image")) {
+                nfdchar_t* imagepath = NULL;
+                nfdresult_t result = NFD_OpenDialog("png,jpg", NULL, &imagepath);
+
+                if (result == NFD_OKAY) {
+                    std::string converted = std::filesystem::relative(imagepath).generic_string();
+                    strcpy(createImagePath, converted.c_str());
+                }
+
+                free(imagepath);
+            } 
 
             // Create Button
             if (ImGui::Button("Create")) {

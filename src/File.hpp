@@ -16,6 +16,6 @@ void saveConfig(ConfigState state);
 ConfigState loadConfig();
 
 void savePrefab(std::string filename, Entity* e);
-int loadPrefab(std::string filename);
+Entity* loadPrefab(std::string filename);
 
 #endif

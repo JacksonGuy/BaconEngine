@@ -1,0 +1,43 @@
+{
+    "entity_type": "Default",
+    "height": 128,
+    "hitboxSize": 5.0,
+    "isPlayer": true,
+    "isSolid": true,
+    "isVisible": true,
+    "mass": 1.0,
+    "name": "Player",
+    "physicsObject": true,
+    "position": [
+        0.0,
+        -100.0
+    ],
+    "rotation": 0.0,
+    "scale": [
+        0.05526770278811455,
+        0.041450776159763336
+    ],
+    "scripts": [
+        "./assets/scripts/movement.lua",
+        "./assets/scripts/testing.lua"
+    ],
+    "texturePath": "./assets/player.jpg",
+    "variables": [
+        {
+            "name": "Health",
+            "type": "number",
+            "value": 10.0
+        },
+        {
+            "name": "Something",
+            "type": "string",
+            "value": "This is some text"
+        },
+        {
+            "name": "Speed",
+            "type": "number",
+            "value": 8.0
+        }
+    ],
+    "width": 128
+}

@@ -69,6 +69,41 @@ Entity::Entity(Entity& e) {
     this->SetPosition(this->position);
 }
 
+void Entity::Copy(Entity& e) {
+    this->name = e.name;
+    this->entity_type = e.entity_type;
+    
+    // We probably don't want to be copying position when
+    // loading Entity attributes from a prefab
+    //this->position = e.position;
+    
+    this->scale = e.scale;
+    this->width = e.width;
+    this->height = e.height;
+    this->rotation = e.rotation;
+    this->isVisible = e.isVisible;
+
+    this->showDetailMenu = true;
+    this->isSolid = e.isSolid;
+    this->physicsObject = e.physicsObject;
+    this->showHitbox = e.showHitbox;
+    this->isPlayer = false;
+    this->hitboxSize = e.hitboxSize;
+    
+    this->mass = e.mass;
+    this->grounded = false;
+    this->velocity = sf::Vector2f(0, 0);
+    this->acceleration = sf::Vector2f(0, 0);
+
+    this->lua_scripts = e.lua_scripts;
+    this->entity_variables = e.entity_variables;
+    this->entity_numbers = e.entity_numbers;
+    this->entity_strings = e.entity_strings;
+
+    this->SetSprite(e.texturePath, false);
+    this->SetPosition(this->position);
+}
+
 void Entity::SetSprite(std::string path, bool autoScale) {
     this->texturePath = path;
     sf::Texture* texture = GameManager::LoadTexture(path);

@@ -38,14 +38,6 @@ class Entity {
         std::map<std::string, double> entity_numbers;
         std::map<std::string, std::string> entity_strings;
 
-        // We can also have users type out lua code directly
-        // into the editor, then save that code as a string,
-        // and use L.do_string(str) to run the code.
-        // It could be faster in certain scenarios, but adds an
-        // extra layer of complexity to running/saving that
-        // information, so we won't do that just yet.
-        // std::vector<std::string> lua_strings;
-
         bool showDetailMenu;
         bool showHitbox;
         bool isPlayer;
@@ -53,6 +45,7 @@ class Entity {
         Entity(sf::Vector2f position = sf::Vector2f(0,0));
         Entity(Entity& e);
 
+        void Copy(Entity& e);
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position);
         void SetSpriteScale(sf::Vector2f scale);

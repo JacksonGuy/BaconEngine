@@ -38,7 +38,6 @@ class EditorInstance {
         bool showEntityList;
         bool showConsole;
         bool showSettingsMenu;
-        bool showFailedPopup;
         bool showTextCreate;
         std::string failedMessage;
 
@@ -52,9 +51,7 @@ class EditorInstance {
         char PrefabPath[256];
 
         // Save and Load project variables
-        bool showLoadPopup;
         char loadProjectName[256];
-        bool showSaveAsPopup;
         char saveAsProjectName[256];
 
         // Create Entity Variables
