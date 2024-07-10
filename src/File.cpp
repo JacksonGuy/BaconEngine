@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 #include "File.hpp"
 #include "GameManager.hpp"
@@ -8,6 +9,8 @@
 using json = nlohmann::json;
 
 void save(std::string filename) {
+    namespace fs = std::filesystem;
+    
     std::ofstream outfile(filename);
     json level_data;
 
@@ -15,11 +18,14 @@ void save(std::string filename) {
 
     int index = 0;
     for (Entity* e : GameManager::Entities) {
+        std::string texturePath = fs::relative(e->texturePath, GameManager::entryPoint).generic_string();
+        texturePath.erase(0, 3);
+
         level_data["Entities"][index] = {
             {"id", e->ID},
             {"name", e->name},
             {"entity_type", e->entity_type},
-            {"texturePath", e->texturePath},
+            {"texturePath", texturePath},
             {"position", {e->position.x, e->position.y}},
             {"scale", {e->scale.x, e->scale.y}},
             {"width", e->width},
@@ -35,16 +41,16 @@ void save(std::string filename) {
 
         int i = 0;
         for (ScriptItem script : e->lua_scripts) {
-            level_data["Entities"][index]["scripts"][i++] = script.path;
+            std::string scriptPath = fs::relative(script.path, GameManager::entryPoint).generic_string();
+            scriptPath.erase(0, 3);
+            level_data["Entities"][index]["scripts"][i++] = scriptPath;
         }
 
         i = 0;
         for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
-            //int entity_order = it->first;
             std::string key = it->second;
             if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
                 level_data["Entities"][index]["variables"][i++] = {
-                    //{"order", entity_order},
                     {"name", key},
                     {"type", "number"},
                     {"value", e->entity_numbers[key]}
@@ -52,7 +58,6 @@ void save(std::string filename) {
             }
             else if (e->entity_strings.find(key) != e->entity_strings.end()) {
                 level_data["Entities"][index]["variables"][i++] = {
-                    //{"order", entity_order},
                     {"name", key},
                     {"type", "string"},
                     {"value", e->entity_strings[key]}
@@ -98,9 +103,13 @@ void save(std::string filename) {
     level_data["Settings"]["Gravity"] = GameManager::gravity;
 
     outfile << std::setw(4) << level_data;
+
+    GameManager::ConsoleWrite("[ENGINE] Successfully saved project.");
 }
 
 bool load(std::string filename) {
+    namespace fs = std::filesystem;
+
     GameManager::ConsoleWrite("[ENGINE] Loading Project: " + filename);
 
     std::ifstream infile(filename);
@@ -109,9 +118,11 @@ bool load(std::string filename) {
         return false;
     }
 
+    fs::path entryPath = fs::path(filename);
+    GameManager::entryPoint = entryPath.parent_path().generic_string();
     json level_data = json::parse(infile);
 
-    GameManager::ConsoleWrite("[DEBUG] Creating Entities...");
+    GameManager::ConsoleWrite("[ENGINE] Creating Entities...");
     for (auto& entity : level_data["Entities"]) {
         Entity* e = new Entity(sf::Vector2f(entity["position"][0], entity["position"][1]));
         e->ID = entity["id"];
@@ -123,7 +134,7 @@ bool load(std::string filename) {
         e->height = entity["height"];
         e->rotation = entity["rotation"];
         e->UpdateRect();
-        e->SetSprite(entity["texturePath"], false);
+        e->SetSprite(toAbsolute(entity["texturePath"]), false);
         e->isPlayer = entity["isPlayer"];
         if (e->isPlayer) {
             GameManager::player = e;
@@ -136,12 +147,11 @@ bool load(std::string filename) {
 
         for (json::iterator it = entity["scripts"].begin(); it != entity["scripts"].end(); ++it) {
             ScriptItem script;
-            script.path = *it;
+            script.path = toAbsolute(*it);
             script.showDetails = false;
             e->lua_scripts.push_back(script);
         }
 
-        //json::iterator it = entity["variables"].begin(); it != entity["variables"].end(); ++it
         for (auto& it : entity["variables"].items()) {
             int order = stoi(it.key());
             std::string name = it.value()["name"];
@@ -161,7 +171,7 @@ bool load(std::string filename) {
 
     Entity::IDNum++; // For the next Entity we create 
 
-    GameManager::ConsoleWrite("[DEBUG] Creating Text...");
+    GameManager::ConsoleWrite("[ENGINE] Creating Text...");
     for (auto& obj : level_data["Text"]) {
         TextObj* text = new TextObj();
         text->ID = obj["id"];
@@ -191,6 +201,12 @@ bool load(std::string filename) {
     GameManager::gravity = level_data["Settings"]["Gravity"];
 
     return true;
+}
+
+std::string toAbsolute(std::string path) {
+    namespace fs = std::filesystem;
+    std::string absPath = GameManager::entryPoint + "/" + path;
+    return absPath; 
 }
 
 void saveConfig(ConfigState state) {

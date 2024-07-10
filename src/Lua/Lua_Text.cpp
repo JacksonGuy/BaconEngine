@@ -181,3 +181,27 @@ int create_text(lua_State* L) {
     lua_pushnumber(L, text->ID);
     return 1;
 }
+
+// local name = get_text_name(id)
+int get_text_name(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+
+    TextObj* text = GameManager::FindTextByID(id);
+    if (text != nullptr) {
+        lua_pushstring(L, text->name.c_str());
+        return 1;
+    }
+    return 0;
+}
+
+// set_text_name(id, name)
+int set_text_name(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+    const std::string name = lua_tostring(L, 2);
+
+    TextObj* text = GameManager::FindTextByID(id);
+    if (text != nullptr) {
+        text->name = name;
+    }
+    return 0;
+}

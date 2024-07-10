@@ -40,6 +40,7 @@ class GameManager {
         static Entity* player;
         static bool isPlayingGame;
         static bool windowHasFocus;
+        static std::string entryPoint;
         static std::map<std::string, sf::Keyboard::Key> key_map;
         static std::map<std::string, sf::Mouse::Button> mouse_map;
         static sf::Keyboard::Key lastKeyboardInput;
@@ -48,6 +49,7 @@ class GameManager {
         static ImGuiTextBuffer ConsoleLog;
         
         static float gravity;
+        static sf::Clock clock;
 
         static lua_State* LuaState;
         static Entity* current_lua_object;

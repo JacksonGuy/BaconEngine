@@ -14,7 +14,7 @@ PlayerInstance::PlayerInstance() {
     
     GameManager::screenWidth = this->screenWidth;
     GameManager::screenHeight = this->screenHeight;
-    GameManager::LoadFont("./assets/fonts/arial.ttf");
+    GameManager::LoadFont("arial.ttf");
 }
 
 bool PlayerInstance::LoadGame(std::string name) {

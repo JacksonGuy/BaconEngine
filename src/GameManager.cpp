@@ -22,10 +22,11 @@ std::map<std::string, sf::Keyboard::Key> GameManager::key_map;
 std::map<std::string, sf::Mouse::Button> GameManager::mouse_map;
 sf::Vector2f GameManager::mousePos = sf::Vector2f(0,0);
 bool GameManager::windowHasFocus = true;
+std::string GameManager::entryPoint = "";
+sf::Clock GameManager::clock;
 
 sf::Texture* GameManager::LoadTexture(std::string path) {
     if (Textures.find(path) == Textures.end()) {
-        GameManager::ConsoleWrite("[DEBUG] Loading new texture...");
         sf::Texture* texture = new sf::Texture();
         if (!texture->loadFromFile(path)) {
             GameManager::ConsoleWrite("[ERROR] Couldn't load texture:" + path);
@@ -38,7 +39,6 @@ sf::Texture* GameManager::LoadTexture(std::string path) {
 void GameManager::LoadFont(std::string path) {
     sf::Font font;
     if (!font.loadFromFile(path)) {
-        //std::cout << "[ERROR] Failed to load font: " << path << std::endl;
         GameManager::ConsoleWrite("[ERROR] Failed to load font: " + path);
     }
     GameManager::font = font; 
@@ -214,11 +214,6 @@ void GameManager::ConsoleWrite(std::string text) {
 }
 
 Entity* GameManager::FindEntityByID(int id) {
-    // for (Entity* e : GameManager::Entities) {
-    //     if (e->ID == id) return e;
-    // }
-    // return nullptr;
-
     int low = 0;
     int high = GameManager::Entities.size();
     while (low <= high) {

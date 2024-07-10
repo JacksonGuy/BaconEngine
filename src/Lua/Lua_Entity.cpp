@@ -150,8 +150,8 @@ int set_entity_position(lua_State* L) {
 
 int create_entity(lua_State* L) {
     std::string prefab = lua_tostring(L, 1);
-    int id = loadPrefab(prefab);
-    lua_pushinteger(L, id);
+    Entity* e = loadPrefab(prefab);
+    lua_pushinteger(L, e->ID);
     return 1;
 }
 int set_visible(lua_State* L) {
@@ -216,5 +216,84 @@ int get_sprite(lua_State* L) {
 int set_sprite(lua_State* L) {
     std::string path = lua_tostring(L, 1);
     GameManager::current_lua_object->SetSprite(path);
+    return 0;
+}
+
+int get_name(lua_State* L) {
+    lua_pushstring(L, GameManager::current_lua_object->name.c_str());
+    return 1;
+}
+
+int set_name(lua_State* L) {
+    const std::string name = lua_tostring(L, 1);
+    GameManager::current_lua_object->name = name;
+    return 0;
+}
+
+int get_entity_name(lua_State* L) {
+    int id = lua_tonumber(L, 1);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        lua_pushstring(L, e->name.c_str());
+        return 1;
+    }
+    return 0;
+} 
+
+int set_entity_name(lua_State* L) {
+    int id = lua_tonumber(L, 1);
+    std::string name = lua_tostring(L, 2);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        e->name = name;
+    }
+    return 0;
+}
+
+int get_entity_velocity(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        lua_pushnumber(L, e->velocity.x);
+        lua_pushnumber(L, e->velocity.y);
+        return 2;
+    }
+    return 0;
+}
+
+int set_entity_velocity(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+    const int velx = lua_tonumber(L, 2);
+    const int vely = lua_tonumber(L, 3);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        e->velocity = sf::Vector2f(velx, vely);
+    } 
+    return 0;
+}
+
+int get_entity_type(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        lua_pushstring(L, e->entity_type.c_str());
+        return 1;
+    }
+    return 0;
+}
+
+int set_entity_type(lua_State* L) {
+    const int id = lua_tonumber(L, 1); 
+    const std::string type = lua_tostring(L, 2);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        e->entity_type = type;
+    }
     return 0;
 }

@@ -9,6 +9,7 @@ extern "C" {
 
 // Misc Engine Tools
 int ConsoleWrite(lua_State* L);
+int get_time_seconds(lua_State* L);
 
 // Text
 int set_text(lua_State* L);
@@ -23,6 +24,8 @@ int set_text_color(lua_State* L);
 int get_text_color(lua_State* L);
 int set_text_size(lua_State* L);
 int get_text_size(lua_State* L);
+int get_text_name(lua_State* L);
+int set_text_name(lua_State* L);
 int create_text(lua_State* L);
 
 // Input
@@ -30,6 +33,7 @@ int get_input(lua_State* L);
 int get_input_single(lua_State* L);
 int get_mouse_input(lua_State* L);
 int get_mouse_input_single(lua_State* L);
+int get_mouse_position(lua_State* L);
 
 // Entity Custom Variables
 int set_variable(lua_State* L);
@@ -50,12 +54,21 @@ int get_clicked(lua_State* L);
 int get_clicked_single(lua_State* L);
 int get_sprite(lua_State* L);
 int set_sprite(lua_State* L);
+int get_name(lua_State* L);
+int set_name(lua_State* L);
 
 int get_entity_position(lua_State* L);
 int set_entity_position(lua_State* L);
 int get_entity_visible(lua_State* L);
 int set_entity_visible(lua_State* L);
+int get_entity_name(lua_State* L);
+int set_entity_name(lua_State* L);
+int get_entity_velocity(lua_State* L);
+int set_entity_velocity(lua_State* L);
+int get_entity_type(lua_State* L);
+int set_entity_type(lua_State* L);
 
+int get_entity_list(lua_State* L);
 int get_entity_by_name(lua_State* L);
 int get_entities_by_type(lua_State* L);
 

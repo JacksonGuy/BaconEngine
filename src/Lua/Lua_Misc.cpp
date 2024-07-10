@@ -10,6 +10,12 @@ int ConsoleWrite(lua_State* L) {
     return 0;
 }
 
+int get_time_seconds(lua_State* L) {
+    float time = GameManager::clock.getElapsedTime().asSeconds();
+    lua_pushnumber(L, time);
+    return 1;
+}
+
 
 int get_input(lua_State* L) {
     const char* input = lua_tostring(L, 1);
@@ -89,6 +95,13 @@ int get_mouse_input_single(lua_State* L) {
     return 1;
 }
 
+int get_mouse_position(lua_State* L) {
+    sf::Vector2i pos = sf::Mouse::getPosition();
+    lua_pushnumber(L, pos.x);
+    lua_pushnumber(L, pos.y);
+    return 2;
+}
+
 int check_collision(lua_State* L) {
     bool collision = GameManager::checkCollision(*GameManager::current_lua_object);
     if (collision) {
@@ -160,4 +173,16 @@ int get_entities_by_type(lua_State* L) {
     else {
         return 0;
     }
+}
+
+int get_entity_list(lua_State* L) {
+    lua_createtable(L, 0, GameManager::Entities.size());
+    for (size_t i = 0; i < GameManager::Entities.size(); i++) {
+        Entity* e = GameManager::Entities[i];
+
+        lua_pushinteger(L, i+1);
+        lua_pushnumber(L, e->ID);
+        lua_settable(L, -3);
+    }
+    return 1;
 }

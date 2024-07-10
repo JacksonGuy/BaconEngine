@@ -87,7 +87,7 @@ EditorInstance::EditorInstance() {
     this->cameraZoom = 1.0f;
 
     // Default Font
-    GameManager::font.loadFromFile("./assets/fonts/arial.ttf");
+    GameManager::font.loadFromFile("arial.ttf");
 
     // Set Engine UI Variables
     this->showDockSpace = false;
@@ -121,6 +121,7 @@ EditorInstance::EditorInstance() {
     // Setup Lua API
     luaL_openlibs(GameManager::LuaState);
     lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
+    lua_register(GameManager::LuaState, "get_time_seconds", get_time_seconds);
 
     lua_register(GameManager::LuaState, "set_variable", set_variable);
     lua_register(GameManager::LuaState, "get_variable", get_variable);
@@ -139,6 +140,8 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_text_color", get_text_color);
     lua_register(GameManager::LuaState, "set_text_size", set_text_size);
     lua_register(GameManager::LuaState, "get_text_size", get_text_size);
+    lua_register(GameManager::LuaState, "set_text_name", set_text_name);
+    lua_register(GameManager::LuaState, "get_text_name", get_text_name);
     lua_register(GameManager::LuaState, "create_text", create_text);
     
     lua_register(GameManager::LuaState, "get_input", get_input);
@@ -158,17 +161,22 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_clicked_single", get_clicked_single);
     lua_register(GameManager::LuaState, "get_sprite", get_sprite);
     lua_register(GameManager::LuaState, "set_sprite", set_sprite);
+    lua_register(GameManager::LuaState, "get_name", get_name);
+    lua_register(GameManager::LuaState, "set_name", set_name);
 
     lua_register(GameManager::LuaState, "check_collision", check_collision);
     lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
     
     lua_register(GameManager::LuaState, "get_entity_by_name", get_entity_by_name);
     lua_register(GameManager::LuaState, "get_entities_by_type", get_entities_by_type);
+    lua_register(GameManager::LuaState, "get_entity_list", get_entity_list);
 
     lua_register(GameManager::LuaState, "get_entity_position", get_entity_position);
     lua_register(GameManager::LuaState, "set_entity_position", set_entity_position);
     lua_register(GameManager::LuaState, "get_entity_visible", get_entity_visible);
     lua_register(GameManager::LuaState, "set_entity_visible", set_entity_visible);
+    lua_register(GameManager::LuaState, "get_entity_name", get_entity_name);
+    lua_register(GameManager::LuaState, "set_entity_name", set_entity_name);
 
     lua_register(GameManager::LuaState, "create_entity", create_entity);
 
@@ -202,10 +210,6 @@ EditorInstance::EditorInstance() {
     GameManager::key_map["LBRACKET"] = sf::Keyboard::LBracket;
     GameManager::key_map["RBRACKET"] = sf::Keyboard::RBracket;
 
-    // for (auto it =  GameManager::key_map.begin(); it != GameManager::key_map.end(); it++) {
-    //     std::cout << it->first << " = " << it->second << std::endl;
-    // }
-
     GameManager::mouse_map["MOUSE_LEFT"] = sf::Mouse::Button::Left;
     GameManager::mouse_map["MOUSE_RIGHT"] = sf::Mouse::Button::Right;
     GameManager::mouse_map["MOUSE_MIDDLE"] = sf::Mouse::Button::Middle;
@@ -221,9 +225,9 @@ void EditorInstance::Run() {
     originDot.setPosition(0.0f, 0.0f);
 
     // DEBUG
-    std::string demoPath = "C:/Users/Jackson/Desktop/projects/BaconEngine/Projects/Demo.json";
-    std::filesystem::path demo = std::filesystem::relative(demoPath);
-    load(demo.generic_string());
+    //std::string demoPath = "C:/Users/Jackson/Desktop/projects/BaconEngine/Projects/Demo.json";
+    //std::filesystem::path demo = std::filesystem::relative(demoPath);
+    //load(demo.generic_string());
 
     while(window->isOpen()) {
         sf::Time deltaTime = clock.restart();
@@ -316,6 +320,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         GameManager::ConsoleWrite("[ENGINE] Successfully Loaded Project");
                         loadedProject = true;
                         projectTitle = outpath;
+                        GameManager::entryPoint = outpath;
                         window->setTitle("Bacon - " + projectTitle);
                     }
                     else {
@@ -472,8 +477,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     nfdresult_t result = NFD_OpenDialog("png,jpg", NULL, &outpath);
 
                     if (result == NFD_OKAY) {
-                        std::string path = std::filesystem::relative(outpath).generic_string();
-                        e->SetSprite(path);
+                        //std::string path = std::filesystem::relative(outpath, GameManager::entryPoint).generic_string();
+                        //e->SetSprite(path);
+                        e->SetSprite(outpath);
                     }
                     free(outpath);
                 }
@@ -516,8 +522,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     nfdresult_t result = NFD_SaveDialog("json", NULL, &savepath);
 
                     if (result == NFD_OKAY) {
-                        std::string rel = std::filesystem::relative(savepath).generic_string();
-                        savePrefab(rel, e);
+                        //std::string rel = std::filesystem::relative(savepath, GameManager::entryPoint).generic_string();
+                        //savePrefab(rel, e);
+                        savePrefab(savepath, e);
                     }
 
                     free(savepath);
@@ -530,10 +537,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     nfdresult_t result = NFD_OpenDialog("json", NULL, &loadpath);
 
                     if (result == NFD_OKAY) {
-                        std::string rel = std::filesystem::relative(loadpath).generic_string();
+                        //std::string rel = std::filesystem::relative(loadpath, GameManager::entryPoint).generic_string();
 
                         // This process is kinda slow but hey it works
-                        Entity* prefabEntity = loadPrefab(rel);
+                        //Entity* prefabEntity = loadPrefab(rel);
+                        Entity* prefabEntity = loadPrefab(loadpath);
                         e->Copy(*prefabEntity);
                         GameManager::Entities.pop_back();
                         delete(prefabEntity);
@@ -595,7 +603,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
                 for (size_t index = 0; index < e->lua_scripts.size(); index++) {
                     ScriptItem script = e->lua_scripts[index];
-                    ImGui::TreeNodeEx(script.path.data(), flags);
+                    std::string relPath = std::filesystem::relative(script.path, GameManager::entryPoint).generic_string();
+                    relPath.erase(0, 3);
+                    ImGui::TreeNodeEx(relPath.data(), flags);
                     if (ImGui::IsItemClicked()) {
                         script.showDetails = !script.showDetails;
                     }
@@ -603,7 +613,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     ImGui::SameLine(ImGui::GetWindowWidth() - 30);
                     ImGui::PushID(index);
                     if (ImGui::Button("X")) {
-                        e->lua_scripts.erase(e->lua_scripts.begin() + i);
+                        e->lua_scripts.erase(e->lua_scripts.begin() + index);
                     }
                     ImGui::PopID();
                 }
@@ -616,7 +626,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                     if (result == NFD_OKAY) {
                         ScriptItem script;
-                        script.path = std::filesystem::relative(scriptpath).generic_string();
+                        script.path = scriptpath;
                         script.showDetails = false;
                         AddAttributeEntity->lua_scripts.push_back(script);
                     }
@@ -799,8 +809,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 nfdresult_t result = NFD_OpenDialog("png,jpg", NULL, &imagepath);
 
                 if (result == NFD_OKAY) {
-                    std::string converted = std::filesystem::relative(imagepath).generic_string();
-                    strcpy(createImagePath, converted.c_str());
+                    //std::string converted = std::filesystem::relative(imagepath, GameManager::entryPoint).generic_string();
+                    //strcpy(createImagePath, converted.c_str());
+                    strcpy(createImagePath, imagepath);
                 }
 
                 free(imagepath);
