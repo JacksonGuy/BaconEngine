@@ -81,11 +81,6 @@ void GameManager::DrawText(sf::RenderWindow& window) {
                 pos += text->target->position;
                 text->text.setPosition(pos);
             }
-            else {
-                std::cout << "Text Name: " << text->name << std::endl;
-                std::cout << "Text ID: " << text->ID << std::endl;
-                std::cout << "Text Target: " << text->target_id << std::endl;
-            }
         }
 
         // Draw text relative to the screen

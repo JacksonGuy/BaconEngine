@@ -109,6 +109,8 @@ EditorInstance::EditorInstance() {
     this->createPosition[1] = 0.f;
     strcpy(this->createNameBuffer, "Entity");                       // Default Name
     strcpy(this->createImagePath, "");                              // Default Image Path
+    this->createDimension[0] = 128;                                 // Default Entity Dimensions
+    this->createDimension[1] = 128;
 
     // Create Text Variables
     this->createTextPosition[0] = 0.f;
@@ -225,9 +227,10 @@ void EditorInstance::Run() {
     originDot.setPosition(0.0f, 0.0f);
 
     // DEBUG
-    //std::string demoPath = "C:/Users/Jackson/Desktop/projects/BaconEngine/Projects/Demo.json";
-    //std::filesystem::path demo = std::filesystem::relative(demoPath);
-    //load(demo.generic_string());
+    std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
+    std::filesystem::path demo = std::filesystem::relative(demoPath);
+    load(demo.generic_string());
+    showEntityList = true;
 
     while(window->isOpen()) {
         sf::Time deltaTime = clock.restart();
@@ -415,15 +418,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (ImGui::BeginTabItem("Testing")) {
-                    if (ImGui::Button("This is a button")) {
-                        sf::View cam = window->getView();
-                        sf::Vector2f center = cam.getCenter();
-                        sf::Vector2u win_size = window->getSize();
-                        sf::Vector2f corner = sf::Vector2f(center.x - (win_size.x/2), center.y - (win_size.y/2)); 
+                    ImGui::InputInt("Test ID", &DebugIntInput);
 
-                        std::string str = "[DEBUG] Top Left: (" + std::to_string(corner.x)
-                            + ", " + std::to_string(corner.y) + ")";
-                        GameManager::ConsoleWrite(str);
+                    if (ImGui::Button("This is a button")) {
+                        Entity* parent = GameManager::FindEntityByID(DebugIntInput);
+                        Entity* newChild = new Entity();
+                        newChild->parent = parent;
+                        parent->children.push_back(newChild);
                     }
                     ImGui::EndTabItem();
                 }
@@ -552,7 +553,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (ImGui::Button("Delete")) {
                     delete(GameManager::Entities[i]);
-                    GameManager::Entities.erase(GameManager::Entities.begin() + i);
                 }
 
                 ImGui::EndTabItem();
@@ -817,11 +817,16 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 free(imagepath);
             } 
 
+            ImGui::InputInt2("Dimensions", createDimension);
+
             // Create Button
             if (ImGui::Button("Create")) {
                 Entity* entity = new Entity(sf::Vector2f(createPosition[0], createPosition[1]));
                 entity->name = createNameBuffer;
+                entity->width = createDimension[0];
+                entity->height = createDimension[1];
                 entity->SetSprite(createImagePath);
+                showEntityCreate = false; // Close Window
             }
         ImGui::End();
     }
@@ -868,29 +873,55 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 else{
                     text->target = nullptr;
                 }
+                showTextCreate = false; // Close Window
             }
         ImGui::End();
     }
 
     // List all Objects
     if (showEntityList) {
+        auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
         ImGui::Begin("Objects", &showEntityList);
-            auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            
             ImGui::BeginTabBar("Lists");
                 if (ImGui::BeginTabItem("Entities")) {
-                    for (Entity* e : GameManager::Entities) {
-                        ImGui::TreeNodeEx(e->name.data(), flags);
-                        if (ImGui::IsItemClicked()) {
-                            e->showDetailMenu = !e->showDetailMenu;
+                    std::vector<int> nodes;
+                    ImGui::SetNextItemOpen(true);
+                    if (ImGui::TreeNodeEx("Game", parentFlags)) {
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
+                                // Get Entity
+                                unsigned int sourceID = *(unsigned int*)payload->Data;
+                                Entity* sourceEntity = GameManager::FindEntityByID(sourceID);
+
+                                // Remove entity from current parent if it has one
+                                if (sourceEntity->parent != nullptr) {
+                                    for (size_t i = 0; i < sourceEntity->parent->children.size(); i++) {
+                                        if (sourceEntity->parent->children[i]->ID == sourceEntity->ID) {
+                                            sourceEntity->parent->children.erase(sourceEntity->parent->children.begin() + i);
+                                        }
+                                    }
+                                }
+
+                                sourceEntity->parent = nullptr;
+                            }
+                            ImGui::EndDragDropTarget();
                         }
+                        
+                        for (Entity* e : GameManager::Entities) {
+                            if (e->parent == nullptr) {
+                                DisplayEntityTree(e);
+                            }
+                        }
+                        ImGui::TreePop();
                     }
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Text")) {
                     for (TextObj* obj : GameManager::TextObjects) {
-                        ImGui::TreeNodeEx(obj->name.data(), flags);
-                        if (ImGui::IsItemClicked()) {
+                        ImGui::TreeNodeEx(obj->name.data(), normalFlags);
+                        if (ImGui::IsItemClicked(1)) {
                             obj->showDetails = !obj->showDetails;
                         }
                     }
@@ -1111,5 +1142,92 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     else {
         // Return so we aren't holding up the rest of the game
         return;
+    }
+}
+
+void EditorInstance::DisplayEntityTree(Entity* e) {
+    auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
+    // Entity has no children (Stop Recursion)
+    if (e->children.size() == 0) {
+        ImGui::TreeNodeEx(e->name.data(), normalFlags);
+        if (ImGui::IsItemClicked(1)) {
+            e->showDetailMenu = !e->showDetailMenu;
+        }
+
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("ENTITY_LIST_ID", &e->ID, sizeof(unsigned int));
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
+                // Get Entity
+                unsigned int sourceID = *(unsigned int*)payload->Data;
+                Entity* sourceEntity = GameManager::FindEntityByID(sourceID);
+
+                // Remove entity from current parent if it has one
+                if (sourceEntity->parent != nullptr) {
+                    for (size_t i = 0; i < sourceEntity->parent->children.size(); i++) {
+                        if (sourceEntity->parent->children[i]->ID == sourceEntity->ID) {
+                            sourceEntity->parent->children.erase(sourceEntity->parent->children.begin() + i);
+                        }
+                    }
+                }
+
+                // Add Entity to new parent
+                e->children.push_back(sourceEntity);
+                sourceEntity->parent = e;
+            }
+            ImGui::EndDragDropTarget();
+        }
+    }
+
+    // Entity has children
+    else {
+        bool is_open = ImGui::TreeNodeEx(e->name.data(), parentFlags);
+        
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("ENTITY_LIST_ID", &e->ID, sizeof(unsigned int));
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
+                // Get Entity
+                unsigned int sourceID = *(unsigned int*)payload->Data;
+                Entity* sourceEntity = GameManager::FindEntityByID(sourceID);
+
+                // Remove entity from current parent if it has one
+                if (sourceEntity->parent != nullptr) {
+                    for (size_t i = 0; i < sourceEntity->parent->children.size(); i++) {
+                        if (sourceEntity->parent->children[i]->ID == sourceEntity->ID) {
+                            sourceEntity->parent->children.erase(sourceEntity->parent->children.begin() + i);
+                            break;
+                        }
+                    }
+                }
+
+                // Add Entity to new parent
+                e->children.push_back(sourceEntity);
+                sourceEntity->parent = e;
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
+        if (ImGui::IsItemClicked(1)) {
+            e->showDetailMenu = !e->showDetailMenu;
+        }
+        if (is_open) {
+            ImGui::Indent(4);
+            
+            for (Entity* child : e->children) {
+                DisplayEntityTree(child);
+            }
+
+            ImGui::TreePop();
+            ImGui::Unindent(4);
+        }
     }
 }

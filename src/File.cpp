@@ -16,10 +16,10 @@ void save(std::string filename) {
 
     level_data["Version"] = GameManager::config.version;
 
-    int index = 0;
-    for (Entity* e : GameManager::Entities) {
+    for (size_t index = 0; index < GameManager::Entities.size(); index++) {
+        Entity* e = GameManager::Entities[index];
         std::string texturePath = fs::relative(e->texturePath, GameManager::entryPoint).generic_string();
-        texturePath.erase(0, 3);
+        //texturePath.erase(0, 3);
 
         level_data["Entities"][index] = {
             {"id", e->ID},
@@ -42,7 +42,7 @@ void save(std::string filename) {
         int i = 0;
         for (ScriptItem script : e->lua_scripts) {
             std::string scriptPath = fs::relative(script.path, GameManager::entryPoint).generic_string();
-            scriptPath.erase(0, 3);
+            //scriptPath.erase(0, 3);
             level_data["Entities"][index]["scripts"][i++] = scriptPath;
         }
 
@@ -65,11 +65,22 @@ void save(std::string filename) {
             }
         }
 
-        index++;
+        if (e->parent == nullptr) {
+            level_data["Entities"][index]["parent"] = -1;
+        }
+        else {
+            level_data["Entities"][index]["parent"] = e->parent->ID;
+        }
+
+        i = 0;
+        for (Entity* child : e->children) {
+            level_data["Entities"][index]["children"][i++] = child->ID;
+        }
     }
 
-    index = 0;
-    for (TextObj* obj : GameManager::TextObjects) {
+    for (size_t index = 0; index < GameManager::TextObjects.size(); index++) {
+        TextObj* obj = GameManager::TextObjects[index];
+        
         int entity_id = -1;
         sf::Color color = obj->text.getFillColor();
         std::string mode;
@@ -86,7 +97,7 @@ void save(std::string filename) {
                 break;
         }
 
-        level_data["Text"][index++] = {
+        level_data["Text"][index] = {
             {"id", obj->ID},
             {"name", obj->name},
             {"position", {obj->position.x, obj->position.y}},
@@ -170,6 +181,18 @@ bool load(std::string filename) {
     }
 
     Entity::IDNum++; // For the next Entity we create 
+
+    GameManager::ConsoleWrite("[ENGINE] Constructing Entity Tree...");
+    for (auto& entity : level_data["Entities"]) {
+        unsigned int childID = entity["id"];
+        unsigned int parentID = entity["parent"];
+        if (parentID != -1) {
+            Entity* child = GameManager::FindEntityByID(childID);
+            Entity* parent = GameManager::FindEntityByID(parentID);
+            parent->children.push_back(child);
+            child->parent = parent;
+        }
+    }
 
     GameManager::ConsoleWrite("[ENGINE] Creating Text...");
     for (auto& obj : level_data["Text"]) {

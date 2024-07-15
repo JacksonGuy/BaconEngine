@@ -29,6 +29,9 @@ Entity::Entity(sf::Vector2f position) {
     this->physicsObject = false;
     this->hitboxSize = 5.0f;
 
+    this->parent = nullptr;
+    this->children = std::vector<Entity*>();
+
     this->mass = 1.f;
     this->grounded = false;
     this->velocity = sf::Vector2f(0, 0);
@@ -60,6 +63,9 @@ Entity::Entity(Entity& e) {
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
 
+    this->parent = e.parent;
+    this->children = e.children;
+
     this->lua_scripts = e.lua_scripts;
     this->entity_variables = e.entity_variables;
     this->entity_numbers = e.entity_numbers;
@@ -67,6 +73,31 @@ Entity::Entity(Entity& e) {
 
     this->SetSprite(e.texturePath, false);
     this->SetPosition(this->position);
+}
+
+Entity::~Entity() {
+    // Remove from Entities
+    for (size_t i = 0; i < GameManager::Entities.size(); i++) {
+        if (GameManager::Entities[i]->ID == ID) {
+            GameManager::Entities.erase(GameManager::Entities.begin() + i);
+            break;
+        }
+    }
+
+    // Remove from parent if it has one 
+    if (parent != nullptr) {
+        for (size_t i = 0; i < parent->children.size(); i++) {
+            if (parent->children[i]->ID == ID) {
+                parent->children.erase(parent->children.begin() + i);
+                break;
+            }
+        }
+    } 
+
+    // Remove parent from children
+    for (Entity* child : children) {
+        child->parent = nullptr;
+    }
 }
 
 void Entity::Copy(Entity& e) {
@@ -94,6 +125,9 @@ void Entity::Copy(Entity& e) {
     this->grounded = false;
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
+
+    this->parent = e.parent;
+    this->children = e.children;
 
     this->lua_scripts = e.lua_scripts;
     this->entity_variables = e.entity_variables;

@@ -40,6 +40,7 @@ class EditorInstance {
         bool showSettingsMenu;
         bool showTextCreate;
         std::string failedMessage;
+        int DebugIntInput = 0;
 
         Entity* AddAttributeEntity;
         char AddScriptName[256];
@@ -58,6 +59,7 @@ class EditorInstance {
         char createNameBuffer[256];
         float createPosition[2];
         char createImagePath[256];
+        int createDimension[2];
 
         // Create Text Variables
         char createTextName[256];
@@ -66,12 +68,15 @@ class EditorInstance {
         int createTextMode;
         int createTextEntityId;
 
-        // Functions
+        // Engine Functions
         EditorInstance();
         void DrawUI(sf::Time deltaTime);              // Draw ImGui Frames
         void Update(sf::Time deltaTime);              // Input
         void FixedUpdate(sf::Time deltaTime);         // Physics
         void Run();
+
+        // UI Functions
+        void DisplayEntityTree(Entity* e);
 };
 
 #endif

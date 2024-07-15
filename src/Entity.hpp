@@ -33,6 +33,9 @@ class Entity {
         sf::Vector2f velocity;
         sf::Vector2f acceleration;
 
+        Entity* parent;
+        std::vector<Entity*> children;
+
         std::vector<ScriptItem> lua_scripts;
         std::map<int, std::string> entity_variables;
         std::map<std::string, double> entity_numbers;
@@ -43,8 +46,11 @@ class Entity {
         bool isPlayer;
 
         Entity(sf::Vector2f position = sf::Vector2f(0,0));
-        Entity(Entity& e);
+        Entity(Entity& e);  // For creating objects
+        ~Entity();
 
+        // For overriding current object data
+        // Yes this does something different than our copy constructor
         void Copy(Entity& e);
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position);
