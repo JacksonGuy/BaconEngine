@@ -3,34 +3,23 @@
 
 #include <iostream>
 #include <fstream>
-#include "json.hpp"
 
-using json = nlohmann::json;
-
-unsigned int Entity::IDNum = 0;
-
-Entity::Entity(sf::Vector2f position) {
-    this->ID = Entity::IDNum++;
+Entity::Entity() : GameObject() {
     this->name = "Entity " + std::to_string(this->ID);
+    this->type = ClassType::ENTITY;
+    
     this->entity_type = "Default";
     this->texturePath = "";
-
-    this->position = position;
-    this->scale = {1.0f, 1.0f};
     this->width = 64;
     this->height = 64;
-    this->rotation = 0.0f;
-    this->isVisible = true;
 
-    this->showDetailMenu = false;
     this->showHitbox = false;
     this->isPlayer = false;
     this->isSolid = false;
     this->physicsObject = false;
     this->hitboxSize = 5.0f;
 
-    this->parent = nullptr;
-    this->children = std::vector<Entity*>();
+    this->lua_scripts = std::vector<ScriptItem>();
 
     this->mass = 1.f;
     this->grounded = false;
@@ -40,18 +29,17 @@ Entity::Entity(sf::Vector2f position) {
     GameManager::Entities.push_back(this);
 }
 
-Entity::Entity(Entity& e) {
-    this->ID = e.ID;
-    this->name = e.name;
-    this->entity_type = e.entity_type;
-    this->position = e.position;
-    this->scale = e.scale;
-    this->width = e.width;
-    this->height = e.height;
-    this->rotation = e.rotation;
-    this->isVisible = e.isVisible;
+Entity::Entity(sf::Vector2f position) : Entity() {
+    this->position = position;
+}   
 
-    this->showDetailMenu = e.showDetailMenu;
+Entity::Entity(Entity& e) : GameObject(e) {
+    this->name = e.name;
+    this->ID = e.ID;
+    this->type = e.type;
+    
+    this->entity_type = e.entity_type;
+
     this->isSolid = e.isSolid;
     this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
@@ -63,16 +51,16 @@ Entity::Entity(Entity& e) {
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
 
-    this->parent = e.parent;
-    this->children = e.children;
-
     this->lua_scripts = e.lua_scripts;
     this->entity_variables = e.entity_variables;
     this->entity_numbers = e.entity_numbers;
     this->entity_strings = e.entity_strings;
 
     this->SetSprite(e.texturePath, false);
-    this->SetPosition(this->position);
+    this->sprite.setPosition(this->position);
+    this->UpdateRect();
+
+    GameManager::Entities.push_back(this);
 }
 
 Entity::~Entity() {
@@ -83,30 +71,11 @@ Entity::~Entity() {
             break;
         }
     }
-
-    // Remove from parent if it has one 
-    if (parent != nullptr) {
-        for (size_t i = 0; i < parent->children.size(); i++) {
-            if (parent->children[i]->ID == ID) {
-                parent->children.erase(parent->children.begin() + i);
-                break;
-            }
-        }
-    } 
-
-    // Remove parent from children
-    for (Entity* child : children) {
-        child->parent = nullptr;
-    }
 }
 
-void Entity::Copy(Entity& e) {
+void Entity::Override(Entity& e) {
     this->name = e.name;
     this->entity_type = e.entity_type;
-    
-    // We probably don't want to be copying position when
-    // loading Entity attributes from a prefab
-    //this->position = e.position;
     
     this->scale = e.scale;
     this->width = e.width;
@@ -114,7 +83,7 @@ void Entity::Copy(Entity& e) {
     this->rotation = e.rotation;
     this->isVisible = e.isVisible;
 
-    this->showDetailMenu = true;
+    this->showDetails = true;
     this->isSolid = e.isSolid;
     this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
@@ -154,9 +123,16 @@ void Entity::SetSprite(std::string path, bool autoScale) {
 }
 
 void Entity::SetPosition(sf::Vector2f position) {
+    sf::Vector2f delta = position - this->position;
+
     this->position = position;
     this->sprite.setPosition(this->position);
     this->UpdateRect();
+
+    for (GameObject* child : this->children) {
+        sf::Vector2f newPos = child->position + delta;
+        child->SetPosition(newPos);
+    }
 }
 
 void Entity::SetSpriteScale(sf::Vector2f scale) {

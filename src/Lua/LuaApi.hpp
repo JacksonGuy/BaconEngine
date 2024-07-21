@@ -56,6 +56,10 @@ int get_sprite(lua_State* L);
 int set_sprite(lua_State* L);
 int get_name(lua_State* L);
 int set_name(lua_State* L);
+int set_width(lua_State* L);
+int get_width(lua_State* L);
+int set_height(lua_State* L);
+int get_height(lua_State* L);
 
 int get_entity_position(lua_State* L);
 int set_entity_position(lua_State* L);
@@ -67,6 +71,10 @@ int get_entity_velocity(lua_State* L);
 int set_entity_velocity(lua_State* L);
 int get_entity_type(lua_State* L);
 int set_entity_type(lua_State* L);
+int set_entity_width(lua_State* L);
+int get_entity_width(lua_State* L);
+int set_entity_height(lua_State* L);
+int get_entity_height(lua_State* L);
 
 int get_entity_list(lua_State* L);
 int get_entity_by_name(lua_State* L);
@@ -75,5 +83,7 @@ int get_entities_by_type(lua_State* L);
 int create_entity(lua_State* L);
 int check_collision(lua_State* L);
 int check_collision_side(lua_State* L);
+int delete_entity(lua_State* L);
+int delete_entity_id(lua_State* L);
 
 #endif

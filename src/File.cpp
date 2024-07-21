@@ -8,6 +8,7 @@
 
 using json = nlohmann::json;
 
+namespace File {
 void save(std::string filename) {
     namespace fs = std::filesystem;
     
@@ -16,6 +17,7 @@ void save(std::string filename) {
 
     level_data["Version"] = GameManager::config.version;
 
+    // Save Entities
     for (size_t index = 0; index < GameManager::Entities.size(); index++) {
         Entity* e = GameManager::Entities[index];
         std::string texturePath = fs::relative(e->texturePath, GameManager::entryPoint).generic_string();
@@ -73,29 +75,16 @@ void save(std::string filename) {
         }
 
         i = 0;
-        for (Entity* child : e->children) {
+        for (GameObject* child : e->children) {
             level_data["Entities"][index]["children"][i++] = child->ID;
         }
     }
 
+    // Save TextObjects
     for (size_t index = 0; index < GameManager::TextObjects.size(); index++) {
         TextObj* obj = GameManager::TextObjects[index];
         
-        int entity_id = -1;
         sf::Color color = obj->text.getFillColor();
-        std::string mode;
-        switch (obj->mode) {
-            case Absolute: 
-                mode = "Absolute";
-                break;
-            case Relative:
-                mode = "Relative";
-                entity_id = obj->target->ID;
-                break;
-            case Screen:
-                mode = "Screen";
-                break;
-        }
 
         level_data["Text"][index] = {
             {"id", obj->ID},
@@ -104,11 +93,21 @@ void save(std::string filename) {
             {"size", obj->text.getCharacterSize()},
             {"rotation", obj->text.getRotation()},
             {"color", {color.r, color.g, color.b, color.a}},
-            {"mode", mode},
-            {"entity_id", entity_id},
             {"text", obj->text.getString()},
             {"isVisible", obj->isVisible}
         };
+
+        if (obj->parent == nullptr) {
+            level_data["Text"][index]["parent"] = -1;
+        }
+        else {
+            level_data["Text"][index]["parent"] = obj->parent->ID;
+        }
+
+        int i = 0;
+        for (GameObject* child : obj->children) {
+            level_data["Text"][index]["children"][i++] = child->ID;
+        }
     }
 
     level_data["Settings"]["Gravity"] = GameManager::gravity;
@@ -135,11 +134,15 @@ bool load(std::string filename) {
 
     GameManager::ConsoleWrite("[ENGINE] Creating Entities...");
     for (auto& entity : level_data["Entities"]) {
-        Entity* e = new Entity(sf::Vector2f(entity["position"][0], entity["position"][1]));
+        Entity* e = new Entity();
         e->ID = entity["id"];
-        Entity::IDNum = e->ID; // Set to max to preserve IDs
+        if (e->ID > GameObject::IDCount) {
+            GameObject::IDCount = e->ID; // Set to max to preserve IDs
+        }
         e->name = entity["name"];
         e->entity_type = entity["entity_type"];
+        e->position.x = entity["position"][0];
+        e->position.y = entity["position"][1];
         e->scale = sf::Vector2f(entity["scale"][0], entity["scale"][1]);
         e->width = entity["width"];
         e->height = entity["height"];
@@ -180,25 +183,17 @@ bool load(std::string filename) {
         }
     }
 
-    Entity::IDNum++; // For the next Entity we create 
-
-    GameManager::ConsoleWrite("[ENGINE] Constructing Entity Tree...");
-    for (auto& entity : level_data["Entities"]) {
-        unsigned int childID = entity["id"];
-        unsigned int parentID = entity["parent"];
-        if (parentID != -1) {
-            Entity* child = GameManager::FindEntityByID(childID);
-            Entity* parent = GameManager::FindEntityByID(parentID);
-            parent->children.push_back(child);
-            child->parent = parent;
-        }
-    }
+    GameObject::IDCount++; // For the next Entity we create 
 
     GameManager::ConsoleWrite("[ENGINE] Creating Text...");
     for (auto& obj : level_data["Text"]) {
         TextObj* text = new TextObj();
         text->ID = obj["id"];
-        TextObj::IDNum = text->ID; // Set to max to preserve IDs
+        
+        if (text->ID > GameObject::IDCount) {
+            GameObject::IDCount = text->ID; // Set to max to preserve IDs
+        }
+    
         text->name = obj["name"];
         text->position = sf::Vector2f(obj["position"][0], obj["position"][1]);
         text->text.setPosition(text->position);
@@ -210,15 +205,28 @@ bool load(std::string filename) {
         text->isVisible = obj["isVisible"];
         std::string str = obj["text"];
         text->text.setString(str);
+    }
 
-        text->target = nullptr;
-        if (obj["mode"] == "Absolute") text->mode = Absolute;
-        else if (obj["mode"] == "Relative") {
-            text->mode = Relative;
-            text->target_id = obj["entity_id"];
-            text->target = GameManager::FindEntityByID(obj["entity_id"]);
+    GameManager::ConsoleWrite("[ENGINE] Constructing Entity Tree...");
+    for (auto& entity : level_data["Entities"]) {
+        unsigned int childID = entity["id"];
+        unsigned int parentID = entity["parent"];
+        if (parentID != -1) {
+            GameObject* child = GameManager::FindObjectByID(childID);
+            GameObject* parent = GameManager::FindObjectByID(parentID);
+            parent->children.push_back(child);
+            child->parent = parent;
         }
-        else if (obj["mode"] == "Screen") text->mode = Screen;
+    }
+    for (auto& text : level_data["Text"]) {
+        unsigned int childID = text["id"];
+        unsigned int parentID = text["parent"]; 
+        if (parentID != -1) {
+            GameObject* child = GameManager::FindObjectByID(childID);
+            GameObject* parent = GameManager::FindObjectByID(parentID);
+            parent->children.push_back(child);
+            child->parent = parent;
+        }
     }
 
     GameManager::gravity = level_data["Settings"]["Gravity"];
@@ -359,4 +367,5 @@ Entity* loadPrefab(std::string filename) {
     }
 
     return e;
+}
 }

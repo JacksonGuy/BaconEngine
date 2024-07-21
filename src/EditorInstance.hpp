@@ -76,7 +76,7 @@ class EditorInstance {
         void Run();
 
         // UI Functions
-        void DisplayEntityTree(Entity* e);
+        void DisplayEntityTree(GameObject* e);
 };
 
 #endif

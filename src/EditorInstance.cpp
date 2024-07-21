@@ -42,7 +42,7 @@ namespace Settings {
     }
 
     // Applies Config File Settings
-    void ApplySettings(ConfigState state) {
+    void ApplySettings(File::ConfigState state) {
         for (int i = 0; i < Settings::resolutionsCount; i++) {
             if (Settings::resolutions[i] == state.resolution) {
                 selectedResolution = i;
@@ -77,7 +77,7 @@ EditorInstance::EditorInstance() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     // Load Editor Settings
-    ConfigState settings = loadConfig();
+    File::ConfigState settings = File::loadConfig();
     Settings::ApplySettings(settings);
     Settings::ChangeResolution(*window);
 
@@ -134,8 +134,6 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "get_text", get_text);
     lua_register(GameManager::LuaState, "set_text_position", set_text_position);
     lua_register(GameManager::LuaState, "get_text_position", get_text_position);
-    lua_register(GameManager::LuaState, "set_text_target", set_text_target);
-    lua_register(GameManager::LuaState, "get_text_target", get_text_target);
     lua_register(GameManager::LuaState, "set_text_visible", set_text_visible);
     lua_register(GameManager::LuaState, "get_text_visible", get_text_visible);
     lua_register(GameManager::LuaState, "set_text_color", set_text_color);
@@ -229,7 +227,7 @@ void EditorInstance::Run() {
     // DEBUG
     std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
     std::filesystem::path demo = std::filesystem::relative(demoPath);
-    load(demo.generic_string());
+    File::load(demo.generic_string());
     showEntityList = true;
 
     while(window->isOpen()) {
@@ -251,11 +249,11 @@ void EditorInstance::Run() {
     }
 
     // Save editor settings before closing
-    ConfigState finalSettings = {
+    File::ConfigState finalSettings = {
         Settings::EngineVersion,
         Settings::GetResolutionString()
     };
-    saveConfig(finalSettings);
+    File::saveConfig(finalSettings);
     std::cout << "Saved Editor Settings" << std::endl;
 
     this->window->close();
@@ -286,7 +284,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         GameManager::ConsoleWrite("[ENGINE] Successfully Saved Project");
                         std::string name = savepath;
                         name += ".json";
-                        save(name);
+                        File::save(name);
                         projectTitle = name;
                         loadedProject = true;
                         window->setTitle("Bacon - " + name);
@@ -294,7 +292,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     free(savepath);
                 }
                 else { 
-                    save(projectTitle);
+                    File::save(projectTitle);
                 }
             }
             
@@ -306,7 +304,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     GameManager::ConsoleWrite("[ENGINE] Successfully Saved Project");
                     std::string name = savepath;
                     name += ".json";
-                    save(name);
+                    File::save(name);
                     projectTitle = name;
                     loadedProject = true;
                     window->setTitle("Bacon - " + name);
@@ -319,7 +317,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 nfdresult_t result = NFD_OpenDialog("json", NULL, &outpath);
 
                 if (result == NFD_OKAY) {
-                    if (load(outpath)) {
+                    if (File::load(outpath)) {
                         GameManager::ConsoleWrite("[ENGINE] Successfully Loaded Project");
                         loadedProject = true;
                         projectTitle = outpath;
@@ -426,6 +424,16 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         newChild->parent = parent;
                         parent->children.push_back(newChild);
                     }
+
+                    if (ImGui::Button("Test Vectors")) {
+                        std::cout << "GameObjects: " << GameManager::GameObjects.size() << std::endl;
+                        std::cout << "Entities: " << GameManager::Entities.size() << std::endl;
+                        std::cout << "TextObjects: " << GameManager::TextObjects.size() << std::endl;
+                        // for (GameObject* obj : GameManager::GameObjects) {
+                        //     std::cout << obj->ID << ": " << obj->name << std::endl;
+                        // }
+                        // std::cout << "---\n";
+                    }
                     ImGui::EndTabItem();
                 }
             ImGui::EndTabBar();
@@ -436,9 +444,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     for (size_t i = 0; i < GameManager::Entities.size(); i++) {
         Entity* e = GameManager::Entities[i];
 
-        if (!e->showDetailMenu) continue;
+        if (!e->showDetails) continue;
         std::string name = "Details (ID: " + std::to_string(e->ID) + ")";
-        ImGui::Begin(name.c_str(), &(e->showDetailMenu));
+        ImGui::Begin(name.c_str(), &(e->showDetails));
             char nameBuff[256];
             strcpy(nameBuff, e->name.data());
             if (ImGui::InputText("Name", nameBuff, 256)) {
@@ -471,7 +479,8 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::BeginTabBar("EntityDetails");
             if (ImGui::BeginTabItem("Details")) {
                 char textBuff[256];
-                strcpy(textBuff, e->texturePath.data());
+                std::string relpath = std::filesystem::relative(e->texturePath.data(), GameManager::entryPoint).generic_string();
+                strcpy(textBuff, relpath.data());
                 ImGui::InputText("Texture", textBuff, 256);
                 if (ImGui::Button("Change Texture")) {
                     nfdchar_t* outpath = NULL;
@@ -525,7 +534,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     if (result == NFD_OKAY) {
                         //std::string rel = std::filesystem::relative(savepath, GameManager::entryPoint).generic_string();
                         //savePrefab(rel, e);
-                        savePrefab(savepath, e);
+                        File::savePrefab(savepath, e);
                     }
 
                     free(savepath);
@@ -538,14 +547,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     nfdresult_t result = NFD_OpenDialog("json", NULL, &loadpath);
 
                     if (result == NFD_OKAY) {
-                        //std::string rel = std::filesystem::relative(loadpath, GameManager::entryPoint).generic_string();
-
-                        // This process is kinda slow but hey it works
-                        //Entity* prefabEntity = loadPrefab(rel);
-                        Entity* prefabEntity = loadPrefab(loadpath);
-                        e->Copy(*prefabEntity);
-                        GameManager::Entities.pop_back();
+                        // This process is pretty slow and dumb but hey it works
+                        Entity* prefabEntity = File::loadPrefab(loadpath);
+                        e->Override(*prefabEntity);
                         delete(prefabEntity);
+                        GameObject::IDCount--;
                     }
 
                     free(loadpath);
@@ -604,7 +610,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 for (size_t index = 0; index < e->lua_scripts.size(); index++) {
                     ScriptItem script = e->lua_scripts[index];
                     std::string relPath = std::filesystem::relative(script.path, GameManager::entryPoint).generic_string();
-                    relPath.erase(0, 3);
+                    //relPath.erase(0, 3);
                     ImGui::TreeNodeEx(relPath.data(), flags);
                     if (ImGui::IsItemClicked()) {
                         script.showDetails = !script.showDetails;
@@ -750,33 +756,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     color_arr[3] * 255));
             }
 
-            int text_mode = 0;
-            if (text->mode == Absolute) text_mode = 0;
-            else if (text->mode == Relative) text_mode = 1;
-            else if (text->mode == Screen) text_mode = 2;
-
-            if (ImGui::RadioButton("Absolute", &text_mode, 0)) {
-                text->mode = Absolute;
-            }
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Relative", &text_mode, 1)) {
-                text->mode = Relative;
-            }
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Screen", &text_mode, 2)) {
-                text->mode = Screen;
-            }
-
-            if (text->mode == Relative) {
-                int entity_id = text->target->ID;
-                if (ImGui::InputInt("Entity ID", &entity_id)) {
-                    Entity* e = GameManager::FindEntityByID(entity_id);
-                    if (e != nullptr) {
-                        text->target = e;
-                    }
-                }
-            }
-
             ImGui::Checkbox("Visible", &text->isVisible);
 
             ImGui::Separator();
@@ -855,24 +834,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 text->position = sf::Vector2f(createTextPosition[0], createTextPosition[1]);
                 text->text.setString(createTextDetails);
 
-                switch (createTextMode) {
-                    case 0: 
-                        text->mode = Absolute;
-                        break;
-                    case 1: 
-                        text->mode = Relative;
-                        break;
-                    case 2: 
-                        text->mode = Screen;
-                        break;
-                }
-
-                if (text->mode == Relative) {
-                    text->target = GameManager::FindEntityByID(createTextEntityId);
-                }
-                else{
-                    text->target = nullptr;
-                }
                 showTextCreate = false; // Close Window
             }
         ImGui::End();
@@ -884,51 +845,39 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
         ImGui::Begin("Objects", &showEntityList);
-            ImGui::BeginTabBar("Lists");
-                if (ImGui::BeginTabItem("Entities")) {
-                    std::vector<int> nodes;
-                    ImGui::SetNextItemOpen(true);
-                    if (ImGui::TreeNodeEx("Game", parentFlags)) {
-                        if (ImGui::BeginDragDropTarget()) {
-                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
-                                // Get Entity
-                                unsigned int sourceID = *(unsigned int*)payload->Data;
-                                Entity* sourceEntity = GameManager::FindEntityByID(sourceID);
+            std::vector<int> nodes;
+            ImGui::SetNextItemOpen(true);
+            // Parent Tree Node
+            if (ImGui::TreeNodeEx("Game", parentFlags)) {
+                // Handle Drag and Drop
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
+                        // Get Entity
+                        unsigned int sourceID = *(unsigned int*)payload->Data;
+                        GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
 
-                                // Remove entity from current parent if it has one
-                                if (sourceEntity->parent != nullptr) {
-                                    for (size_t i = 0; i < sourceEntity->parent->children.size(); i++) {
-                                        if (sourceEntity->parent->children[i]->ID == sourceEntity->ID) {
-                                            sourceEntity->parent->children.erase(sourceEntity->parent->children.begin() + i);
-                                        }
-                                    }
+                        // Remove entity from current parent if it has one
+                        if (sourceObject->parent != nullptr) {
+                            for (size_t i = 0; i < sourceObject->parent->children.size(); i++) {
+                                if (sourceObject->parent->children[i]->ID == sourceObject->ID) {
+                                    sourceObject->parent->children.erase(sourceObject->parent->children.begin() + i);
                                 }
+                            }
+                        }
 
-                                sourceEntity->parent = nullptr;
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-                        
-                        for (Entity* e : GameManager::Entities) {
-                            if (e->parent == nullptr) {
-                                DisplayEntityTree(e);
-                            }
-                        }
-                        ImGui::TreePop();
+                        sourceObject->parent = nullptr;
                     }
-                    ImGui::EndTabItem();
+                    ImGui::EndDragDropTarget();
                 }
-                if (ImGui::BeginTabItem("Text")) {
-                    for (TextObj* obj : GameManager::TextObjects) {
-                        ImGui::TreeNodeEx(obj->name.data(), normalFlags);
-                        if (ImGui::IsItemClicked(1)) {
-                            obj->showDetails = !obj->showDetails;
-                        }
+                
+                // Display Entities
+                for (GameObject* obj : GameManager::GameObjects) {
+                    if (obj->parent == nullptr) {
+                        DisplayEntityTree(obj);
                     }
-                    ImGui::EndTabItem();
                 }
-            ImGui::EndTabBar();
-            
+                ImGui::TreePop();
+            }
         ImGui::End();
     }
 
@@ -970,6 +919,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     }
 }
 
+// Mostly just editor input
 void EditorInstance::Update(sf::Time deltaTime) {    
     GameManager::windowHasFocus = window->hasFocus();
 
@@ -1012,7 +962,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
                 for (Entity* e : GameManager::Entities) {
                     if (e->rect.contains(converted.x, converted.y)) {
                         // Toggle details menu visability
-                        e->showDetailMenu = !e->showDetailMenu;
+                        e->showDetails = !e->showDetails;
                     }
                 }
 
@@ -1062,6 +1012,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
     }
 }
 
+// Physics and Lua scripting
 void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     lastFixedUpdate += deltaTime;
 
@@ -1078,8 +1029,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
 
         // Player position update
         if (GameManager::player != nullptr && GameManager::isPlayingGame) {
-            GameManager::player->sprite.setPosition(GameManager::player->position);
-            GameManager::player->UpdateRect();
+            GameManager::player->SetPosition(GameManager::player->position);
             camera->setCenter(GameManager::player->position);
             window->setView(*camera);
         }
@@ -1089,7 +1039,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             for (Entity* e : GameManager::Entities) {
                 if (!e->physicsObject) continue;
 
-                // Gravity
+                // Gravity and collisions
                 bool collision = false;
                 bool bottomCollision = false;
                 bool topCollision = false;
@@ -1097,11 +1047,13 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                     if (e->ID == other->ID) continue;
                     if (!other->isSolid) continue;
 
+                    // Have we hit the ground?
                     if (e->bottomRect.intersects(other->rect)) {
                         collision = true;
                         bottomCollision = true;
                     }
 
+                    // Did the top of our entity hit something?
                     if (e->topRect.intersects(other->rect)) {
                         collision = true;
                         topCollision = true;
@@ -1122,7 +1074,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                         // Else, do nothing
                     }
 
-                    // We bonked our head jumping
+                    // We bonked our head
                     if (topCollision) {
                         e->velocity.y = 1; // DEBUG
                     }
@@ -1135,7 +1087,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
 
                 // Apply Velocity
                 e->velocity += e->acceleration;
-                e->position += e->velocity;
+                e->SetPosition(e->position + e->velocity);
             }
         }
     }
@@ -1145,19 +1097,33 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     }
 }
 
-void EditorInstance::DisplayEntityTree(Entity* e) {
+void EditorInstance::DisplayEntityTree(GameObject* obj) {
     auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
     // Entity has no children (Stop Recursion)
-    if (e->children.size() == 0) {
-        ImGui::TreeNodeEx(e->name.data(), normalFlags);
+    if (obj->children.size() == 0) {
+        
+        // DEBUG
+        ImGui::SetNextItemOpen(true); // Always display full tree
+
+        // Cast to display names correctly
+        if (obj->type == ENTITY) {
+            Entity* e = (Entity*)obj;
+            ImGui::TreeNodeEx(e->name.data(), normalFlags);
+        }
+        else if (obj->type == TEXT) {
+            TextObj* text = (TextObj*)obj;
+            ImGui::TreeNodeEx(text->name.data(), normalFlags);
+        }
+        
+        
         if (ImGui::IsItemClicked(1)) {
-            e->showDetailMenu = !e->showDetailMenu;
+            obj->showDetails = !obj->showDetails;
         }
 
         if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("ENTITY_LIST_ID", &e->ID, sizeof(unsigned int));
+            ImGui::SetDragDropPayload("ENTITY_LIST_ID", &obj->ID, sizeof(unsigned int));
             ImGui::EndDragDropSource();
         }
 
@@ -1165,20 +1131,20 @@ void EditorInstance::DisplayEntityTree(Entity* e) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
                 // Get Entity
                 unsigned int sourceID = *(unsigned int*)payload->Data;
-                Entity* sourceEntity = GameManager::FindEntityByID(sourceID);
+                GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
 
                 // Remove entity from current parent if it has one
-                if (sourceEntity->parent != nullptr) {
-                    for (size_t i = 0; i < sourceEntity->parent->children.size(); i++) {
-                        if (sourceEntity->parent->children[i]->ID == sourceEntity->ID) {
-                            sourceEntity->parent->children.erase(sourceEntity->parent->children.begin() + i);
+                if (sourceObject->parent != nullptr) {
+                    for (size_t i = 0; i < sourceObject->parent->children.size(); i++) {
+                        if (sourceObject->parent->children[i]->ID == sourceObject->ID) {
+                            sourceObject->parent->children.erase(sourceObject->parent->children.begin() + i);
                         }
                     }
                 }
 
                 // Add Entity to new parent
-                e->children.push_back(sourceEntity);
-                sourceEntity->parent = e;
+                obj->children.push_back(sourceObject);
+                sourceObject->parent = obj;
             }
             ImGui::EndDragDropTarget();
         }
@@ -1186,10 +1152,23 @@ void EditorInstance::DisplayEntityTree(Entity* e) {
 
     // Entity has children
     else {
-        bool is_open = ImGui::TreeNodeEx(e->name.data(), parentFlags);
+        // DEBUG
+        ImGui::SetNextItemOpen(true); // Always display full tree
+        
+        bool is_open;
+        
+        // Cast to display names correctly
+        if (obj->type == ENTITY) {
+            Entity* e = (Entity*)obj;
+            is_open = ImGui::TreeNodeEx(e->name.data(), parentFlags);
+        }
+        else if (obj->type == TEXT) {
+            TextObj* text = (TextObj*)obj;
+            is_open = ImGui::TreeNodeEx(text->name.data(), parentFlags);
+        }
         
         if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("ENTITY_LIST_ID", &e->ID, sizeof(unsigned int));
+            ImGui::SetDragDropPayload("ENTITY_LIST_ID", &obj->ID, sizeof(unsigned int));
             ImGui::EndDragDropSource();
         }
 
@@ -1197,32 +1176,32 @@ void EditorInstance::DisplayEntityTree(Entity* e) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_LIST_ID")) {
                 // Get Entity
                 unsigned int sourceID = *(unsigned int*)payload->Data;
-                Entity* sourceEntity = GameManager::FindEntityByID(sourceID);
+                GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
 
                 // Remove entity from current parent if it has one
-                if (sourceEntity->parent != nullptr) {
-                    for (size_t i = 0; i < sourceEntity->parent->children.size(); i++) {
-                        if (sourceEntity->parent->children[i]->ID == sourceEntity->ID) {
-                            sourceEntity->parent->children.erase(sourceEntity->parent->children.begin() + i);
+                if (sourceObject->parent != nullptr) {
+                    for (size_t i = 0; i < sourceObject->parent->children.size(); i++) {
+                        if (sourceObject->parent->children[i]->ID == sourceObject->ID) {
+                            sourceObject->parent->children.erase(sourceObject->parent->children.begin() + i);
                             break;
                         }
                     }
                 }
 
                 // Add Entity to new parent
-                e->children.push_back(sourceEntity);
-                sourceEntity->parent = e;
+                obj->children.push_back(sourceObject);
+                sourceObject->parent = obj;
             }
             ImGui::EndDragDropTarget();
         }
         
         if (ImGui::IsItemClicked(1)) {
-            e->showDetailMenu = !e->showDetailMenu;
+            obj->showDetails = !obj->showDetails;
         }
         if (is_open) {
             ImGui::Indent(4);
             
-            for (Entity* child : e->children) {
+            for (GameObject* child : obj->children) {
                 DisplayEntityTree(child);
             }
 

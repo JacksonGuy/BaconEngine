@@ -150,7 +150,7 @@ int set_entity_position(lua_State* L) {
 
 int create_entity(lua_State* L) {
     std::string prefab = lua_tostring(L, 1);
-    Entity* e = loadPrefab(prefab);
+    Entity* e = File::loadPrefab(prefab);
     lua_pushinteger(L, e->ID);
     return 1;
 }
@@ -294,6 +294,97 @@ int set_entity_type(lua_State* L) {
     Entity* e = GameManager::FindEntityByID(id);
     if (e != nullptr) {
         e->entity_type = type;
+    }
+    return 0;
+}
+
+int set_width(lua_State* L) {
+    const int width = lua_tonumber(L, 1);
+    GameManager::current_lua_object->width = width;
+    
+    // This might be a bad function to call here
+    // It covers everything, but does more than it needs to
+    GameManager::current_lua_object->SetSprite(GameManager::current_lua_object->texturePath, false);
+    
+    return 0;
+}
+
+int get_width(lua_State* L) {
+    lua_pushinteger(L, GameManager::current_lua_object->width);
+    return 1;
+}
+
+int set_height(lua_State* L) {
+    const int height = lua_tonumber(L, 1);
+    GameManager::current_lua_object->height = height;
+
+    // This might be a bad function to call here
+    // It covers everything, but does more than it needs to
+    GameManager::current_lua_object->SetSprite(GameManager::current_lua_object->texturePath, false);
+
+    return 0;
+}
+
+int get_height(lua_State* L) {
+    lua_pushinteger(L, GameManager::current_lua_object->height);
+    return 1;
+}
+
+int set_entity_width(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+    const int width = lua_tonumber(L, 2);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        e->width = width;
+    }
+    return 0;
+}
+
+int get_entity_width(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+    
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        lua_pushnumber(L, e->width);
+        return 1;
+    }
+    return 0;
+}
+
+int set_entity_height(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+    const int height = lua_tonumber(L, 2);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        e->height = height;
+    }
+    return 0;
+}
+
+int get_entity_height(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        lua_pushnumber(L, e->height);
+        return 1;
+    }
+    return 0;
+}
+
+int delete_entity(lua_State* L) {
+    delete(GameManager::current_lua_object);
+    return 0;
+}
+
+int delete_entity_id(lua_State* L) {
+    const int id = lua_tonumber(L, 1);
+
+    Entity* e = GameManager::FindEntityByID(id);
+    if (e != nullptr) {
+        delete(e);
     }
     return 0;
 }

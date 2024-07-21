@@ -18,7 +18,7 @@ PlayerInstance::PlayerInstance() {
 }
 
 bool PlayerInstance::LoadGame(std::string name) {
-    bool result = load(name);
+    bool result = File::load(name);
 
     this->playerExists = false;
     if (GameManager::player != nullptr) {

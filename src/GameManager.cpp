@@ -1,8 +1,9 @@
 #include "GameManager.hpp"
 #include <iostream>
 
-ConfigState GameManager::config;
+File::ConfigState GameManager::config;
 std::map<std::string, sf::Texture*> GameManager::Textures;
+std::vector<GameObject*> GameManager::GameObjects;
 std::vector<Entity*> GameManager::Entities;
 std::vector<TextObj*> GameManager::TextObjects;
 sf::Font GameManager::font;
@@ -73,26 +74,6 @@ void GameManager::DrawEntities(sf::RenderWindow& window) {
 
 void GameManager::DrawText(sf::RenderWindow& window) {
     for (TextObj* text : GameManager::TextObjects) {
-        // Draw text relative to some entity
-        // (0,0) is the entity position
-        if (text->mode == Relative) {
-            if (text->target != nullptr) {
-                sf::Vector2f pos = text->position;
-                pos += text->target->position;
-                text->text.setPosition(pos);
-            }
-        }
-
-        // Draw text relative to the screen
-        // (0,0) is the top left corner of the camera
-        else if (text->mode == Screen) {
-            sf::View cam = window.getView();
-            sf::FloatRect rect = cam.getViewport();
-            sf::Vector2f point = sf::Vector2f(text->position.x + rect.left, text->position.y + rect.top);
-            point = window.mapPixelToCoords((sf::Vector2i)point);
-            text->text.setPosition(point);
-        }
-
         if (text->isVisible) {
             window.draw(text->text);
         }
@@ -155,57 +136,89 @@ bool GameManager::checkCollisionSide(const sf::Rect<float> side) {
 }
 
 void GameManager::SaveEditorState(sf::RenderWindow& window) {
-    // Clear saveState
-    for (Entity* e : saveState.Entities) {
-        delete e;
-    }
-    for (TextObj* text : saveState.TextObjects) {
-        delete text;
-    }
-    saveState.Entities.clear();
-    saveState.TextObjects.clear();
-
-    // Copy entities 
+    // Copy GameObjects
     for (Entity* e : GameManager::Entities) {
         Entity* copy = new Entity(*e);
         saveState.Entities.push_back(copy);
+        GameManager::Entities.pop_back();
+        GameManager::GameObjects.pop_back();
     }
     for (TextObj* text : GameManager::TextObjects) {
         TextObj* copy = new TextObj(*text);
         saveState.TextObjects.push_back(copy);
+        GameManager::TextObjects.pop_back();
+        GameManager::GameObjects.pop_back();
     }
+
+    // Copy Camera Properties
     saveState.CameraPos = window.getView().getCenter();
     saveState.CameraSize = window.getView().getSize();
 }
 
 void GameManager::RestoreEditorState(sf::RenderWindow& window) {
+    // Delete Editor stuff
     for (Entity* e : GameManager::Entities) {
-        delete e;
+        free(e);
     }
     for (TextObj* text : GameManager::TextObjects) {
-        delete text;
-    } 
+        free(text);
+    }
+    GameManager::GameObjects.clear();
     GameManager::Entities.clear();
     GameManager::TextObjects.clear();
 
+    // Copy Objects back from  SaveState
     for (Entity* e : saveState.Entities) {
         Entity* copy = new Entity(*e);
         if (copy->isPlayer) {
             GameManager::player = copy;
         }
-        GameManager::Entities.push_back(copy);
     }
     for (TextObj* text : saveState.TextObjects) {
         TextObj* copy = new TextObj(*text);
-        GameManager::TextObjects.push_back(copy);
     }
-    sf::View camera(saveState.CameraPos, saveState.CameraSize);
+
+    // Restore camera 
+    sf::View camera = sf::View(saveState.CameraPos, saveState.CameraSize);
     window.setView(camera);
+
+    // Clear SaveState
+    // We call free here instead of delete to avoid removing
+    // each "real" entity from the GameManager vectors
+    for (Entity* e : saveState.Entities) {
+        free(e);
+    }
+    for (TextObj* text : saveState.TextObjects) {
+        free(text);
+    }
+    saveState.Entities.clear();
+    saveState.TextObjects.clear();
 }
 
 void GameManager::ConsoleWrite(std::string text) {
     std::string newText = text + "\n";
     GameManager::ConsoleLog.append(newText.c_str());
+}
+
+GameObject* GameManager::FindObjectByID(int id) {
+    int low = 0;
+    int high = GameManager::GameObjects.size();
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+
+        if (GameManager::GameObjects[mid]->ID == id) {
+            return GameManager::GameObjects[mid];
+        }
+
+        if (GameManager::GameObjects[mid]->ID < id) {
+            low = mid + 1;
+        }
+        else {
+            high = mid - 1;
+        }
+    }
+
+    return nullptr;
 }
 
 Entity* GameManager::FindEntityByID(int id) {

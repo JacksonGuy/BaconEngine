@@ -4,29 +4,17 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
-#include "Entity.hpp"
+#include "GameObject.hpp"
 
-enum TextRenderMode {
-    Absolute,
-    Relative,
-    Screen
-};
-
-class TextObj {
+class TextObj : public GameObject {
     public:
-        static unsigned int IDNum;
-        unsigned int ID;
-        std::string name;
         sf::Text text;
-        sf::Vector2f position;
-        Entity* target;
-        int target_id;
-        TextRenderMode mode;
-        bool showDetails;
-        bool isVisible;
 
         TextObj();
         TextObj(TextObj& obj);
+        ~TextObj();
+
+        void SetPosition(sf::Vector2f position) override;
 };
 
 #endif

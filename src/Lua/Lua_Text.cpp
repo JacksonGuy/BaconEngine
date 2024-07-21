@@ -59,35 +59,6 @@ int get_text_position(lua_State* L) {
     return 0;
 }
 
-// set_text_target(id, entity)
-int set_text_target(lua_State* L) {
-    const int textID = lua_tonumber(L, 1);
-    const int entityID = lua_tonumber(L, 2);
-
-    TextObj* text = GameManager::FindTextByID(textID);
-    Entity* e = GameManager::FindEntityByID(entityID);
-
-    if (text != nullptr && e != nullptr) {
-        text->target = e;
-        text->target_id = entityID; 
-    }
-
-    return 0;
-}
-
-// local entity = get_text_target(id)
-int get_text_target(lua_State* L) {
-    const int id = lua_tonumber(L, 1);
-
-    TextObj* text = GameManager::FindTextByID(id);
-    if (text != nullptr) {
-        lua_pushnumber(L, text->target->ID);
-        return 1;
-    }
-
-    return 0;
-}
-
 // set_text_visible(id, bool)
 int set_text_visible(lua_State* L) {
     const int id = lua_tonumber(L, 1);

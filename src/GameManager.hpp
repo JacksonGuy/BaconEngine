@@ -9,8 +9,8 @@
 #include "imgui.h"
 
 #include "Entity.hpp"
-#include "File.hpp"
 #include "Text.hpp"
+#include "File.hpp"
 
 extern "C" {
     #include <lauxlib.h>
@@ -27,12 +27,13 @@ struct EditorSaveState {
 
 class GameManager {
     public:
-        static ConfigState config;
+        static File::ConfigState config;
         static unsigned int screenWidth;
         static unsigned int screenHeight;
         static unsigned int framerateLimit;
 
         static std::map<std::string, sf::Texture*> Textures;
+        static std::vector<GameObject*> GameObjects;
         static std::vector<Entity*> Entities;
         static std::vector<TextObj*> TextObjects;
         
@@ -68,6 +69,7 @@ class GameManager {
         static void SaveEditorState(sf::RenderWindow& window);
         static void RestoreEditorState(sf::RenderWindow& window);
 
+        static GameObject* FindObjectByID(int id);
         static Entity* FindEntityByID(int id);
         static Entity* FindEntityByName(std::string name);
         static std::vector<Entity*> FindEntitiesByType(std::string type);
