@@ -205,6 +205,9 @@ bool load(std::string filename) {
         text->text.setString(str);
     }
 
+    GameManager::ConsoleWrite("[ENGINE] Sorting GameObjects...");
+    GameManager::SortObjectsByID();
+
     GameManager::ConsoleWrite("[ENGINE] Constructing Entity Tree...");
     for (auto& entity : level_data["Entities"]) {
         unsigned int childID = entity["id"];
@@ -212,8 +215,10 @@ bool load(std::string filename) {
         if (parentID != -1) {
             GameObject* child = GameManager::FindObjectByID(childID);
             GameObject* parent = GameManager::FindObjectByID(parentID);
-            parent->children.push_back(child);
-            child->parent = parent;
+            if (child != nullptr && parent != nullptr) {
+                parent->children.push_back(child);
+                child->parent = parent;
+            }
         }
     }
     for (auto& text : level_data["Text"]) {
@@ -222,13 +227,12 @@ bool load(std::string filename) {
         if (parentID != -1) {
             GameObject* child = GameManager::FindObjectByID(childID);
             GameObject* parent = GameManager::FindObjectByID(parentID);
-            parent->children.push_back(child);
-            child->parent = parent;
+            if (child != nullptr && parent != nullptr) {
+                parent->children.push_back(child);
+                child->parent = parent;
+            }
         }
     }
-
-    GameManager::ConsoleWrite("[ENGINE] Sorting...");
-    GameManager::SortObjectsByID();
 
     GameManager::gravity = level_data["Settings"]["Gravity"];
 

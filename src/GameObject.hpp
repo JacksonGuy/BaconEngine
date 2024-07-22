@@ -26,6 +26,7 @@ class GameObject {
 
         GameObject* parent;
         std::vector<GameObject*> children;
+        std::vector<unsigned int> childrenIDs;
 
         bool showDetails;
 

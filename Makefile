@@ -1,5 +1,7 @@
 CC = g++
-CFLAGS = -O3 -g
+
+#CFLAGS = -O3 -g
+CFLAGS = -g
 CLFAGS += -Iinclude/SFML/include/
 CFLAGS += -Linclude/SFML/lib
 CFLAGS += -DSFML_STATIC

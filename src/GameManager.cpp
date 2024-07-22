@@ -11,7 +11,6 @@ unsigned int GameManager::screenWidth = 1280;
 unsigned int GameManager::screenHeight = 720;
 Entity* GameManager::player = nullptr;
 bool GameManager::isPlayingGame;
-EditorSaveState GameManager::saveState;
 ImGuiTextBuffer GameManager::ConsoleLog;
 unsigned int GameManager::framerateLimit = 500;
 float GameManager::gravity = 0.2f;
@@ -135,27 +134,11 @@ bool GameManager::checkCollisionSide(const sf::Rect<float> side) {
     return false;
 }
 
-void GameManager::SaveEditorState(sf::RenderWindow& window) {
-    // Copy GameObjects
-    for (Entity* e : GameManager::Entities) {
-        Entity* copy = new Entity(*e);
-        saveState.Entities.push_back(copy);
-        GameManager::Entities.pop_back();
-        GameManager::GameObjects.pop_back();
-    }
-    for (TextObj* text : GameManager::TextObjects) {
-        TextObj* copy = new TextObj(*text);
-        saveState.TextObjects.push_back(copy);
-        GameManager::TextObjects.pop_back();
-        GameManager::GameObjects.pop_back();
-    }
-
-    // Copy Camera Properties
-    saveState.CameraPos = window.getView().getCenter();
-    saveState.CameraSize = window.getView().getSize();
+void GameManager::SaveEditorState(sf::RenderWindow& window, std::string filename) {
+    File::save(filename);
 }
 
-void GameManager::RestoreEditorState(sf::RenderWindow& window) {
+void GameManager::RestoreEditorState(sf::RenderWindow& window, std::string filename) {
     // Delete Editor stuff
     for (Entity* e : GameManager::Entities) {
         free(e);
@@ -167,35 +150,8 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window) {
     GameManager::Entities.clear();
     GameManager::TextObjects.clear();
 
-    // Copy Objects back from  SaveState
-    for (Entity* e : saveState.Entities) {
-        Entity* copy = new Entity(*e);
-        if (copy->isPlayer) {
-            GameManager::player = copy;
-        }
-    }
-    for (TextObj* text : saveState.TextObjects) {
-        TextObj* copy = new TextObj(*text);
-    }
-
-    // Sort
-    GameManager::SortObjectsByID();
-
-    // Restore camera 
-    sf::View camera = sf::View(saveState.CameraPos, saveState.CameraSize);
-    window.setView(camera);
-
-    // Clear SaveState
-    // We call free here instead of delete to avoid removing
-    // each "real" entity from the GameManager vectors
-    for (Entity* e : saveState.Entities) {
-        free(e);
-    }
-    for (TextObj* text : saveState.TextObjects) {
-        free(text);
-    }
-    saveState.Entities.clear();
-    saveState.TextObjects.clear();
+    // Load Back data
+    File::load(filename);
 }
 
 void GameManager::ConsoleWrite(std::string text) {
@@ -204,23 +160,31 @@ void GameManager::ConsoleWrite(std::string text) {
 }
 
 GameObject* GameManager::FindObjectByID(int id) {
-    int low = 0;
-    int high = GameManager::GameObjects.size();
-    while (low <= high) {
-        int mid = low + (high - low) / 2;
+    // int low = 0;
+    // int high = GameManager::GameObjects.size();
+    // while (low <= high) {
+    //     int mid = low + (high - low) / 2;
 
-        if (GameManager::GameObjects[mid]->ID == id) {
-            return GameManager::GameObjects[mid];
-        }
+    //     if (GameManager::GameObjects[mid]->ID == id) {
+    //         return GameManager::GameObjects[mid];
+    //     }
 
-        if (GameManager::GameObjects[mid]->ID < id) {
-            low = mid + 1;
-        }
-        else {
-            high = mid - 1;
+    //     if (GameManager::GameObjects[mid]->ID < id) {
+    //         low = mid + 1;
+    //     }
+    //     else {
+    //         high = mid - 1;
+    //     }
+    // }
+
+    // return nullptr;
+
+    for (GameObject* obj : GameManager::GameObjects) {
+        if (obj->ID == id) {
+            return obj;
         }
     }
-
+    std::cout << "[ERROR] Could not find object!!!!!!\n";
     return nullptr;
 }
 

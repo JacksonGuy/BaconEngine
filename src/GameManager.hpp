@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 
@@ -18,13 +19,6 @@ extern "C" {
     #include <lua.h>
     #include <lualib.h>
 }
-
-struct EditorSaveState {
-    std::vector<Entity*> Entities;
-    std::vector<TextObj*> TextObjects;
-    sf::Vector2f CameraPos;
-    sf::Vector2f CameraSize;
-};
 
 class GameManager {
     public:
@@ -67,8 +61,8 @@ class GameManager {
         static std::vector<Entity*> getCollidingWith(const Entity& e1);
         static bool checkCollisionSide(const sf::Rect<float> rect);
 
-        static void SaveEditorState(sf::RenderWindow& window);
-        static void RestoreEditorState(sf::RenderWindow& window);
+        static void SaveEditorState(sf::RenderWindow& window, std::string filename);
+        static void RestoreEditorState(sf::RenderWindow& window, std::string filename);
 
         static GameObject* FindObjectByID(int id);
         static Entity* FindEntityByID(int id);
@@ -81,9 +75,6 @@ class GameManager {
         static void ConsoleWrite(std::string text);
 
         static void RunLuaUpdates();
-
-    private:
-        static EditorSaveState saveState;
 };
 
 #endif

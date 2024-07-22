@@ -35,6 +35,14 @@ void TextObj::SetPosition(sf::Vector2f position) {
 
     for (GameObject* child : this->children) {
         sf::Vector2f newPos = child->position + delta;
-        child->SetPosition(newPos);
+        
+        if (child->type == ENTITY) {
+            Entity* e = (Entity*)child;
+            e->SetPosition(newPos);
+        }
+        else if (child->type == TEXT) {
+            TextObj* text = (TextObj*)child;
+            text->SetPosition(newPos);
+        }
     }
 }

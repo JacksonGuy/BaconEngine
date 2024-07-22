@@ -16,57 +16,56 @@ namespace Settings {};
 
 class EditorInstance {
     public:
-        std::string projectTitle;
-        bool loadedProject = false;
+        std::string m_projectTitle;
+        bool m_loadedProject = false;
 
-        sf::RenderWindow* window;
-        sf::View* camera;
-        float cameraZoom;
+        sf::RenderWindow* m_window;
+        sf::View* m_camera;
+        sf::Vector2f m_cameraPos;
+        sf::Vector2f m_cameraSize;
+        float m_cameraZoom;
 
         // Engine Variables
-        sf::Clock clock;
-        sf::Vector2f mousePos;
-        sf::Time lastFixedUpdate;
-        unsigned int frameLimit;
-        sf::Time TimePerFrame;
+        sf::Clock m_clock;
+        sf::Vector2f m_mousePos;
+        sf::Time m_lastFixedUpdate;
+        unsigned int m_frameLimit;
+        sf::Time m_TimePerFrame;
 
         // UI Variables
-        bool showDockSpace;
-        bool cameraMove;
-        bool showEntityCreate;
-        bool showMainMenu;
-        bool showEntityList;
-        bool showConsole;
-        bool showSettingsMenu;
-        bool showTextCreate;
-        std::string failedMessage;
-        int DebugIntInput = 0;
+        bool m_showDockSpace;
+        bool m_cameraMove;
+        bool m_showEntityCreate;
+        bool m_showMainMenu;
+        bool m_showEntityList;
+        bool m_showConsole;
+        bool m_showSettingsMenu;
+        bool m_showTextCreate;
+        std::string m_failedMessage;
+        GameObject* m_currentSelectedObject;
+        int m_DebugIntInput = 0;
 
-        Entity* AddAttributeEntity;
-        char AddScriptName[256];
-        char AddVariableName[256];
-        int AddVariableType;
-        double AddVariableNumber;
-        char AddVariableString[256];
+        Entity* m_AddAttributeEntity;
+        char m_AddScriptName[256];
+        char m_AddVariableName[256];
+        int m_AddVariableType;
+        double m_AddVariableNumber;
+        char m_AddVariableString[256];
 
-        char PrefabPath[256];
-
-        // Save and Load project variables
-        char loadProjectName[256];
-        char saveAsProjectName[256];
+        char m_PrefabPath[256];
 
         // Create Entity Variables
-        char createNameBuffer[256];
-        float createPosition[2];
-        char createImagePath[256];
-        int createDimension[2];
+        char m_createNameBuffer[256];
+        float m_createPosition[2];
+        char m_createImagePath[256];
+        int m_createDimension[2];
 
         // Create Text Variables
-        char createTextName[256];
-        char createTextDetails[1024 * 16];
-        float createTextPosition[2];
-        int createTextMode;
-        int createTextEntityId;
+        char m_createTextName[256];
+        char m_createTextDetails[1024 * 16];
+        float m_createTextPosition[2];
+        int m_createTextMode;
+        int m_createTextEntityId;
 
         // Engine Functions
         EditorInstance();
