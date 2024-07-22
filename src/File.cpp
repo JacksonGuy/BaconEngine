@@ -183,8 +183,6 @@ bool load(std::string filename) {
         }
     }
 
-    GameObject::IDCount++; // For the next Entity we create 
-
     GameManager::ConsoleWrite("[ENGINE] Creating Text...");
     for (auto& obj : level_data["Text"]) {
         TextObj* text = new TextObj();
@@ -228,6 +226,9 @@ bool load(std::string filename) {
             child->parent = parent;
         }
     }
+
+    GameManager::ConsoleWrite("[ENGINE] Sorting...");
+    GameManager::SortObjectsByID();
 
     GameManager::gravity = level_data["Settings"]["Gravity"];
 

@@ -178,6 +178,9 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window) {
         TextObj* copy = new TextObj(*text);
     }
 
+    // Sort
+    GameManager::SortObjectsByID();
+
     // Restore camera 
     sf::View camera = sf::View(saveState.CameraPos, saveState.CameraSize);
     window.setView(camera);
@@ -293,4 +296,20 @@ TextObj* GameManager::FindTextByID(int id) {
     }
 
     return nullptr;
+}
+
+// Insertion Sort
+void GameManager::SortObjectsByID() {
+    GameObject* key;
+    size_t j;
+    for (size_t i = 1; i < GameManager::GameObjects.size(); i++) {
+        key = GameManager::GameObjects[i];
+        j = i - 1;
+
+        while (j >= 0 && GameManager::GameObjects[j]->ID > key->ID) {
+            GameManager::GameObjects[j+1] = GameManager::GameObjects[j];
+            j--; 
+        }
+        GameManager::GameObjects[j+1] = key;
+    }
 }

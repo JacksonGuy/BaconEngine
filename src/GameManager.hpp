@@ -1,6 +1,7 @@
 #ifndef GAMEMANAGER_H
 #define GAMEMANAGER_H
 
+#include <iostream>
 #include <map>
 #include <vector>
 #include <string>
@@ -74,6 +75,8 @@ class GameManager {
         static Entity* FindEntityByName(std::string name);
         static std::vector<Entity*> FindEntitiesByType(std::string type);
         static TextObj* FindTextByID(int id);
+
+        static void SortObjectsByID();
 
         static void ConsoleWrite(std::string text);
 

@@ -418,21 +418,22 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 if (ImGui::BeginTabItem("Testing")) {
                     ImGui::InputInt("Test ID", &DebugIntInput);
 
-                    if (ImGui::Button("This is a button")) {
+                    if (ImGui::Button("Add Entity")) {
                         Entity* parent = GameManager::FindEntityByID(DebugIntInput);
                         Entity* newChild = new Entity();
                         newChild->parent = parent;
                         parent->children.push_back(newChild);
                     }
 
-                    if (ImGui::Button("Test Vectors")) {
-                        std::cout << "GameObjects: " << GameManager::GameObjects.size() << std::endl;
-                        std::cout << "Entities: " << GameManager::Entities.size() << std::endl;
-                        std::cout << "TextObjects: " << GameManager::TextObjects.size() << std::endl;
-                        // for (GameObject* obj : GameManager::GameObjects) {
-                        //     std::cout << obj->ID << ": " << obj->name << std::endl;
-                        // }
-                        // std::cout << "---\n";
+                    if (ImGui::Button("Testing")) {
+                        std::cout << "IDCount: " << GameObject::IDCount << std::endl;
+                        for (size_t i = 0; i < GameManager::GameObjects.size(); i++) {
+                            std::cout << GameManager::GameObjects[i]->ID << std::endl;
+                        }
+                    }
+
+                    if (ImGui::Button("Sort")) {
+                        GameManager::SortObjectsByID();
                     }
                     ImGui::EndTabItem();
                 }
