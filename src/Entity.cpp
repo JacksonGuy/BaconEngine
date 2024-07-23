@@ -149,7 +149,12 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
 }
 
 void Entity::UpdateRect() {
-    this->rect = this->sprite.getGlobalBounds();
+    sf::Rect spriteRect = this->sprite.getGlobalBounds();
+    sf::Vector2f pos = spriteRect.getPosition();
+    sf::Vector2f size = spriteRect.getSize();
+    sf::Rect newRect = sf::Rect(pos.x - this->hitboxSize, pos.y - this->hitboxSize, 
+        size.x + (this->hitboxSize * 2), size.y + (this->hitboxSize * 2));
+    this->rect = newRect;
     this->UpdateCollisionRects();
 }
 

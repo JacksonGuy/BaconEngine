@@ -956,10 +956,11 @@ void EditorInstance::Update(sf::Time deltaTime) {
         if (event.type == sf::Event::MouseButtonPressed) {
             // If left mouse buttton is pressed, and we aren't clicking on an ImGui window
             if (event.mouseButton.button == 0 && !io.WantCaptureMouse) {
+                // Editing Game
                 if (!GameManager::isPlayingGame) {
                     sf::Vector2f converted = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
 
-                    // Check if we clicked on Gameobjects
+                    // Check if we clicked on a Gameobject
                     // If so, set as selected
                     bool selectedSomething = false;
                     for (Entity* e : GameManager::Entities) {
@@ -1011,6 +1012,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
         if (event.type == sf::Event::MouseButtonReleased) {
             // Turn off camera move 
             m_cameraMove = false;
+            m_currentSelectedObject = nullptr;
         }
 
         if (event.type == sf::Event::MouseMoved) {
