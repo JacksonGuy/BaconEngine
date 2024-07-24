@@ -554,12 +554,16 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     if (result == NFD_OKAY) {
                         // This process is pretty slow and dumb but hey it works
                         Entity* prefabEntity = File::loadPrefab(loadpath);
-                        e->Override(*prefabEntity);
+                        e->Overwrite(*prefabEntity);
                         delete(prefabEntity);
                         GameObject::IDCount--;
                     }
 
                     free(loadpath);
+                }
+
+                if (ImGui::Button("Copy")) {
+                    m_copyObject = e;
                 }
 
                 if (ImGui::Button("Delete")) {
@@ -775,6 +779,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 text->text.setString(text_buffer);
             }
 
+            if (ImGui::Button("Copy")) {
+                m_copyObject = text;
+            }
+
             if (ImGui::Button("Delete")) {
                 free(GameManager::TextObjects[i]);
                 GameManager::TextObjects.erase(GameManager::TextObjects.begin() + i);
@@ -944,7 +952,24 @@ void EditorInstance::Update(sf::Time deltaTime) {
         // Keyboard and Mouse input
         if (event.type == sf::Event::KeyPressed) {
             GameManager::lastKeyboardInput = event.key.code;
+            m_keypresses[event.key.code] = true;
         }
+        if (event.type == sf::Event::KeyReleased) {
+            m_keypresses[event.key.code] = false;
+        }
+
+
+        // Paste GameObject
+        if (m_keypresses[sf::Keyboard::LControl] && m_keypresses[sf::Keyboard::V]) {
+            if (m_copyObject != nullptr) {
+                GameObject* copy = (GameObject*)CopyTree(m_copyObject);
+                sf::Vector2f converted = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
+                copy->SetPosition(converted);
+
+                m_keypresses[sf::Keyboard::V] = false;
+            }
+        }
+
         // Yes I know this is a duplicate
         // Better organization or something something
         if (event.type == sf::Event::MouseButtonPressed) {
@@ -1254,4 +1279,44 @@ void EditorInstance::DisplayEntityTree(GameObject* obj) {
             ImGui::Unindent(4);
         }
     }
+}
+
+void* EditorInstance::CopyTree(GameObject* obj) {
+    if (obj->type == ENTITY) {
+        Entity* copy = new Entity();
+        Entity* e = (Entity*)obj;
+        copy->Overwrite(*e);
+        copy->name = e->name;
+
+        for (GameObject* child : obj->children) {
+            GameObject* childCopy = (GameObject*)CopyTree(child);
+            
+            sf::Vector2f delta = child->position - obj->position;
+            childCopy->position = copy->position + delta;
+            
+            copy->children.push_back(childCopy);
+            childCopy->parent = copy;
+        }
+
+        return copy;
+    }
+    else if (obj->type == TEXT) {
+        TextObj* copy = new TextObj();
+        copy->Overwrite(*(TextObj*)obj);
+        copy->name = obj->name;
+
+        for (GameObject* child : obj->children) {
+            GameObject* childCopy = (GameObject*)CopyTree(child);
+            
+            sf::Vector2f delta = child->position - obj->position;
+            childCopy->position = copy->position + delta;
+            
+            copy->children.push_back(childCopy);
+            childCopy->parent = copy;
+        }
+
+        return copy;
+    }
+
+    return nullptr;
 }

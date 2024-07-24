@@ -40,9 +40,7 @@ class Entity : public GameObject {
         Entity(Entity& e);  // For creating objects
         ~Entity();
 
-        // For overriding current object data
-        // Yes this does something different than our copy constructor
-        void Override(Entity& e);
+        void Overwrite(Entity& e);
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position) override;
         void SetSpriteScale(sf::Vector2f scale);

@@ -14,6 +14,7 @@ class TextObj : public GameObject {
         TextObj(TextObj& obj);
         ~TextObj();
 
+        void Overwrite(TextObj& text);
         void SetPosition(sf::Vector2f position) override;
 };
 

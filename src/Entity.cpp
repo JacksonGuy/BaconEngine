@@ -73,17 +73,11 @@ Entity::~Entity() {
     }
 }
 
-void Entity::Override(Entity& e) {
+void Entity::Overwrite(Entity& e) {
+    GameObject::Overwrite(e);
     this->name = e.name;
     this->entity_type = e.entity_type;
-    
-    this->scale = e.scale;
-    this->width = e.width;
-    this->height = e.height;
-    this->rotation = e.rotation;
-    this->isVisible = e.isVisible;
 
-    this->showDetails = true;
     this->isSolid = e.isSolid;
     this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
@@ -94,9 +88,6 @@ void Entity::Override(Entity& e) {
     this->grounded = false;
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
-
-    this->parent = e.parent;
-    this->children = e.children;
 
     this->lua_scripts = e.lua_scripts;
     this->entity_variables = e.entity_variables;

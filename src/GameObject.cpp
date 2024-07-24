@@ -68,6 +68,17 @@ GameObject::~GameObject() {
     }
 }
 
+void GameObject::Overwrite(GameObject& obj) {
+    this->name = obj.name;
+    this->type = obj.type;
+    
+    this->scale = obj.scale;
+    this->width = obj.width;
+    this->height = obj.height;
+    this->rotation = obj.rotation;
+    this->isVisible = obj.isVisible; 
+} 
+
 void GameObject::SetPosition(sf::Vector2f position) {
     sf::Vector2f delta = position - this->position;
     

@@ -53,10 +53,6 @@ void GameManager::DrawEntities(sf::RenderWindow& window) {
         if (e->showHitbox) {
             sf::Vector2f pos = e->rect.getPosition();
             sf::Vector2f size = e->rect.getSize();
-            //float x = pos.x - e->hitboxSize;
-            //float y = pos.y - e->hitboxSize;
-            //float width = size.x + (e->hitboxSize * 2);
-            //float height = size.y + (e->hitboxSize * 2);
 
             sf::Vertex lines[] = {
                 sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Red),

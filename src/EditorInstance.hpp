@@ -31,6 +31,7 @@ class EditorInstance {
         sf::Time m_lastFixedUpdate;
         unsigned int m_frameLimit;
         sf::Time m_TimePerFrame;
+        std::unordered_map<sf::Keyboard::Key, bool> m_keypresses;
 
         // UI Variables
         bool m_showDockSpace;
@@ -43,6 +44,7 @@ class EditorInstance {
         bool m_showTextCreate;
         std::string m_failedMessage;
         GameObject* m_currentSelectedObject;
+        GameObject* m_copyObject;
         int m_DebugIntInput = 0;
 
         Entity* m_AddAttributeEntity;
@@ -76,6 +78,7 @@ class EditorInstance {
 
         // UI Functions
         void DisplayEntityTree(GameObject* e);
+        void* CopyTree(GameObject* obj);
 };
 
 #endif

@@ -27,6 +27,13 @@ TextObj::TextObj(TextObj& obj) : GameObject(obj) {
 
 TextObj::~TextObj() {}
 
+void TextObj::Overwrite(TextObj& text) {
+    GameObject::Overwrite(text);
+    
+    this->name = text.name;
+    this->text = text.text;
+}
+
 void TextObj::SetPosition(sf::Vector2f position) { 
     sf::Vector2f delta = position - this->position;
     

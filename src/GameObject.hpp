@@ -34,6 +34,7 @@ class GameObject {
         GameObject(GameObject& obj);
         ~GameObject();
 
+        void Overwrite(GameObject& obj);
         virtual void SetPosition(sf::Vector2f position);
 };
 
