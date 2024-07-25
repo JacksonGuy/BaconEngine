@@ -30,6 +30,7 @@ sf::Texture* GameManager::LoadTexture(std::string path) {
         sf::Texture* texture = new sf::Texture();
         if (!texture->loadFromFile(path)) {
             GameManager::ConsoleWrite("[ERROR] Couldn't load texture:" + path);
+            return nullptr;
         }
         Textures[path] = texture;
     } 

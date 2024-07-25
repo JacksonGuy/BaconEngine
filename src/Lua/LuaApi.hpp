@@ -86,4 +86,10 @@ int check_collision_side(lua_State* L);
 int delete_entity(lua_State* L);
 int delete_entity_id(lua_State* L);
 
+// Sound
+int play_sound(lua_State* L);
+int play_music(lua_State* L);
+int pause_music(lua_State* L);
+int stop_music(lua_State* L);
+
 #endif

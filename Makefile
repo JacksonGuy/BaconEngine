@@ -21,14 +21,12 @@ else
 endif
 
 SOURCES += $(wildcard src/*.cpp src/**/*.cpp)
-#SOURCES += $(wildcard src/Lua/*.cpp)
 SOURCES += include/imgui/imgui.cpp 
 SOURCES += include/imgui/imgui_draw.cpp
 SOURCES += include/imgui/imgui_tables.cpp 
 SOURCES += include/imgui/imgui_widgets.cpp
 SOURCES += include/imgui/imgui-SFML.cpp
 SOURCES += include/imgui/imgui_demo.cpp
-# OBJS = $(addsuffix .o, $(basename $(SOURCES)))
 OBJS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 
 UNAME = $(shell uname -s)
@@ -36,7 +34,7 @@ LIBS =
 EXE = 
 
 ifeq ($(UNAME), Linux)
-	LIBS += -lGL -lglfw -lsfml-graphics -lsfml-window -lsfml-system
+	LIBS += -lGL -lglfw -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 	ifeq ($(target), editor)
 		EXE = editor
 	else ifeq ($(target), test)
@@ -47,7 +45,9 @@ ifeq ($(UNAME), Linux)
 endif
 
 ifeq ($(OS), Windows_NT)
-	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua -lnfd -lcomctl32 -lole32 -luuid
+	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s
+	LIBS += -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua -lnfd -lcomctl32 -lole32 -luuid
+	LIBS += -lopenal32 -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
 	ifeq ($(target), editor)
 		EXE = editor.exe
 	else ifeq ($(target), test)

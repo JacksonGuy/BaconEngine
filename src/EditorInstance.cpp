@@ -5,6 +5,8 @@
 #include "Lua/LuaApi.hpp"
 #include <nfd.h>
 
+#include "Sound.hpp"
+
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution
     const int resolutionsCount = 6;     // Size of resolutions array below
@@ -175,6 +177,11 @@ EditorInstance::EditorInstance() {
     lua_register(GameManager::LuaState, "set_entity_name", set_entity_name);
 
     lua_register(GameManager::LuaState, "create_entity", create_entity);
+    
+    lua_register(GameManager::LuaState, "play_sound", play_sound);
+    lua_register(GameManager::LuaState, "play_music", play_music);
+    lua_register(GameManager::LuaState, "pause_music", pause_music);
+    lua_register(GameManager::LuaState, "stop_music", stop_music);
 
     // Other
     this->m_lastFixedUpdate = sf::Time::Zero;
@@ -389,6 +396,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     m_camera->setCenter(m_cameraPos);
                     m_camera->setSize(m_cameraSize);
                     m_window->setView(*m_camera);
+                    Sound::stop_sounds();
                     GameManager::ConsoleWrite("[PLAYER] Game Ended. Editor data restored.");
                     GameManager::isPlayingGame = false;
                 }
@@ -1078,6 +1086,10 @@ void EditorInstance::Update(sf::Time deltaTime) {
             }
         }
     }
+
+    // Manage Sounds
+    Sound::clean_sounds();
+    Sound::clean_music();
 }
 
 // Physics and Lua scripting
