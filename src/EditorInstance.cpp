@@ -919,7 +919,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     if (m_showSettingsMenu) {
         ImGui::Begin("Settings", &m_showSettingsMenu);
             ImGui::BeginTabBar("SettingsMenus", ImGuiTabBarFlags_None);
-                ImGui::BeginTabItem("Display");
+                if (ImGui::BeginTabItem("Display")) {
                     ImGui::Text("Resolution");
                     const char* previewValue = Settings::resolutions[Settings::selectedResolution];
                     if (ImGui::BeginCombo("##", previewValue)) {
@@ -936,7 +936,22 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         }
                         ImGui::EndCombo();
                     }
-                ImGui::EndTabItem();
+                    ImGui::EndTabItem();
+                }
+
+                if (ImGui::BeginTabItem("Sound")) {
+                    ImGui::Text("Volume");
+                    if (ImGui::SliderFloat("Master", &Sound::masterVolume, 0.f, 100.f)) {
+                        Sound::setMasterVolume(Sound::masterVolume);
+                    }
+                    if (ImGui::SliderFloat("Effects", &Sound::effectsVolume, 0.f, 100.f)) {
+                        Sound::setEffectsVolume(Sound::effectsVolume);
+                    }
+                    if (ImGui::SliderFloat("Music", &Sound::musicVolume, 0.f, 100.f)) {
+                        Sound::setMusicVolume(Sound::musicVolume);
+                    }
+                    ImGui::EndTabItem();
+                }
             ImGui::EndTabBar();
         ImGui::End();
     }

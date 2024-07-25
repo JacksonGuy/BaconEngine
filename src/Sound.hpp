@@ -16,6 +16,10 @@ namespace Sound {
     extern std::unordered_map<std::string, sf::Music*> musicPlayers;
     extern std::vector<SoundObject> soundPlayers;
 
+    extern float masterVolume;
+    extern float effectsVolume;
+    extern float musicVolume;
+
     sf::SoundBuffer* load_sound(std::string file);
     void play_sound(std::string file);
     void clean_sounds();
@@ -24,6 +28,9 @@ namespace Sound {
     void clean_music();
 
     void stop_sounds();
+    void setMasterVolume(float volume);
+    void setEffectsVolume(float volume);
+    void setMusicVolume(float volume);
 }
 
 #endif
