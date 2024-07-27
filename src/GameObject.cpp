@@ -69,6 +69,11 @@ GameObject::~GameObject() {
     }
 }
 
+/**
+ * @brief Copies the variables of another GameObject
+ * 
+ * @param obj The GameObject to copy from
+ */
 void GameObject::Overwrite(GameObject& obj) {
     this->name = obj.name;
     this->type = obj.type;
@@ -80,6 +85,11 @@ void GameObject::Overwrite(GameObject& obj) {
     this->isVisible = obj.isVisible; 
 } 
 
+/**
+ * @brief Sets the position of the GameObject and its children
+ * 
+ * @param position the new position
+ */
 void GameObject::SetPosition(sf::Vector2f position) {
     sf::Vector2f delta = position - this->position;
     

@@ -4,6 +4,9 @@ namespace Input {
     std::unordered_map<std::string, sf::Keyboard::Key> key_map;
     std::unordered_map<std::string, sf::Mouse::Button> mouse_map;
 
+    /**
+     * @brief Creates a map of strings to SFML inputs
+     */
     void InitInputMaps() {
         for (int i = 0; i < 26; i++) {
             // I'm sorry Dennis Ritchie...

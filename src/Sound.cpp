@@ -13,6 +13,12 @@ float masterVolume = 100.f;
 float effectsVolume = 100.f;
 float musicVolume = 100.f;
 
+/**
+ * @brief Loads a new sound effect
+ * 
+ * @param file the path to the sound file
+ * @return sf::SoundBuffer* raw sound buffer
+ */
 sf::SoundBuffer* load_sound(std::string file) {
     // Search for sound buffer first
     if (Sound::soundBuffers.find(file) == Sound::soundBuffers.end()) {
@@ -28,6 +34,11 @@ sf::SoundBuffer* load_sound(std::string file) {
     return Sound::soundBuffers[file];
 }
 
+/**
+ * @brief Play a sound file 
+ * 
+ * @param file the path to the sound file
+ */
 void play_sound(std::string file) {
     sf::SoundBuffer* sound = Sound::load_sound(file);
     if (sound != nullptr) {
@@ -45,6 +56,9 @@ void play_sound(std::string file) {
     }
 }
 
+/**
+ * @brief Deletes SFML Sound objects that aren't playing
+ */
 void clean_sounds() {
     // WARNING: Cursed Lambda function
     // Avoid eye contact!!
@@ -60,6 +74,12 @@ void clean_sounds() {
     ), Sound::soundPlayers.end());
 }
 
+/**
+ * @brief Loads a new music file
+ * 
+ * @param file the path to the music file
+ * @return sf::Music* SFML music object
+ */
 sf::Music* load_music(std::string file) {
     // Search for music player
     if (Sound::musicPlayers.find(file) == Sound::musicPlayers.end()) {
@@ -75,6 +95,9 @@ sf::Music* load_music(std::string file) {
     return Sound::musicPlayers[file];
 }
 
+/**
+ * @brief Deletes unused SFML music objects
+ */
 void clean_music() {
     for (auto it = Sound::musicPlayers.begin(); it != Sound::musicPlayers.end(); it++) {
         if (it->second->getStatus() == sf::Music::Stopped) {
@@ -84,6 +107,9 @@ void clean_music() {
     }
 }
 
+/**
+ * @brief Stops all playing sounds and deletes them
+ */
 void stop_sounds() {
     // Stop Sounds
     for (SoundObject sound : Sound::soundPlayers) {
@@ -100,6 +126,11 @@ void stop_sounds() {
     clean_music();
 }
 
+/**
+ * @brief Set the Master Volume
+ * 
+ * @param volume volume ranging from 0-100 
+ */
 void setMasterVolume(float volume) {
     masterVolume = volume;
     if (masterVolume > 100.f) masterVolume = 100.f;
@@ -112,6 +143,11 @@ void setMasterVolume(float volume) {
     setMusicVolume(musicVolume);
 }
 
+/**
+ * @brief Set the volume of effects
+ * 
+ * @param volume volume ranging from 0-100
+ */
 void setEffectsVolume(float volume) {
     effectsVolume = volume;
     if (effectsVolume > 100.f) effectsVolume = 100.f;
@@ -125,6 +161,11 @@ void setEffectsVolume(float volume) {
     }
 }
 
+/**
+ * @brief Set the volume of music
+ * 
+ * @param volume volume ranging from 0-100
+ */
 void setMusicVolume(float volume) {
     musicVolume = volume;
     if (musicVolume > 100.f) musicVolume = 100.f;

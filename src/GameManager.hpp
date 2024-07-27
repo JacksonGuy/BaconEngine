@@ -44,7 +44,6 @@ class GameManager {
         static float gravity;
         static sf::Clock clock;
 
-        static bool MouseOnEntity(sf::Vector2f mousePos);
         static bool checkCollision(const Entity& e1, const Entity& e2);
         static bool checkCollision(const Entity& e1);
         static std::vector<Entity*> getCollidingWith(const Entity& e1);

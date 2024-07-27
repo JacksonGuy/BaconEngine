@@ -27,6 +27,11 @@ TextObj::TextObj(TextObj& obj) : GameObject(obj) {
 
 TextObj::~TextObj() {}
 
+/**
+ * @brief Copies the variables of the given TextObj
+ * 
+ * @param text the TextObj to copy
+ */
 void TextObj::Overwrite(TextObj& text) {
     GameObject::Overwrite(text);
     
@@ -34,6 +39,11 @@ void TextObj::Overwrite(TextObj& text) {
     this->text = text.text;
 }
 
+/**
+ * @brief Sets the position of the TextObj and children objects
+ * 
+ * @param position the new position
+ */
 void TextObj::SetPosition(sf::Vector2f position) { 
     sf::Vector2f delta = position - this->position;
     

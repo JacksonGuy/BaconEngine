@@ -10,6 +10,12 @@
 using json = nlohmann::json;
 
 namespace File {
+
+/**
+ * @brief Saves the game project
+ * 
+ * @param filename File to save to
+ */
 void save(std::string filename) {
     namespace fs = std::filesystem;
     
@@ -120,6 +126,12 @@ void save(std::string filename) {
     GameManager::ConsoleWrite("[ENGINE] Successfully saved project.");
 }
 
+/**
+ * @brief Loads game project from a file
+ * 
+ * @param filename Name of the file
+ * @return boolean: if loading the project failed
+ */
 bool load(std::string filename) {
     namespace fs = std::filesystem;
 
@@ -249,12 +261,23 @@ bool load(std::string filename) {
     return true;
 }
 
+/**
+ * @brief Converts a relative path to an absolute system path
+ * 
+ * @param path the relative file path
+ * @return std::string absolute system path
+ */
 std::string toAbsolute(std::string path) {
     namespace fs = std::filesystem;
     std::string absPath = GameManager::entryPoint + "/" + path;
     return absPath; 
 }
 
+/**
+ * @brief Save editor settings
+ * 
+ * @param state Editor settings
+ */
 void saveConfig(ConfigState state) {
     std::ofstream outfile("config.json");
     json settings;
@@ -267,6 +290,11 @@ void saveConfig(ConfigState state) {
     GameManager::config = state;
 }
 
+/**
+ * @brief Loads and applies editor settings
+ * 
+ * @return ConfigState the loaded settings
+ */
 ConfigState loadConfig() {
     std::ifstream infile("config.json");
     if (!infile.is_open()) {
@@ -284,6 +312,12 @@ ConfigState loadConfig() {
     return state;
 }
 
+/**
+ * @brief Saves an Entity as a prefab file
+ * 
+ * @param filename The file to save the prefab to
+ * @param e the entity to save
+ */
 void savePrefab(std::string filename, Entity* e) {
     std::ofstream outfile(filename);
     json data;
@@ -329,6 +363,12 @@ void savePrefab(std::string filename, Entity* e) {
     outfile << std::setw(4) << data;
 }
 
+/**
+ * @brief Creates an Entity from a prefab file
+ * 
+ * @param filename the file to read from
+ * @return Entity* the created Entity
+ */
 Entity* loadPrefab(std::string filename) {
     std::ifstream infile(filename);
     if (!infile.is_open()) {

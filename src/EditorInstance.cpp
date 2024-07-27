@@ -1126,6 +1126,11 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     }
 }
 
+/**
+ * @brief Create and ImGui Tree from a GameObject and its children objects
+ * 
+ * @param obj The starting GameObject node
+ */
 void EditorInstance::DisplayEntityTree(GameObject* obj) {
     auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -1240,6 +1245,12 @@ void EditorInstance::DisplayEntityTree(GameObject* obj) {
     }
 }
 
+/**
+ * @brief Copies a GameObject along with its Entity Tree
+ * 
+ * @param obj The GameObject to copy
+ * @return void* The copied object. Cast according to the type of object passed in.
+ */
 void* EditorInstance::CopyTree(GameObject* obj) {
     if (obj->type == ENTITY) {
         Entity* copy = new Entity();

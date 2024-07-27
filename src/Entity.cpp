@@ -74,6 +74,11 @@ Entity::~Entity() {
     }
 }
 
+/**
+ * @brief Copies the variables of another Entity
+ * 
+ * @param e The Entity to copy from
+ */
 void Entity::Overwrite(Entity& e) {
     GameObject::Overwrite(e);
     this->name = e.name;
@@ -99,6 +104,12 @@ void Entity::Overwrite(Entity& e) {
     this->SetPosition(this->position);
 }
 
+/**
+ * @brief Sets the sprite of the Entity
+ * 
+ * @param path path to the image
+ * @param autoScale automatically scale the image to fit the Entity's width and height
+ */
 void Entity::SetSprite(std::string path, bool autoScale) {
     this->texturePath = path;
     sf::Texture* texture = Rendering::LoadTexture(path);
@@ -114,6 +125,11 @@ void Entity::SetSprite(std::string path, bool autoScale) {
     this->UpdateRect();
 }
 
+/**
+ * @brief Sets the position of the Entity and its children
+ * 
+ * @param position the new position
+ */
 void Entity::SetPosition(sf::Vector2f position) {
     sf::Vector2f delta = position - this->position;
 
@@ -135,11 +151,19 @@ void Entity::SetPosition(sf::Vector2f position) {
     }
 }
 
+/**
+ * @brief Scales the Entity sprite
+ * 
+ * @param scale the scale to apply
+ */
 void Entity::SetSpriteScale(sf::Vector2f scale) {
     this->scale = scale;
     this->sprite.setScale(this->scale);
 }
 
+/**
+ * @brief Updates the border rect and side rects
+ */
 void Entity::UpdateRect() {
     sf::Rect spriteRect = this->sprite.getGlobalBounds();
     sf::Vector2f pos = spriteRect.getPosition();
@@ -150,6 +174,9 @@ void Entity::UpdateRect() {
     this->UpdateCollisionRects();
 }
 
+/**
+ * @brief Updates the side rects
+ */
 void Entity::UpdateCollisionRects() {
     sf::Vector2f rectPos = this->rect.getPosition();
     // This fixes some issues we have with physics collisions occurring 
