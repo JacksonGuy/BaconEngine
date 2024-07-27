@@ -14,6 +14,7 @@ GameObject::GameObject() {
     this->height = 0;
     this->rotation = 0.f;
     this->isVisible = true;
+    this->layer = 0;
 
     this->parent = nullptr;
     this->children = std::vector<GameObject*>();

@@ -14,6 +14,11 @@
 
 namespace Settings {};
 
+struct RenderLayer {
+    std::vector<GameObject*> objects;
+    unsigned int layerNum;
+};
+
 class EditorInstance {
     public:
         std::string m_projectTitle;
@@ -71,6 +76,7 @@ class EditorInstance {
 
         // Engine Functions
         EditorInstance();
+        ~EditorInstance();
         void DrawUI(sf::Time deltaTime);              // Draw ImGui Frames
         void Update(sf::Time deltaTime);              // Input
         void FixedUpdate(sf::Time deltaTime);         // Physics

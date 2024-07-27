@@ -1,5 +1,6 @@
 #include "Entity.hpp"
 #include "GameManager.hpp"
+#include "Rendering.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -100,7 +101,7 @@ void Entity::Overwrite(Entity& e) {
 
 void Entity::SetSprite(std::string path, bool autoScale) {
     this->texturePath = path;
-    sf::Texture* texture = GameManager::LoadTexture(path);
+    sf::Texture* texture = Rendering::LoadTexture(path);
     if (autoScale) {
         this->scale.x = ((float)this->width) / texture->getSize().x;
         this->scale.y = ((float)this->height) / texture->getSize().y;

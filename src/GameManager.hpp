@@ -27,7 +27,6 @@ class GameManager {
         static unsigned int screenHeight;
         static unsigned int framerateLimit;
 
-        static std::map<std::string, sf::Texture*> Textures;
         static std::vector<GameObject*> GameObjects;
         static std::vector<Entity*> Entities;
         static std::vector<TextObj*> TextObjects;
@@ -37,8 +36,6 @@ class GameManager {
         static bool isPlayingGame;
         static bool windowHasFocus;
         static std::string entryPoint;
-        static std::map<std::string, sf::Keyboard::Key> key_map;
-        static std::map<std::string, sf::Mouse::Button> mouse_map;
         static sf::Keyboard::Key lastKeyboardInput;
         static sf::Mouse::Button lastMouseInput;
         static sf::Vector2f mousePos;
@@ -46,14 +43,6 @@ class GameManager {
         
         static float gravity;
         static sf::Clock clock;
-
-        static lua_State* LuaState;
-        static Entity* current_lua_object;
-
-        static sf::Texture* LoadTexture(std::string path);
-        static void LoadFont(std::string path);
-        static void DrawEntities(sf::RenderWindow& window);
-        static void DrawText(sf::RenderWindow& window);
 
         static bool MouseOnEntity(sf::Vector2f mousePos);
         static bool checkCollision(const Entity& e1, const Entity& e2);
@@ -73,8 +62,6 @@ class GameManager {
         static void SortObjectsByID();
 
         static void ConsoleWrite(std::string text);
-
-        static void RunLuaUpdates();
 };
 
 #endif

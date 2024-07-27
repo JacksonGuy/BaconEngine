@@ -5,6 +5,7 @@
 #include "File.hpp"
 #include "GameManager.hpp"
 #include "json.hpp"
+#include "Rendering.hpp"
 
 using json = nlohmann::json;
 
@@ -38,7 +39,8 @@ void save(std::string filename) {
             {"physicsObject", e->physicsObject},
             {"hitboxSize", e->hitboxSize},
             {"mass", e->mass},
-            {"isVisible", e->isVisible}
+            {"isVisible", e->isVisible},
+            {"layer", e->layer}
         };
 
         int i = 0;
@@ -94,7 +96,8 @@ void save(std::string filename) {
             {"rotation", obj->text.getRotation()},
             {"color", {color.r, color.g, color.b, color.a}},
             {"text", obj->text.getString()},
-            {"isVisible", obj->isVisible}
+            {"isVisible", obj->isVisible},
+            {"layer", obj->layer}
         };
 
         if (obj->parent == nullptr) {
@@ -158,6 +161,7 @@ bool load(std::string filename) {
         e->hitboxSize = entity["hitboxSize"];
         e->mass = entity["mass"];
         e->isVisible = entity["isVisible"];
+        e->layer = entity["layer"];
 
         for (json::iterator it = entity["scripts"].begin(); it != entity["scripts"].end(); ++it) {
             ScriptItem script;
@@ -201,6 +205,7 @@ bool load(std::string filename) {
             obj["color"][0], obj["color"][1], obj["color"][2], obj["color"][3])
         );
         text->isVisible = obj["isVisible"];
+        text->layer = obj["layer"];
         std::string str = obj["text"];
         text->text.setString(str);
     }
@@ -232,6 +237,11 @@ bool load(std::string filename) {
                 child->parent = parent;
             }
         }
+    }
+
+    GameManager::ConsoleWrite("[ENGINE] Creating layers...");
+    for (GameObject* obj : GameManager::GameObjects) {
+        Rendering::AddToLayer(obj);
     }
 
     GameManager::gravity = level_data["Settings"]["Gravity"];

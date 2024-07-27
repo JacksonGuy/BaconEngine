@@ -23,6 +23,7 @@ class GameObject {
         int width, height;
         float rotation;
         bool isVisible;
+        unsigned int layer;
 
         GameObject* parent;
         std::vector<GameObject*> children;

@@ -1,8 +1,8 @@
 #include "GameManager.hpp"
+#include "Lua/luaApi.hpp"
 #include <iostream>
 
 File::ConfigState GameManager::config;
-std::map<std::string, sf::Texture*> GameManager::Textures;
 std::vector<GameObject*> GameManager::GameObjects;
 std::vector<Entity*> GameManager::Entities;
 std::vector<TextObj*> GameManager::TextObjects;
@@ -14,67 +14,12 @@ bool GameManager::isPlayingGame;
 ImGuiTextBuffer GameManager::ConsoleLog;
 unsigned int GameManager::framerateLimit = 500;
 float GameManager::gravity = 0.2f;
-lua_State* GameManager::LuaState = luaL_newstate();
-Entity* GameManager::current_lua_object = nullptr;
 sf::Keyboard::Key GameManager::lastKeyboardInput;
 sf::Mouse::Button GameManager::lastMouseInput;
-std::map<std::string, sf::Keyboard::Key> GameManager::key_map;
-std::map<std::string, sf::Mouse::Button> GameManager::mouse_map;
 sf::Vector2f GameManager::mousePos = sf::Vector2f(0,0);
 bool GameManager::windowHasFocus = true;
 std::string GameManager::entryPoint = "";
 sf::Clock GameManager::clock;
-
-sf::Texture* GameManager::LoadTexture(std::string path) {
-    if (Textures.find(path) == Textures.end()) {
-        sf::Texture* texture = new sf::Texture();
-        if (!texture->loadFromFile(path)) {
-            GameManager::ConsoleWrite("[ERROR] Couldn't load texture:" + path);
-            return nullptr;
-        }
-        Textures[path] = texture;
-    } 
-    return Textures[path];
-}
-
-void GameManager::LoadFont(std::string path) {
-    sf::Font font;
-    if (!font.loadFromFile(path)) {
-        GameManager::ConsoleWrite("[ERROR] Failed to load font: " + path);
-    }
-    GameManager::font = font; 
-}
-
-void GameManager::DrawEntities(sf::RenderWindow& window) {
-    for (Entity* e : Entities) {
-        if (e->isVisible) {
-            window.draw(e->sprite);
-        }
-
-        if (e->showHitbox) {
-            sf::Vector2f pos = e->rect.getPosition();
-            sf::Vector2f size = e->rect.getSize();
-
-            sf::Vertex lines[] = {
-                sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Red),
-                sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y), sf::Color::Red),
-                sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y + size.y), sf::Color::Red),
-                sf::Vertex(sf::Vector2f(pos.x, pos.y + size.y), sf::Color::Red),
-                sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Red)
-            };
-
-            window.draw(lines, 5, sf::LinesStrip);
-        }
-    }
-}
-
-void GameManager::DrawText(sf::RenderWindow& window) {
-    for (TextObj* text : GameManager::TextObjects) {
-        if (text->isVisible) {
-            window.draw(text->text);
-        }
-    }
-}
 
 bool GameManager::MouseOnEntity(sf::Vector2f mousePos) {
     for (Entity* e : GameManager::Entities) {
@@ -156,32 +101,25 @@ void GameManager::ConsoleWrite(std::string text) {
     GameManager::ConsoleLog.append(newText.c_str());
 }
 
+// Binary Search Tree
 GameObject* GameManager::FindObjectByID(int id) {
-    // int low = 0;
-    // int high = GameManager::GameObjects.size();
-    // while (low <= high) {
-    //     int mid = low + (high - low) / 2;
+    int low = 0;
+    int high = GameManager::GameObjects.size();
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
 
-    //     if (GameManager::GameObjects[mid]->ID == id) {
-    //         return GameManager::GameObjects[mid];
-    //     }
+        if (GameManager::GameObjects[mid]->ID == id) {
+            return GameManager::GameObjects[mid];
+        }
 
-    //     if (GameManager::GameObjects[mid]->ID < id) {
-    //         low = mid + 1;
-    //     }
-    //     else {
-    //         high = mid - 1;
-    //     }
-    // }
-
-    // return nullptr;
-
-    for (GameObject* obj : GameManager::GameObjects) {
-        if (obj->ID == id) {
-            return obj;
+        if (GameManager::GameObjects[mid]->ID < id) {
+            low = mid + 1;
+        }
+        else {
+            high = mid - 1;
         }
     }
-    std::cout << "[ERROR] Could not find object!!!!!!\n";
+
     return nullptr;
 }
 
@@ -223,19 +161,6 @@ std::vector<Entity*> GameManager::FindEntitiesByType(std::string type) {
         }
     }
     return found;
-}
- 
-void GameManager::RunLuaUpdates() {
-    for (Entity* e : GameManager::Entities) {
-        GameManager::current_lua_object = e;
-        for (ScriptItem script : e->lua_scripts) {
-            if (luaL_dofile(GameManager::LuaState, script.path.c_str()) != LUA_OK) {
-                std::string error = lua_tostring(GameManager::LuaState, -1);
-                GameManager::ConsoleWrite("[ERROR] Lua Script failed: " + error);
-            }
-        }
-    }
-    GameManager::current_lua_object = nullptr;
 }
 
 TextObj* GameManager::FindTextByID(int id) {

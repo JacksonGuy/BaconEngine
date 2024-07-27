@@ -2,10 +2,12 @@
 
 #include <iostream>
 #include <filesystem>
-#include "Lua/LuaApi.hpp"
 #include <nfd.h>
 
+#include "Lua/LuaApi.hpp"
 #include "Sound.hpp"
+#include "Input.hpp"
+#include "Rendering.hpp"
 
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution
@@ -119,105 +121,24 @@ EditorInstance::EditorInstance() {
     this->m_createTextEntityId = -1;
 
     // Setup Lua API
-    luaL_openlibs(GameManager::LuaState);
-    lua_register(GameManager::LuaState, "ConsoleWrite", ConsoleWrite);
-    lua_register(GameManager::LuaState, "get_time_seconds", get_time_seconds);
+    Lua::RegisterFunctions();
 
-    lua_register(GameManager::LuaState, "set_variable", set_variable);
-    lua_register(GameManager::LuaState, "get_variable", get_variable);
-    lua_register(GameManager::LuaState, "get_entity_variable", get_entity_variable);
-    lua_register(GameManager::LuaState, "set_entity_variable", set_entity_variable);
-
-    lua_register(GameManager::LuaState, "set_text", set_text);
-    lua_register(GameManager::LuaState, "get_text", get_text);
-    lua_register(GameManager::LuaState, "set_text_position", set_text_position);
-    lua_register(GameManager::LuaState, "get_text_position", get_text_position);
-    lua_register(GameManager::LuaState, "set_text_visible", set_text_visible);
-    lua_register(GameManager::LuaState, "get_text_visible", get_text_visible);
-    lua_register(GameManager::LuaState, "set_text_color", set_text_color);
-    lua_register(GameManager::LuaState, "get_text_color", get_text_color);
-    lua_register(GameManager::LuaState, "set_text_size", set_text_size);
-    lua_register(GameManager::LuaState, "get_text_size", get_text_size);
-    lua_register(GameManager::LuaState, "set_text_name", set_text_name);
-    lua_register(GameManager::LuaState, "get_text_name", get_text_name);
-    lua_register(GameManager::LuaState, "create_text", create_text);
-    
-    lua_register(GameManager::LuaState, "get_input", get_input);
-    lua_register(GameManager::LuaState, "get_mouse_input", get_mouse_input);
-    lua_register(GameManager::LuaState, "get_input_single", get_input_single);
-    lua_register(GameManager::LuaState, "get_mouse_input_single", get_mouse_input_single);
-    
-    lua_register(GameManager::LuaState, "get_position", get_position);
-    lua_register(GameManager::LuaState, "set_position", set_position);
-    lua_register(GameManager::LuaState, "get_velocity", get_velocity);
-    lua_register(GameManager::LuaState, "set_velocity", set_velocity);
-    lua_register(GameManager::LuaState, "get_acceleration", get_acceleration);
-    lua_register(GameManager::LuaState, "get_grounded", get_grounded);
-    lua_register(GameManager::LuaState, "set_visible", set_visible);
-    lua_register(GameManager::LuaState, "get_visible", get_visible);
-    lua_register(GameManager::LuaState, "get_clicked", get_clicked);
-    lua_register(GameManager::LuaState, "get_clicked_single", get_clicked_single);
-    lua_register(GameManager::LuaState, "get_sprite", get_sprite);
-    lua_register(GameManager::LuaState, "set_sprite", set_sprite);
-    lua_register(GameManager::LuaState, "get_name", get_name);
-    lua_register(GameManager::LuaState, "set_name", set_name);
-
-    lua_register(GameManager::LuaState, "check_collision", check_collision);
-    lua_register(GameManager::LuaState, "check_collision_side", check_collision_side);
-    
-    lua_register(GameManager::LuaState, "get_entity_by_name", get_entity_by_name);
-    lua_register(GameManager::LuaState, "get_entities_by_type", get_entities_by_type);
-    lua_register(GameManager::LuaState, "get_entity_list", get_entity_list);
-
-    lua_register(GameManager::LuaState, "get_entity_position", get_entity_position);
-    lua_register(GameManager::LuaState, "set_entity_position", set_entity_position);
-    lua_register(GameManager::LuaState, "get_entity_visible", get_entity_visible);
-    lua_register(GameManager::LuaState, "set_entity_visible", set_entity_visible);
-    lua_register(GameManager::LuaState, "get_entity_name", get_entity_name);
-    lua_register(GameManager::LuaState, "set_entity_name", set_entity_name);
-
-    lua_register(GameManager::LuaState, "create_entity", create_entity);
-    
-    lua_register(GameManager::LuaState, "play_sound", play_sound);
-    lua_register(GameManager::LuaState, "play_music", play_music);
-    lua_register(GameManager::LuaState, "pause_music", pause_music);
-    lua_register(GameManager::LuaState, "stop_music", stop_music);
+    // Input
+    Input::InitInputMaps();
 
     // Other
     this->m_lastFixedUpdate = sf::Time::Zero;
     this->m_frameLimit = 60;                                          // Change if necessary
     this->m_TimePerFrame = sf::seconds(1.f / m_frameLimit);
     this->m_window->setFramerateLimit(165);
+    
+    // Create RenderLayers
+    Rendering::CreateLayers(5);
+}
 
-    // Keys
-    for (int i = 0; i < 26; i++) {
-        // I'm sorry Dennis Ritchie...
-        char ch = 'A' + i;
-        std::string index;
-        index.push_back(ch);
-        GameManager::key_map[index] = sf::Keyboard::Key(i);
-    }
-    GameManager::key_map["ESC"] = sf::Keyboard::Escape;
-    GameManager::key_map["LCONTROL"] = sf::Keyboard::LControl;
-    GameManager::key_map["LSHIFT"] = sf::Keyboard::LShift;
-    GameManager::key_map["LALT"] = sf::Keyboard::LAlt;
-    GameManager::key_map["RCONTROL"] = sf::Keyboard::RControl;
-    GameManager::key_map["RSHIFT"] = sf::Keyboard::RShift;
-    GameManager::key_map["RALT"] = sf::Keyboard::RAlt;
-    GameManager::key_map["SPACE"] = sf::Keyboard::Space;
-    GameManager::key_map["TAB"] = sf::Keyboard::Tab;
-    GameManager::key_map["UP"] = sf::Keyboard::Up;
-    GameManager::key_map["DOWN"] = sf::Keyboard::Down;
-    GameManager::key_map["LEFT"] = sf::Keyboard::Left;
-    GameManager::key_map["RIGHT"] = sf::Keyboard::Right;
-    GameManager::key_map["LBRACKET"] = sf::Keyboard::LBracket;
-    GameManager::key_map["RBRACKET"] = sf::Keyboard::RBracket;
-
-    GameManager::mouse_map["MOUSE_LEFT"] = sf::Mouse::Button::Left;
-    GameManager::mouse_map["MOUSE_RIGHT"] = sf::Mouse::Button::Right;
-    GameManager::mouse_map["MOUSE_MIDDLE"] = sf::Mouse::Button::Middle;
-    GameManager::mouse_map["MOUSE_BUTTON_4"] = sf::Mouse::Button::XButton1;
-    GameManager::mouse_map["MOUSE_BUTTON_5"] = sf::Mouse::Button::XButton2;
+EditorInstance::~EditorInstance() {
+    delete m_window;
+    delete m_camera;
 }
 
 // Main Game Loop
@@ -248,8 +169,7 @@ void EditorInstance::Run() {
             m_window->draw(originDot);
         }
         
-        GameManager::DrawEntities(*this->m_window);
-        GameManager::DrawText(*this->m_window);
+        Rendering::DrawGameObjects(*m_window);
         ImGui::SFML::Render(*this->m_window);
         this->m_window->display();
     }
@@ -470,6 +390,12 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             strcpy(typeBuff, e->entity_type.data());
             if (ImGui::InputText("Type", typeBuff, 256)) {
                 e->entity_type = typeBuff;
+            }
+
+            int e_layer = e->layer;
+            if (ImGui::InputInt("Layer", &e_layer)) {
+                if (e_layer >= 0) Rendering::SwapLayer(e, e_layer);
+                else e_layer = 0;
             }
 
             if (GameManager::player != nullptr && GameManager::player != e) {
@@ -747,6 +673,12 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         std::string name = "Text Details (ID: " + std::to_string(text->ID) + ")";
         ImGui::Begin(name.c_str(), &text->showDetails);
             ImGui::InputText("Name", text->name.data(), 256);
+
+            int text_layer = text->layer;
+            if (ImGui::InputInt("Layer", &text_layer)) {
+                if (text_layer >= 0) Rendering::SwapLayer(text, text_layer);
+                else text_layer = 0;
+            }
 
             float text_pos[] = {text->position.x, text->position.y};
             if (ImGui::InputFloat2("Position", text_pos)) {
@@ -1119,7 +1051,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
 
         // Run Lua Scripts
         if (GameManager::isPlayingGame) {
-            GameManager::RunLuaUpdates();
+            Lua::RunLuaUpdates();
         }
 
         // Player position update
