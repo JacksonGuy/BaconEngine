@@ -126,6 +126,9 @@ EditorInstance::EditorInstance() {
     // Input
     Input::InitInputMaps();
 
+    // Rendering
+    //Rendering::CreateLayers(5);
+
     // Other
     this->m_lastFixedUpdate = sf::Time::Zero;
     this->m_frameLimit = 60;                                          // Change if necessary
@@ -263,10 +266,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 ImGui::EndDisabled();
             }
 
-            // Popups
-            //ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-            //ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
             ImGui::EndMenu();
         }
 
@@ -314,12 +313,14 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             else {
                 if (ImGui::Button("End Game")) {
                     GameManager::RestoreEditorState(*m_window, m_projectTitle);
+                    
                     m_camera->setCenter(m_cameraPos);
                     m_camera->setSize(m_cameraSize);
                     m_window->setView(*m_camera);
                     Sound::stop_sounds();
-                    GameManager::ConsoleWrite("[PLAYER] Game Ended. Editor data restored.");
                     GameManager::isPlayingGame = false;
+                    
+                    GameManager::ConsoleWrite("[PLAYER] Game Ended. Editor data restored.");
                 }
             }
             ImGui::Separator();
@@ -385,10 +386,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 e->name = nameBuff;
             }
 
-            char typeBuff[256];
-            strcpy(typeBuff, e->entity_type.data());
-            if (ImGui::InputText("Type", typeBuff, 256)) {
-                e->entity_type = typeBuff;
+            char tagBuff[256];
+            strcpy(tagBuff, e->tag.data());
+            if (ImGui::InputText("Tag", tagBuff, 256)) {
+                e->tag = tagBuff;
             }
 
             int e_layer = e->layer;
@@ -673,11 +674,19 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::Begin(name.c_str(), &text->showDetails);
             ImGui::InputText("Name", text->name.data(), 256);
 
+            char tagBuff[256];
+            strcpy(tagBuff, text->tag.data());
+            if (ImGui::InputText("Tag", tagBuff, 256)) {
+                text->tag = tagBuff;
+            }
+
             int text_layer = text->layer;
             if (ImGui::InputInt("Layer", &text_layer)) {
                 if (text_layer >= 0) Rendering::SwapLayer(text, text_layer);
                 else text_layer = 0;
             }
+
+            ImGui::Separator();
 
             float text_pos[] = {text->position.x, text->position.y};
             if (ImGui::InputFloat2("Position", text_pos)) {

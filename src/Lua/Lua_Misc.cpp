@@ -50,12 +50,14 @@ namespace Lua {
         lua_register(LuaState, "set_sprite", set_sprite);
         lua_register(LuaState, "get_name", get_name);
         lua_register(LuaState, "set_name", set_name);
+        lua_register(LuaState, "get_tag", get_tag);
+        lua_register(LuaState, "set_tag", set_tag);
 
         lua_register(LuaState, "check_collision", check_collision);
         lua_register(LuaState, "check_collision_side", check_collision_side);
         
         lua_register(LuaState, "get_entity_by_name", get_entity_by_name);
-        lua_register(LuaState, "get_entities_by_type", get_entities_by_type);
+        lua_register(LuaState, "get_objects_by_tag", get_objects_by_tag);
         lua_register(LuaState, "get_entity_list", get_entity_list);
 
         lua_register(LuaState, "get_entity_position", get_entity_position);
@@ -238,15 +240,15 @@ namespace Lua {
         return 0;
     }
 
-    int get_entities_by_type(lua_State* L) {
-        std::string type = lua_tostring(L, 1);
+    int get_objects_by_tag(lua_State* L) {
+        std::string tag = lua_tostring(L, 1);
 
-        std::vector<Entity*> found = GameManager::FindEntitiesByType(type);
+        std::vector<GameObject*> found = GameManager::FindObjectsByTag(tag);
         if (found.size() > 0) {
             lua_createtable(L, 0, found.size());
             for (size_t i = 0; i < found.size(); i++) {
-                Entity* e = found[i];
-                int id = e->ID;
+                GameObject* obj = found[i];
+                int id = obj->ID;
 
                 lua_pushinteger(L, i+1);
                 lua_pushinteger(L, id);

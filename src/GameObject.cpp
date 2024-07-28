@@ -7,6 +7,7 @@ GameObject::GameObject() {
     this->type = OBJECT;
     this->ID = GameObject::IDCount++;
     this->name = "Object " + std::to_string(this->ID);
+    this->tag = "Default";
 
     this->position = sf::Vector2f(0.f, 0.f); 
     this->scale = sf::Vector2f(1.f, 1.f);
@@ -28,6 +29,7 @@ GameObject::GameObject(GameObject& obj) {
     this->ID = obj.ID;
     this->type = obj.type;
     this->name = obj.name;
+    this->tag = obj.tag;
 
     this->position = obj.position;
     this->scale = obj.scale;
@@ -77,6 +79,7 @@ GameObject::~GameObject() {
 void GameObject::Overwrite(GameObject& obj) {
     this->name = obj.name;
     this->type = obj.type;
+    this->tag = obj.tag;
     
     this->scale = obj.scale;
     this->width = obj.width;

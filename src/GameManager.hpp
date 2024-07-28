@@ -55,7 +55,7 @@ class GameManager {
         static GameObject* FindObjectByID(int id);
         static Entity* FindEntityByID(int id);
         static Entity* FindEntityByName(std::string name);
-        static std::vector<Entity*> FindEntitiesByType(std::string type);
+        static std::vector<GameObject*> FindObjectsByTag(std::string tag);
         static TextObj* FindTextByID(int id);
 
         static void SortObjectsByID();

@@ -9,7 +9,6 @@ Entity::Entity() : GameObject() {
     this->name = "Entity " + std::to_string(this->ID);
     this->type = ClassType::ENTITY;
     
-    this->entity_type = "Default";
     this->texturePath = "";
     this->width = 64;
     this->height = 64;
@@ -37,9 +36,6 @@ Entity::Entity(sf::Vector2f position) : Entity() {
 Entity::Entity(Entity& e) : GameObject(e) {
     this->name = e.name;
     this->ID = e.ID;
-    this->type = e.type;
-    
-    this->entity_type = e.entity_type;
 
     this->isSolid = e.isSolid;
     this->physicsObject = e.physicsObject;
@@ -82,7 +78,6 @@ Entity::~Entity() {
 void Entity::Overwrite(Entity& e) {
     GameObject::Overwrite(e);
     this->name = e.name;
-    this->entity_type = e.entity_type;
 
     this->isSolid = e.isSolid;
     this->physicsObject = e.physicsObject;

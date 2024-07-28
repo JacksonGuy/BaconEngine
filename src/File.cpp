@@ -33,7 +33,7 @@ void save(std::string filename) {
         level_data["Entities"][index] = {
             {"id", e->ID},
             {"name", e->name},
-            {"entity_type", e->entity_type},
+            {"tag", e->tag},
             {"texturePath", texturePath},
             {"position", {e->position.x, e->position.y}},
             {"scale", {e->scale.x, e->scale.y}},
@@ -103,7 +103,8 @@ void save(std::string filename) {
             {"color", {color.r, color.g, color.b, color.a}},
             {"text", obj->text.getString()},
             {"isVisible", obj->isVisible},
-            {"layer", obj->layer}
+            {"layer", obj->layer},
+            {"tag", obj->tag}
         };
 
         if (obj->parent == nullptr) {
@@ -155,7 +156,7 @@ bool load(std::string filename) {
             GameObject::IDCount = e->ID; // Set to max to preserve IDs
         }
         e->name = entity["name"];
-        e->entity_type = entity["entity_type"];
+        e->tag = entity["tag"];
         e->position.x = entity["position"][0];
         e->position.y = entity["position"][1];
         e->scale = sf::Vector2f(entity["scale"][0], entity["scale"][1]);
@@ -220,6 +221,7 @@ bool load(std::string filename) {
         text->layer = obj["layer"];
         std::string str = obj["text"];
         text->text.setString(str);
+        text->tag = obj["tag"];
     }
 
     GameManager::ConsoleWrite("[ENGINE] Sorting GameObjects...");
@@ -327,7 +329,7 @@ void savePrefab(std::string filename, Entity* e) {
     json data;
 
     data["name"] = e->name;
-    data["entity_type"] = e->entity_type;
+    data["tag"] = e->tag;
     data["texturePath"] = e->texturePath;
     data["position"] = {e->position.x, e->position.y};
     data["scale"] = {e->scale.x, e->scale.y};
@@ -384,7 +386,7 @@ Entity* loadPrefab(std::string filename) {
     Entity* e = new Entity();
     e->position = sf::Vector2f(data["position"][0], data["position"][1]);
     e->name = data["name"];
-    e->entity_type = data["entity_type"];
+    e->tag = data["tag"];
     e->scale = sf::Vector2f(data["scale"][0], data["scale"][1]);
     e->width = data["width"];
     e->height = data["height"];

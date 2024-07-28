@@ -17,6 +17,7 @@ class GameObject {
         static unsigned int IDCount;
         unsigned int ID;
         std::string name;
+        std::string tag;
         
         sf::Vector2f position;
         sf::Vector2f scale;

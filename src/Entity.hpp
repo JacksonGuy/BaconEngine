@@ -8,7 +8,6 @@
 
 class Entity : public GameObject {
     public:
-        std::string entity_type;
         std::string name;
         std::string texturePath;
 

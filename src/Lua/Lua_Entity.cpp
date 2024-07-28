@@ -277,24 +277,24 @@ namespace Lua {
         return 0;
     }
 
-    int get_entity_type(lua_State* L) {
+    int get_tag(lua_State* L) {
         const int id = lua_tonumber(L, 1);
 
-        Entity* e = GameManager::FindEntityByID(id);
-        if (e != nullptr) {
-            lua_pushstring(L, e->entity_type.c_str());
+        GameObject* obj = GameManager::FindObjectByID(id);
+        if (obj != nullptr) {
+            lua_pushstring(L, obj->tag.c_str());
             return 1;
         }
         return 0;
     }
 
-    int set_entity_type(lua_State* L) {
+    int set_tag(lua_State* L) {
         const int id = lua_tonumber(L, 1); 
-        const std::string type = lua_tostring(L, 2);
+        const std::string tag = lua_tostring(L, 2);
 
-        Entity* e = GameManager::FindEntityByID(id);
-        if (e != nullptr) {
-            e->entity_type = type;
+        GameObject* obj = GameManager::FindObjectByID(id);
+        if (obj != nullptr) {
+            obj->tag = tag;
         }
         return 0;
     }

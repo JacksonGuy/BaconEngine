@@ -205,16 +205,16 @@ Entity* GameManager::FindEntityByName(std::string name) {
 }
 
 /**
- * @brief Returns a std::vector of Entities with the given entity type (string)
+ * @brief Returns a std::vector of GameObject with the given tag (string)
  * 
- * @param type The entity type
- * @return std::vector<Entity*> The vector of Entities with the given type 
+ * @param type The GameObject tag
+ * @return std::vector<Entity*> The vector of GameObjects with the given tag 
  */
-std::vector<Entity*> GameManager::FindEntitiesByType(std::string type) {
-    std::vector<Entity*> found;
-    for (Entity* e : GameManager::Entities) {
-        if (e->entity_type == type) {
-            found.push_back(e);
+std::vector<GameObject*> GameManager::FindObjectsByTag(std::string tag) {
+    std::vector<GameObject*> found;
+    for (GameObject* obj : GameManager::GameObjects) {
+        if (obj->tag == tag) {
+            found.push_back(obj);
         }
     }
     return found;
