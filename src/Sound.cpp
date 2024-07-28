@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 
 namespace Sound {
 
@@ -40,7 +41,8 @@ sf::SoundBuffer* load_sound(std::string file) {
  * @param file the path to the sound file
  */
 void play_sound(std::string file) {
-    sf::SoundBuffer* sound = Sound::load_sound(file);
+    std::string absPath = File::toAbsolute(file);
+    sf::SoundBuffer* sound = Sound::load_sound(absPath);
     if (sound != nullptr) {
         // Create player and play sound
         sf::Sound* player = new sf::Sound();
@@ -51,7 +53,7 @@ void play_sound(std::string file) {
         // Create SoundObject for management
         Sound::SoundObject obj;
         obj.player = player;
-        obj.file = file;
+        obj.file = absPath;
         Sound::soundPlayers.push_back(obj);
     }
 }
@@ -81,18 +83,21 @@ void clean_sounds() {
  * @return sf::Music* SFML music object
  */
 sf::Music* load_music(std::string file) {
+    // Convert file path
+    std::string absPath = File::toAbsolute(file); 
+    
     // Search for music player
-    if (Sound::musicPlayers.find(file) == Sound::musicPlayers.end()) {
+    if (Sound::musicPlayers.find(absPath) == Sound::musicPlayers.end()) {
         sf::Music* player = new sf::Music();
-        if (!player->openFromFile(file)) {
+        if (!player->openFromFile(absPath)) {
             GameManager::ConsoleWrite("[ERROR] Failed to load music: " + file);
             return nullptr;
         }
         player->setVolume(musicVolume);
-        Sound::musicPlayers[file] = player;
+        Sound::musicPlayers[absPath] = player;
     }
 
-    return Sound::musicPlayers[file];
+    return Sound::musicPlayers[absPath];
 }
 
 /**

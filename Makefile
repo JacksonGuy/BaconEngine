@@ -1,8 +1,7 @@
 CC = g++
 
-#CFLAGS = -O3 -g
-CFLAGS = -g
-CLFAGS += -Iinclude/SFML/include/
+CFLAGS = 
+CFLAGS += -Iinclude/SFML/include/
 CFLAGS += -Linclude/SFML/lib
 CFLAGS += -DSFML_STATIC
 CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
@@ -13,7 +12,11 @@ CFLAGS += -Iinclude/tracy
 
 BUILD_DIR = bin
 
-ifeq ($(target), editor)
+ifeq ($(target), editor_release)
+	CFLAGS += -O3
+	SOURCES += Program.cpp
+else ifeq ($(target), editor_debug)
+	CFLAGS += -g -Wall -Wextra -pedantic-errors
 	SOURCES += Program.cpp
 else ifeq ($(target), test)
 	SOURCES += Test.cpp
@@ -36,8 +39,12 @@ LIBS =
 EXE = 
 
 ifeq ($(UNAME), Linux)
-	LIBS += -lGL -lglfw -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
-	ifeq ($(target), editor)
+	LIBS += -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
+	LIBS += -llua -lGL -lglfw
+	LIBS += -lopenal32 -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
+	ifeq ($(target), editor_debug)
+		EXE = editor
+	else ifeq ($(target), editor_release)
 		EXE = editor
 	else ifeq ($(target), test)
 		EXE = test
@@ -50,7 +57,9 @@ ifeq ($(OS), Windows_NT)
 	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s
 	LIBS += -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua -lnfd -lcomctl32 -lole32 -luuid
 	LIBS += -lopenal32 -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
-	ifeq ($(target), editor)
+	ifeq ($(target), editor_debug)
+		EXE = editor.exe
+	else ifeq ($(target), editor_release)
 		EXE = editor.exe
 	else ifeq ($(target), test)
 		EXE = test.exe

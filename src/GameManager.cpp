@@ -1,6 +1,9 @@
 #include "GameManager.hpp"
-#include "Lua/luaApi.hpp"
+
 #include <iostream>
+
+#include "Lua/luaApi.hpp"
+#include "Rendering.hpp"
 
 File::ConfigState GameManager::config;
 std::vector<GameObject*> GameManager::GameObjects;
@@ -116,6 +119,7 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window, std::string filen
     GameManager::GameObjects.clear();
     GameManager::Entities.clear();
     GameManager::TextObjects.clear();
+    Rendering::m_layers.clear();
 
     // Load Back data
     File::load(filename);
@@ -248,7 +252,7 @@ TextObj* GameManager::FindTextByID(int id) {
  */
 void GameManager::SortObjectsByID() {
     GameObject* key;
-    size_t j;
+    int j;
     for (size_t i = 1; i < GameManager::GameObjects.size(); i++) {
         key = GameManager::GameObjects[i];
         j = i - 1;

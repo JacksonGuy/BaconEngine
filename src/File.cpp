@@ -228,10 +228,10 @@ bool load(std::string filename) {
     GameManager::ConsoleWrite("[ENGINE] Constructing Entity Tree...");
     for (auto& entity : level_data["Entities"]) {
         unsigned int childID = entity["id"];
-        unsigned int parentID = entity["parent"];
+        int parentID = entity["parent"];
         if (parentID != -1) {
             GameObject* child = GameManager::FindObjectByID(childID);
-            GameObject* parent = GameManager::FindObjectByID(parentID);
+            GameObject* parent = GameManager::FindObjectByID((unsigned int)parentID);
             if (child != nullptr && parent != nullptr) {
                 parent->children.push_back(child);
                 child->parent = parent;
@@ -240,10 +240,10 @@ bool load(std::string filename) {
     }
     for (auto& text : level_data["Text"]) {
         unsigned int childID = text["id"];
-        unsigned int parentID = text["parent"]; 
+        int parentID = text["parent"]; 
         if (parentID != -1) {
             GameObject* child = GameManager::FindObjectByID(childID);
-            GameObject* parent = GameManager::FindObjectByID(parentID);
+            GameObject* parent = GameManager::FindObjectByID((unsigned int)parentID);
             if (child != nullptr && parent != nullptr) {
                 parent->children.push_back(child);
                 child->parent = parent;
@@ -299,7 +299,11 @@ ConfigState loadConfig() {
     std::ifstream infile("config.json");
     if (!infile.is_open()) {
         GameManager::ConsoleWrite("[ERROR] Failed to load editor settings");
-        return (ConfigState){"0","800x600"};
+        
+        ConfigState state;
+        state.version = "0";
+        state.resolution = "800x600";
+        return state;
     }
 
     json settings = json::parse(infile);

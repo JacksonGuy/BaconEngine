@@ -89,10 +89,11 @@ namespace Rendering {
      * @param count the number of new layers to create
      */
     void CreateLayers(int count) {
+        size_t size = m_layers.size();
         for (int i = 0; i < count; i++) {
             RenderingLayer layer;
             layer.objects = std::vector<GameObject*>();
-            layer.layerNum = i + m_layers.size();
+            layer.layerNum = i + size;
             m_layers.push_back(layer);
         }
     }

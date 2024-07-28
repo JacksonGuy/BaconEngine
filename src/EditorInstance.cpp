@@ -131,14 +131,15 @@ EditorInstance::EditorInstance() {
     this->m_frameLimit = 60;                                          // Change if necessary
     this->m_TimePerFrame = sf::seconds(1.f / m_frameLimit);
     this->m_window->setFramerateLimit(165);
-    
-    // Create RenderLayers
-    Rendering::CreateLayers(5);
 }
 
 EditorInstance::~EditorInstance() {
     delete m_window;
     delete m_camera;
+
+    Sound::stop_sounds();
+    Sound::clean_music();
+    Sound::clean_sounds();
 }
 
 // Main Game Loop
@@ -276,11 +277,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Object List", NULL, &m_showEntityList));
-            if (ImGui::MenuItem("Game Details", NULL, &m_showMainMenu));
-            if (ImGui::MenuItem("Console", NULL, &m_showConsole));
-            if (ImGui::MenuItem("Menu Docking", NULL, &m_showDockSpace));
-            if (ImGui::MenuItem("Editor Settings", NULL, &m_showSettingsMenu));
+            ImGui::MenuItem("Object List", NULL, &m_showEntityList);
+            ImGui::MenuItem("Game Details", NULL, &m_showMainMenu);
+            ImGui::MenuItem("Console", NULL, &m_showConsole);
+            ImGui::MenuItem("Menu Docking", NULL, &m_showDockSpace);
+            ImGui::MenuItem("Editor Settings", NULL, &m_showSettingsMenu);
             ImGui::EndMenu();
         }
 
@@ -357,10 +358,8 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
 
                     if (ImGui::Button("Testing")) {
-                        for (GameObject* obj : GameManager::GameObjects) {
-                            if (obj->parent != nullptr) {
-                                std::cout << obj->parent->ID << ": " << obj->parent->name << std::endl;
-                            }
+                        for (Rendering::RenderingLayer layer : Rendering::m_layers) {
+                            std::cout << "Layer " << layer.layerNum << ": " << layer.objects.size() << std::endl;
                         }
                     }
 
@@ -712,10 +711,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::Separator();
 
             std::string textString = text->text.getString();
-            int buffer_size = 1024 * 16;
-            char text_buffer[buffer_size];
+            char text_buffer[1024 * 16];
             strcpy(text_buffer, textString.c_str()); 
-            if (ImGui::InputTextMultiline("Text", text_buffer, buffer_size)) {
+            if (ImGui::InputTextMultiline("Text", text_buffer, 1024 * 16)) {
                 text->text.setString(text_buffer);
             }
 
