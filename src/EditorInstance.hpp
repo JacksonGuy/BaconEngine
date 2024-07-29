@@ -71,7 +71,6 @@ class EditorInstance {
         char m_createTextName[256];
         char m_createTextDetails[1024 * 16];
         float m_createTextPosition[2];
-        int m_createTextMode;
         int m_createTextEntityId;
 
         // Engine Functions

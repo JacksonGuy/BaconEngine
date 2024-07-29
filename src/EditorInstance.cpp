@@ -117,7 +117,6 @@ EditorInstance::EditorInstance() {
     this->m_createTextPosition[1] = 0.f;
     strcpy(this->m_createTextName, "Text");
     strcpy(this->m_createTextDetails, "");
-    this->m_createTextMode = 0;
     this->m_createTextEntityId = -1;
 
     // Setup Lua API
@@ -203,6 +202,24 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         if (ImGui::BeginMenu("File")) {
             if (GameManager::isPlayingGame) {
                 ImGui::BeginDisabled();
+            }
+
+            if (ImGui::MenuItem("New Project")) {
+                bool result;
+                std::string path;
+                if (!m_loadedProject) {
+                    result = File::CreateNew(path);
+                }
+                else {
+                    File::save(m_projectTitle);
+                    result = File::CreateNew(path);
+                }
+
+                if (result != false) {
+                    m_projectTitle = path;
+                    m_loadedProject = true;
+                    m_window->setTitle("Bacon - " + path);
+                }
             }
 
             if (ImGui::MenuItem("Save")) {
@@ -778,16 +795,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::InputText("Name", m_createTextName, 256);
             ImGui::InputFloat2("Position", m_createTextPosition);
             ImGui::InputText("Text", m_createTextDetails, 8*256);
-
-            ImGui::RadioButton("Absolute", &m_createTextMode, 0);
-            ImGui::SameLine();
-            ImGui::RadioButton("Relative", &m_createTextMode, 1);
-            ImGui::SameLine();
-            ImGui::RadioButton("Screen", &m_createTextMode, 2);
-
-            if (m_createTextMode == 1) {
-                ImGui::InputInt("Entity ID", &m_createTextEntityId);
-            }
 
             if (ImGui::Button("Create")) {
                 TextObj* text = new TextObj();

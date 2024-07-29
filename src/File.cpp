@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <nfd.h>
 
 #include "File.hpp"
 #include "GameManager.hpp"
@@ -261,6 +262,35 @@ bool load(std::string filename) {
     GameManager::gravity = level_data["Settings"]["Gravity"];
 
     return true;
+}
+
+bool CreateNew(std::string& path) {
+    nfdchar_t* outpath = NULL;
+    nfdresult_t result = NFD_PickFolder(NULL, &outpath);
+
+    if (result == NFD_OKAY) {
+        std::string _path = outpath + std::string("\\Game.json");
+        GameManager::entryPoint = outpath;
+        std::ofstream outfile(_path);
+        json data;
+
+        data["Settings"]["Gravity"] = GameManager::gravity;
+        data["Version"] = GameManager::config.version;
+        outfile << std::setw(4) << data;
+
+        std::filesystem::create_directory(outpath + std::string("/sprites"));
+        std::filesystem::create_directory(outpath + std::string("/scripts"));
+        std::filesystem::create_directory(outpath + std::string("/fonts"));
+        std::filesystem::create_directory(outpath + std::string("/prefabs"));
+        std::filesystem::create_directory(outpath + std::string("/sounds"));
+
+        free(outpath);
+        path = _path;
+        return true;
+    }
+
+    free(outpath);
+    return false;
 }
 
 /**

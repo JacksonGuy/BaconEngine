@@ -13,6 +13,8 @@ namespace File {
     void save(std::string filename);
     bool load(std::string filename);
 
+    bool CreateNew(std::string& path);
+
     std::string toAbsolute(std::string path);
 
     void saveConfig(ConfigState state);
