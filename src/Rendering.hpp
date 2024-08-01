@@ -23,6 +23,7 @@ namespace Rendering {
     void CreateLayers(int count);
     void AddToLayer(GameObject* obj);
     void SwapLayer(GameObject* obj, unsigned int layer);
+    void RemoveFromLayer(GameObject* obj);
 }
 
 #endif

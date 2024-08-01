@@ -7,7 +7,8 @@
 enum ClassType {
     OBJECT,
     ENTITY,
-    TEXT
+    TEXT,
+    CAMERA
 };
 
 class GameObject {
@@ -38,6 +39,7 @@ class GameObject {
 
         void Overwrite(GameObject& obj);
         virtual void SetPosition(sf::Vector2f position);
+        void UpdateChildrenPositions(sf::Vector2f change);
 };
 
 #endif

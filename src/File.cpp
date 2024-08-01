@@ -121,6 +121,32 @@ void save(std::string filename) {
         }
     }
 
+    // Save Cameras
+    for (size_t index = 0; index < GameManager::Cameras.size(); index++) {
+        Camera* camera = GameManager::Cameras[index];
+
+        level_data["Cameras"][index] = {
+            {"id", camera->ID},
+            {"name", camera->name},
+            {"position", {camera->position.x, camera->position.y}},
+            {"size", {camera->width, camera->height}},
+            {"rotation", camera->rotation},
+            {"isActive", camera->isActive},
+            {"isVisible", camera->isVisible}
+        };
+
+        if (camera->parent == nullptr) {
+            level_data["Cameras"][index]["parent"] = -1;
+        }
+        else {
+            level_data["Cameras"][index]["parent"] = camera->parent->ID;
+        }
+
+        for (size_t i = 0; i < camera->children.size(); i++) {
+            level_data["Cameras"][index]["children"][i] = camera->children[i]->ID;
+        }
+    }
+
     level_data["Settings"]["Gravity"] = GameManager::gravity;
 
     outfile << std::setw(4) << level_data;
@@ -148,6 +174,8 @@ bool load(std::string filename) {
     fs::path entryPath = fs::path(filename);
     GameManager::entryPoint = entryPath.parent_path().generic_string();
     json level_data = json::parse(infile);
+
+    GameObject::IDCount = 0; // Reset ID Count
 
     GameManager::ConsoleWrite("[ENGINE] Creating Entities...");
     for (auto& entity : level_data["Entities"]) {
@@ -225,6 +253,32 @@ bool load(std::string filename) {
         text->tag = obj["tag"];
     }
 
+    GameManager::ConsoleWrite("[ENGINE] Create cameras...");
+    for (auto& obj : level_data["Cameras"]) {
+        Camera* camera = new Camera();
+        camera->ID = obj["id"];
+
+        if (camera->ID > GameObject::IDCount) {
+            GameObject::IDCount = camera->ID;
+        }
+
+        camera->name = obj["name"];
+        camera->position = sf::Vector2f(obj["position"][0], obj["position"][1]);
+        camera->width = obj["size"][0];
+        camera->height = obj["size"][1];
+        camera->rotation = obj["rotation"];
+        camera->isActive = obj["isActive"];
+        camera->isVisible = obj["isVisible"];
+
+        if (camera->isActive) {
+            GameManager::camera = camera;
+        }
+
+        camera->SetPosition(camera->position);
+        camera->view->setSize(sf::Vector2f(camera->width, camera->height));
+        camera->view->setRotation(camera->rotation);
+    }
+
     GameManager::ConsoleWrite("[ENGINE] Sorting GameObjects...");
     GameManager::SortObjectsByID();
 
@@ -253,6 +307,18 @@ bool load(std::string filename) {
             }
         }
     }
+    for (auto& camera : level_data["Cameras"]) {
+        unsigned int childID = camera["id"];
+        int parentID = camera["parent"]; 
+        if (parentID != -1) {
+            GameObject* child = GameManager::FindObjectByID(childID);
+            GameObject* parent = GameManager::FindObjectByID((unsigned int)parentID);
+            if (child != nullptr && parent != nullptr) {
+                parent->children.push_back(child);
+                child->parent = parent;
+            }
+        }
+    }
 
     GameManager::ConsoleWrite("[ENGINE] Creating layers...");
     for (GameObject* obj : GameManager::GameObjects) {
@@ -264,6 +330,12 @@ bool load(std::string filename) {
     return true;
 }
 
+/**
+ * @brief Create a new project file structure
+ * 
+ * @param path where to create the project
+ * @return boolean: if the project was successfully created
+ */
 bool CreateNew(std::string& path) {
     nfdchar_t* outpath = NULL;
     nfdresult_t result = NFD_PickFolder(NULL, &outpath);

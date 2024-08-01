@@ -1,5 +1,6 @@
 #include "GameObject.hpp"
 #include "GameManager.hpp"
+#include "Rendering.hpp"
 
 unsigned int GameObject::IDCount = 0;
 
@@ -69,6 +70,9 @@ GameObject::~GameObject() {
     for (GameObject* obj : this->children) {
         obj->parent = nullptr;
     }
+
+    // Remove from RenderingLayer
+    Rendering::RemoveFromLayer(this);
 }
 
 /**
@@ -108,6 +112,30 @@ void GameObject::SetPosition(sf::Vector2f position) {
         else if (child->type == TEXT) {
             TextObj* text = (TextObj*)child;
             text->SetPosition(newPos);
+        }
+    }
+}
+
+/**
+ * @brief Updates the positions of all children GameObjects relative to some change
+ * 
+ * @param change The amount to change each child's position by
+ */
+void GameObject::UpdateChildrenPositions(sf::Vector2f change) {
+    for (GameObject* child : this->children) {
+        sf::Vector2f newPos = child->position + change;
+
+        if (child->type == ENTITY) {
+            Entity* e = (Entity*)child;
+            e->SetPosition(newPos);
+        }
+        else if (child->type == TEXT) {
+            TextObj* text = (TextObj*)child;
+            text->SetPosition(newPos);
+        }
+        else if (child->type == CAMERA) {
+            Camera* camera = (Camera*)child;
+            camera->SetPosition(newPos);
         }
     }
 }

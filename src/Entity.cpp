@@ -6,8 +6,8 @@
 #include <fstream>
 
 Entity::Entity() : GameObject() {
-    this->name = "Entity " + std::to_string(this->ID);
-    this->type = ClassType::ENTITY;
+    this->name = "Entity";
+    this->type = ENTITY;
     
     this->texturePath = "";
     this->width = 64;
@@ -132,18 +132,7 @@ void Entity::SetPosition(sf::Vector2f position) {
     this->sprite.setPosition(this->position);
     this->UpdateRect();
 
-    for (GameObject* child : this->children) {
-        sf::Vector2f newPos = child->position + delta;
-
-        if (child->type == ENTITY) {
-            Entity* e = (Entity*)child;
-            e->SetPosition(newPos);
-        }
-        else if (child->type == TEXT) {
-            TextObj* text = (TextObj*)child;
-            text->SetPosition(newPos);
-        }
-    }
+    this->UpdateChildrenPositions(delta);
 }
 
 /**

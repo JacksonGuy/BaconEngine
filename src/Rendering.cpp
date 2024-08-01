@@ -79,6 +79,26 @@ namespace Rendering {
                         window.draw(text->text);
                     }
                 }
+                else if (obj->type == CAMERA) {
+                    Camera* camera = (Camera*)obj;
+                    if (camera->isVisible) {
+                        sf::Vector2f pos = camera->position;
+                        sf::Vector2f size = sf::Vector2f(camera->width, camera->height);
+
+                        sf::Vertex lines[] = {
+                            sf::Vertex(sf::Vector2f(pos.x - size.x/2, pos.y - size.y/2), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x + size.x/2, pos.y - size.y/2), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x + size.x/2, pos.y + size.y/2), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x - size.x/2, pos.y + size.y/2), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x - size.x/2, pos.y - size.y/2), sf::Color::Red)
+                        };
+
+                        window.draw(lines, 5, sf::LinesStrip);
+                    }
+                }
+                else {
+                    std::cout << "CANT DRAW THING\n"; 
+                }
             }
         }
     }
@@ -132,5 +152,22 @@ namespace Rendering {
         // Add object to new layer
         obj->layer = layer;
         AddToLayer(obj);
+    }
+
+    /**
+     * @brief Removes the given GameObject from its RenderingLayer
+     * 
+     * @param obj the GameObject to remove
+     */
+    void RemoveFromLayer(GameObject* obj) {
+        int layer = obj->layer;
+        
+        for (size_t i = 0; i < m_layers[layer].objects.size(); i++) {
+            GameObject* other = m_layers[layer].objects[i]; 
+            if (other->ID == obj->ID) {
+                m_layers[layer].objects.erase(m_layers[layer].objects.begin() + i);
+                break;
+            }
+        }
     }
 }

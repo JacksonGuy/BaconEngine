@@ -8,6 +8,7 @@
 #include "Sound.hpp"
 #include "Input.hpp"
 #include "Rendering.hpp"
+#include "Camera.hpp"
 
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution
@@ -101,6 +102,8 @@ EditorInstance::EditorInstance() {
     this->m_showEntityList = false;                                   // List of Entities
     this->m_showConsole = false;                                      // Debug Console
     this->m_showSettingsMenu = false;                                 // Editor Settings
+    this->m_showTextCreate = false;                                   // Text create menu
+    this->m_showCameraCreate = false;                                 // Camera create menu
 
     this->m_failedMessage = "";                                       // What error to display
 
@@ -117,16 +120,19 @@ EditorInstance::EditorInstance() {
     this->m_createTextPosition[1] = 0.f;
     strcpy(this->m_createTextName, "Text");
     strcpy(this->m_createTextDetails, "");
-    this->m_createTextEntityId = -1;
+
+    // Create Camera Variables
+    strcpy(this->m_createCameraName, "Camera");
+    this->m_createCameraPosition[0] = 0.f;
+    this->m_createCameraPosition[1] = 0.f;
+    this->m_createCameraSize[0] = GameManager::screenWidth;
+    this->m_createCameraSize[1] = GameManager::screenHeight;
 
     // Setup Lua API
     Lua::RegisterFunctions();
 
     // Input
     Input::InitInputMaps();
-
-    // Rendering
-    //Rendering::CreateLayers(5);
 
     // Other
     this->m_lastFixedUpdate = sf::Time::Zero;
@@ -289,6 +295,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         if (ImGui::BeginMenu("Create")) {
                 ImGui::MenuItem("Entity", NULL, &m_showEntityCreate);
                 ImGui::MenuItem("Text", NULL, &m_showTextCreate);
+                ImGui::MenuItem("Camera", NULL, &m_showCameraCreate);
             ImGui::EndMenu();
         }
 
@@ -321,8 +328,15 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             if (!GameManager::isPlayingGame) {
                 if (ImGui::Button("Play Game")) {
                     GameManager::SaveEditorState(*m_window, m_projectTitle);
+                    
+                    // Save editor camera position and size
                     m_cameraPos = m_camera->getCenter();
                     m_cameraSize = m_camera->getSize();
+
+                    if (GameManager::camera != nullptr) {
+                        m_window->setView(*GameManager::camera->view);
+                    }
+
                     GameManager::ConsoleWrite("[PLAYER] Editor data saved. Starting game...");
                     GameManager::isPlayingGame = true;
                 }
@@ -331,12 +345,15 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 if (ImGui::Button("End Game")) {
                     GameManager::RestoreEditorState(*m_window, m_projectTitle);
                     
+                    // Restore editor camera
                     m_camera->setCenter(m_cameraPos);
                     m_camera->setSize(m_cameraSize);
                     m_window->setView(*m_camera);
-                    Sound::stop_sounds();
-                    GameManager::isPlayingGame = false;
                     
+                    // Stop in game sounds
+                    Sound::stop_sounds();
+
+                    GameManager::isPlayingGame = false;
                     GameManager::ConsoleWrite("[PLAYER] Game Ended. Editor data restored.");
                 }
             }
@@ -376,14 +393,21 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
 
                     if (ImGui::Button("Testing")) {
-                        for (Rendering::RenderingLayer layer : Rendering::m_layers) {
-                            std::cout << "Layer " << layer.layerNum << ": " << layer.objects.size() << std::endl;
+                        for (GameObject* obj : GameManager::GameObjects) {
+                            std::cout << obj->name << std::endl;
                         }
                     }
-
-                    if (ImGui::Button("Sort")) {
-                        GameManager::SortObjectsByID();
+                    
+                    if (ImGui::Button("Print Layers")) {
+                        for (Rendering::RenderingLayer layer : Rendering::m_layers) {
+                            std::cout << "Layer " << layer.layerNum << ":\n";
+                            for (GameObject* obj : layer.objects) {
+                                std::cout << "\t" << obj->ID << ": " << obj->name << "\n";
+                            }
+                        }
+                        std::cout << "\n";
                     }
+
                     ImGui::EndTabItem();
                 }
             ImGui::EndTabBar();
@@ -689,7 +713,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
         std::string name = "Text Details (ID: " + std::to_string(text->ID) + ")";
         ImGui::Begin(name.c_str(), &text->showDetails);
-            ImGui::InputText("Name", text->name.data(), 256);
+            char nameBuff[256];
+            strcpy(nameBuff, text->name.data());
+            if (ImGui::InputText("Name", nameBuff, 256)) {
+                text->name = nameBuff;
+            }
 
             char tagBuff[256];
             strcpy(tagBuff, text->tag.data());
@@ -748,10 +776,74 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             }
 
             if (ImGui::Button("Delete")) {
-                free(GameManager::TextObjects[i]);
-                GameManager::TextObjects.erase(GameManager::TextObjects.begin() + i);
+                delete(GameManager::TextObjects[i]);
             }
             
+        ImGui::End();
+    }
+
+    // Show Camera Detail
+    for (size_t i = 0; i < GameManager::Cameras.size(); i++) {
+        Camera* camera = GameManager::Cameras[i];
+        if (!camera->showDetails) continue;
+
+        std::string name = "Camera Details (ID: " + std::to_string(camera->ID) + ")";
+        ImGui::Begin(name.data(), &camera->showDetails);
+            char nameBuff[256];
+            strcpy(nameBuff, camera->name.data());
+            if (ImGui::InputText("Name", nameBuff, 256)) {
+                camera->name = nameBuff;
+            }
+
+            int layerBuff = camera->layer;
+            if (ImGui::InputInt("Layer", &layerBuff)) {
+                if (layerBuff >= 0) Rendering::SwapLayer(camera, layerBuff);
+                else layerBuff = 0;
+            }
+
+            float posBuff[] = {camera->position.x, camera->position.y};
+            if (ImGui::InputFloat2("Position", posBuff)) {
+                camera->SetPosition(sf::Vector2f(posBuff[0], posBuff[1]));
+                camera->view->setCenter(camera->position);
+            }
+
+            int sizeBuff[] = {camera->width, camera->height};
+            if (ImGui::InputInt2("Size", sizeBuff)) {
+                camera->width = sizeBuff[0];
+                camera->height = sizeBuff[1];
+                camera->view->setSize(camera->width, camera->height);
+            }
+
+            if (ImGui::InputFloat("Rotation", &camera->rotation)) {
+                camera->view->setRotation(camera->rotation);
+            }
+
+            ImGui::Separator();
+
+            if (GameManager::camera != nullptr && GameManager::camera != camera) {
+                ImGui::BeginDisabled();
+            }
+            if (ImGui::Checkbox("Active Camera", &camera->isActive)) {
+                if (GameManager::camera == nullptr) {
+                    GameManager::camera = camera;
+                }
+                else {
+                    GameManager::camera = nullptr;
+                }
+            }
+            if (GameManager::camera != nullptr && GameManager::camera != camera) {
+                ImGui::EndDisabled();
+            }
+
+            ImGui::SameLine();
+            ImGui::Checkbox("Visible", &camera->isVisible);
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Delete")) {
+                delete(camera);
+            }
+
         ImGui::End();
     }
 
@@ -784,6 +876,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 entity->width = m_createDimension[0];
                 entity->height = m_createDimension[1];
                 entity->SetSprite(m_createImagePath);
+
+                Rendering::AddToLayer(entity);
+
                 m_showEntityCreate = false; // Close Window
             }
         ImGui::End();
@@ -803,7 +898,33 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 text->position = sf::Vector2f(m_createTextPosition[0], m_createTextPosition[1]);
                 text->text.setString(m_createTextDetails);
 
+                Rendering::AddToLayer(text);
+
                 m_showTextCreate = false; // Close Window
+            }
+        ImGui::End();
+    }
+
+    // Create new Camera
+    if (m_showCameraCreate) {
+        ImGui::Begin("Create Camera", &m_showCameraCreate);
+            ImGui::InputText("Name", m_createCameraName, 256);
+            ImGui::InputFloat2("Position", m_createCameraPosition);
+            ImGui::InputInt2("Size", m_createCameraSize);
+
+            if (ImGui::Button("Create")) {
+                Camera* camera = new Camera();
+                camera->name = m_createCameraName;
+                camera->position = sf::Vector2f(m_createCameraPosition[0], m_createCameraPosition[1]);
+                camera->width = m_createCameraSize[0];
+                camera->height = m_createCameraSize[1];
+
+                camera->view->setCenter(camera->position);
+                camera->view->setSize(sf::Vector2f(camera->width, camera->height));
+
+                Rendering::AddToLayer(camera);
+
+                m_showCameraCreate = false;
             }
         ImGui::End();
     }
@@ -1071,8 +1192,13 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
         // Player position update
         if (GameManager::player != nullptr && GameManager::isPlayingGame) {
             GameManager::player->SetPosition(GameManager::player->position);
-            m_camera->setCenter(GameManager::player->position);
-            m_window->setView(*m_camera);
+
+            if (GameManager::camera != nullptr) {
+                m_window->setView(*GameManager::camera->view);
+            }
+            else {
+                m_window->setView(*m_camera);
+            }
         }
 
         // Physics
@@ -1164,6 +1290,10 @@ void EditorInstance::DisplayEntityTree(GameObject* obj) {
             TextObj* text = (TextObj*)obj;
             ImGui::TreeNodeEx(text->name.data(), normalFlags);
         }
+        else if (obj->type == CAMERA) {
+            Camera* camera = (Camera*)obj;
+            ImGui::TreeNodeEx(camera->name.data(), normalFlags);
+        }
         
         
         if (ImGui::IsItemClicked(1)) {
@@ -1213,6 +1343,10 @@ void EditorInstance::DisplayEntityTree(GameObject* obj) {
         else if (obj->type == TEXT) {
             TextObj* text = (TextObj*)obj;
             is_open = ImGui::TreeNodeEx(text->name.data(), parentFlags);
+        }
+        else if (obj->type == CAMERA) {
+            Camera* camera = (Camera*)obj;
+            is_open = ImGui::TreeNodeEx(camera->name.data(), parentFlags);
         }
         
         if (ImGui::BeginDragDropSource()) {
@@ -1288,6 +1422,22 @@ void* EditorInstance::CopyTree(GameObject* obj) {
         TextObj* copy = new TextObj();
         copy->Overwrite(*(TextObj*)obj);
         copy->name = obj->name;
+
+        for (GameObject* child : obj->children) {
+            GameObject* childCopy = (GameObject*)CopyTree(child);
+            
+            sf::Vector2f delta = child->position - obj->position;
+            childCopy->position = copy->position + delta;
+            
+            copy->children.push_back(childCopy);
+            childCopy->parent = copy;
+        }
+
+        return copy;
+    }
+    else if (obj->type == CAMERA) {
+        Camera* copy = new Camera();
+        copy->Overwrite(*(Camera*)obj);
 
         for (GameObject* child : obj->children) {
             GameObject* childCopy = (GameObject*)CopyTree(child);

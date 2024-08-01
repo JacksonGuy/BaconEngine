@@ -23,6 +23,8 @@ sf::Vector2f GameManager::mousePos = sf::Vector2f(0,0);
 bool GameManager::windowHasFocus = true;
 std::string GameManager::entryPoint = "";
 sf::Clock GameManager::clock;
+Camera* GameManager::camera;
+std::vector<Camera*> GameManager::Cameras;
 
 /**
  * @brief Check for collision between two specific Entities
@@ -111,14 +113,18 @@ void GameManager::SaveEditorState(sf::RenderWindow& window, std::string filename
 void GameManager::RestoreEditorState(sf::RenderWindow& window, std::string filename) {
     // Delete Editor stuff
     for (Entity* e : GameManager::Entities) {
-        free(e);
+        delete(e);
     }
     for (TextObj* text : GameManager::TextObjects) {
-        free(text);
+        delete(text);
+    }
+    for (Camera* camera : GameManager::Cameras) {
+        delete(camera);
     }
     GameManager::GameObjects.clear();
     GameManager::Entities.clear();
     GameManager::TextObjects.clear();
+    GameManager::Cameras.clear();
     Rendering::m_layers.clear();
 
     // Load Back data

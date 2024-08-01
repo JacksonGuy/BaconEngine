@@ -13,6 +13,7 @@
 #include "Entity.hpp"
 #include "Text.hpp"
 #include "File.hpp"
+#include "Camera.hpp"
 
 extern "C" {
     #include <lauxlib.h>
@@ -30,9 +31,11 @@ class GameManager {
         static std::vector<GameObject*> GameObjects;
         static std::vector<Entity*> Entities;
         static std::vector<TextObj*> TextObjects;
+        static std::vector<Camera*> Cameras;
         
         static sf::Font font;
         static Entity* player;
+        static Camera* camera;
         static bool isPlayingGame;
         static bool windowHasFocus;
         static std::string entryPoint;

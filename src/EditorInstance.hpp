@@ -47,6 +47,7 @@ class EditorInstance {
         bool m_showConsole;
         bool m_showSettingsMenu;
         bool m_showTextCreate;
+        bool m_showCameraCreate;
         std::string m_failedMessage;
         GameObject* m_currentSelectedObject;
         GameObject* m_copyObject;
@@ -71,7 +72,11 @@ class EditorInstance {
         char m_createTextName[256];
         char m_createTextDetails[1024 * 16];
         float m_createTextPosition[2];
-        int m_createTextEntityId;
+
+        // Create Camera Variables
+        char m_createCameraName[256];
+        float m_createCameraPosition[2];
+        int m_createCameraSize[2];
 
         // Engine Functions
         EditorInstance();

@@ -4,12 +4,10 @@
 TextObj::TextObj() : GameObject() {
     this->name = "Text";
     this->type = TEXT;
+    
     this->text = sf::Text("Words", GameManager::font);
     this->text.setCharacterSize(24);
     this->text.setFillColor(sf::Color::Black);
-
-    this->showDetails = false;
-    this->isVisible = true;
 
     GameManager::TextObjects.push_back(this);
 }
@@ -19,13 +17,18 @@ TextObj::TextObj(TextObj& obj) : GameObject(obj) {
 
     this->text = obj.text;
 
-    this->showDetails = obj.showDetails;
-    this->isVisible = obj.isVisible;
-
     GameManager::TextObjects.push_back(this);
 }
 
-TextObj::~TextObj() {}
+TextObj::~TextObj() {
+    // Remove from TextObjects
+    for (size_t i = 0; i < GameManager::Cameras.size(); i++) {
+        if (this->ID == GameManager::Cameras[i]->ID) {
+            GameManager::Cameras.erase(GameManager::Cameras.begin() + i);
+            break;
+        }
+    }
+}
 
 /**
  * @brief Copies the variables of the given TextObj
@@ -50,16 +53,5 @@ void TextObj::SetPosition(sf::Vector2f position) {
     this->position = position;
     this->text.setPosition(this->position);
 
-    for (GameObject* child : this->children) {
-        sf::Vector2f newPos = child->position + delta;
-        
-        if (child->type == ENTITY) {
-            Entity* e = (Entity*)child;
-            e->SetPosition(newPos);
-        }
-        else if (child->type == TEXT) {
-            TextObj* text = (TextObj*)child;
-            text->SetPosition(newPos);
-        }
-    }
+    this->UpdateChildrenPositions(delta);
 }
