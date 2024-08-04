@@ -8,7 +8,7 @@ CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 CFLAGS += -Iinclude/lua -Linclude/lua
 CFLAGS += -Iinclude/nativefiledialog/src/include
 CFLAGS += -Linclude/nativefiledialog/build/lib/Release/x64
-CFLAGS += -Iinclude/tracy
+#CFLAGS += -Iinclude/tracy
 
 BUILD_DIR = bin
 
@@ -31,7 +31,7 @@ SOURCES += include/imgui/imgui_tables.cpp
 SOURCES += include/imgui/imgui_widgets.cpp
 SOURCES += include/imgui/imgui-SFML.cpp
 SOURCES += include/imgui/imgui_demo.cpp
-SOURCES += include/tracy/TracyClient.cpp
+#SOURCES += include/tracy/TracyClient.cpp
 OBJS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 
 UNAME = $(shell uname -s)
@@ -81,5 +81,5 @@ all: $(OBJS)
 	$(CC) -o $(EXE) $^ $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf ./bin
+	rm -rf ./bin/src
 	rm -rf ./*.exe
