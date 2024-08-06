@@ -93,11 +93,23 @@ namespace Lua {
     int delete_entity(lua_State* L);
     int delete_entity_id(lua_State* L);
 
+    // Camera
+    int set_camera(lua_State* L);
+    int get_current_camera_ID(lua_State* L);
+    int get_current_camera_name(lua_State* L);
+
     // Sound
     int play_sound(lua_State* L);
     int play_music(lua_State* L);
     int pause_music(lua_State* L);
     int stop_music(lua_State* L);
+    int set_master_volume(lua_State* L);
+    int set_effects_volume(lua_State* L);
+    int set_music_volume(lua_State* L);
+    
+    // IO
+    int save_game(lua_State* L);
+    int load_game(lua_State* L);
 }
 
 #endif

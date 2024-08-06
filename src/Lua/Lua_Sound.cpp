@@ -33,4 +33,22 @@ namespace Lua {
         player->stop();
         return 0; 
     }
+
+    int set_master_volume(lua_State* L) {
+        float volume = lua_tonumber(L, 1);
+        Sound::setMasterVolume(volume);
+        return 0;
+    }
+
+    int set_effects_volume(lua_State* L) {
+        float volume = lua_tonumber(L, 1);
+        Sound::setEffectsVolume(volume);
+        return 0;
+    }
+
+    int set_music_volume(lua_State* L) {
+        float volume = lua_tonumber(L, 1);
+        Sound::setMusicVolume(volume);
+        return 0;
+    }
 }

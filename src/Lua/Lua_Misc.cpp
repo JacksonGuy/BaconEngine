@@ -73,6 +73,16 @@ namespace Lua {
         lua_register(LuaState, "play_music", play_music);
         lua_register(LuaState, "pause_music", pause_music);
         lua_register(LuaState, "stop_music", stop_music);
+        lua_register(LuaState, "set_master_volume", set_master_volume);
+        lua_register(LuaState, "set_effects_volume", set_effects_volume);
+        lua_register(LuaState, "set_music_volume", set_music_volume);
+
+        lua_register(LuaState, "set_camera", set_camera);
+        lua_register(LuaState, "get_current_camera_ID", get_current_camera_ID);
+        lua_register(LuaState, "get_current_camera_name", get_current_camera_name);
+
+        lua_register(LuaState, "save_game", save_game);
+        lua_register(LuaState, "load_game", load_game);
     }
 
     void RunLuaUpdates() {
@@ -271,5 +281,55 @@ namespace Lua {
             lua_settable(L, -3);
         }
         return 1;
+    }
+
+    int set_camera(lua_State* L) { 
+        if (lua_isstring(L, 1)) {
+            std::string name = lua_tostring(L, 1);
+
+            for (Camera* camera : GameManager::Cameras) {
+                if (camera->name == name) {
+                    GameManager::camera = camera;
+                    break;
+                }
+            }
+        }
+        else if (lua_isnumber(L, 1)) {
+            unsigned int id = lua_tonumber(L, 1);
+
+            for (Camera* camera : GameManager::Cameras) {
+                if (camera->ID == id) {
+                    GameManager::camera = camera;
+                    break;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    int get_current_camera_ID(lua_State* L) {
+        lua_pushnumber(L, GameManager::camera->ID);
+        return 1;
+    }
+
+    int get_current_camera_name(lua_State* L) {
+        lua_pushstring(L, GameManager::camera->name.data());
+        return 1;
+    }
+
+    int save_game(lua_State* L) {
+        std::string file = lua_tostring(L, 1);
+        File::save(file);
+        return 0;
+    }
+
+    int load_game(lua_State* L) {
+        std::string file = lua_tostring(L, 1);
+        bool result = File::load(file);
+        if (result == false) {
+            GameManager::ConsoleWrite("[ERROR] Failed to load save file!");
+        }
+        return 0;
     }
 }

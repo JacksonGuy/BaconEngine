@@ -83,3 +83,7 @@ all: $(OBJS)
 clean:
 	rm -rf ./bin/src
 	rm -rf ./*.exe
+
+cleanall:
+	rm -rf ./bin
+	rm -rf ./*.exe
