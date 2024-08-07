@@ -7,7 +7,7 @@
 
 File::ConfigState GameManager::config;
 std::vector<GameObject*> GameManager::GameObjects;
-std::vector<Entity*> GameManager::Entities;
+std::vector<Entity*> GameManager::Entities = {};
 std::vector<TextObj*> GameManager::TextObjects;
 sf::Font GameManager::font;
 unsigned int GameManager::screenWidth = 1280;

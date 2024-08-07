@@ -16,7 +16,7 @@ ifeq ($(target), editor_release)
 	CFLAGS += -O3
 	SOURCES += Program.cpp
 else ifeq ($(target), editor_debug)
-	CFLAGS += -g -Wall -Wextra -pedantic-errors
+	CFLAGS += -ggdb -Wall -Wextra -pedantic-errors
 	SOURCES += Program.cpp
 else ifeq ($(target), test)
 	SOURCES += Test.cpp
@@ -82,6 +82,7 @@ all: $(OBJS)
 
 clean:
 	rm -rf ./bin/src
+	rm -rf ./bin/*.o
 	rm -rf ./*.exe
 
 cleanall:

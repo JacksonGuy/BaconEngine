@@ -115,6 +115,8 @@ EditorInstance::EditorInstance() {
     this->m_createDimension[0] = 128;                                 // Default Entity Dimensions
     this->m_createDimension[1] = 128;
 
+    this->m_HitboxAdjust = 1.f;
+
     // Create Text Variables
     this->m_createTextPosition[0] = 0.f;
     this->m_createTextPosition[1] = 0.f;
@@ -393,9 +395,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
 
                     if (ImGui::Button("Testing")) {
-                        for (GameObject* obj : GameManager::GameObjects) {
-                            std::cout << obj->name << std::endl;
-                        }
+                        std::cout << GameManager::player->grounded << std::endl;
                     }
                     
                     if (ImGui::Button("Print Layers")) {
@@ -483,11 +483,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (ImGui::InputInt("Width", &e->width)) {
-                    e->UpdateRect();
                     e->SetSprite(e->texturePath);
                 }
                 if (ImGui::InputInt("Height", &e->height)) {
-                    e->UpdateRect();
                     e->SetSprite(e->texturePath);
                 }
 
@@ -502,7 +500,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                     // Rotate
                     e->sprite.setRotation(e->rotation);
-                    e->UpdateRect();
                 }
 
                 ImGui::Separator();
@@ -566,10 +563,92 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (e->isSolid) {
-                    if (ImGui::InputFloat("Hitbox Size", &e->hitboxSize)) {
-                        e->UpdateRect();
-                    }
+                    ImGui::Separator();
+                    ImGui::Text("Hitbox");
                     ImGui::Checkbox("Show Hitbox", &e->showHitbox);
+
+                    sf::Vector2f pos = e->rect.getPosition();
+                    float hitboxPos[2] = {pos.x, pos.y};
+                    if (ImGui::InputFloat2("Hitbox Position", hitboxPos)) {
+                        e->rect.left = hitboxPos[0];
+                        e->rect.top = hitboxPos[1];
+                        e->UpdateCollisionRects();
+                    }
+
+                    sf::Vector2f size = e->rect.getSize();
+                    float hitboxSize[2] = {size.x, size.y};
+                    if (ImGui::InputFloat2("Hitbox Size", hitboxSize)) {
+                        e->rect.width = hitboxSize[0];
+                        e->rect.height = hitboxSize[1];
+                        e->UpdateCollisionRects();
+                    }
+
+                    ImGui::Text("Top");
+                    ImGui::SameLine();
+                    ImGui::Text("\tButtom");
+                    ImGui::SameLine();
+                    ImGui::Text("\tLeft");
+                    ImGui::SameLine();
+                    ImGui::Text("\tRight");
+
+                    // Top
+                    if (ImGui::Button("-")) {
+                        e->rect.top += m_HitboxAdjust;
+                        e->rect.height -= m_HitboxAdjust;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("+")) {
+                        e->rect.top -= m_HitboxAdjust;
+                        e->rect.height += m_HitboxAdjust;
+                    }
+
+                    // Bottom
+                    ImGui::SameLine();
+                    ImGui::Text(" ");
+                    ImGui::SameLine();
+                    ImGui::PushID(1);
+                    if (ImGui::Button("-")) {
+                        e->rect.height -= m_HitboxAdjust;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("+")) {
+                        e->rect.height += m_HitboxAdjust;
+                    }
+                    ImGui::PopID();
+
+                    // Left
+                    ImGui::SameLine();
+                    ImGui::Text("   ");
+                    ImGui::SameLine();
+                    ImGui::PushID(2);
+                    if (ImGui::Button("-")) {
+                        e->rect.left += m_HitboxAdjust;
+                        e->rect.width -= m_HitboxAdjust;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("+")) {
+                        e->rect.left -= m_HitboxAdjust;
+                        e->rect.width += m_HitboxAdjust;
+                    }
+                    ImGui::PopID();
+
+                    // Right
+                    ImGui::SameLine();
+                    ImGui::Text("  ");
+                    ImGui::SameLine();
+                    ImGui::PushID(3);
+                    if (ImGui::Button("-")) {
+                        e->rect.width -= m_HitboxAdjust;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("+")) {
+                        e->rect.width += m_HitboxAdjust;
+                    }
+                    ImGui::PopID();
+
+                    ImGui::InputFloat("Adjust Amount", &m_HitboxAdjust);
+
+                    ImGui::Separator();
                 }
 
                 if (e->physicsObject) {
@@ -1131,6 +1210,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
         }
 
         if (event.type == sf::Event::MouseMoved) {
+            // Move Camera
             if (m_cameraMove) {
                 // Calculate change
                 sf::Vector2f currentPos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
@@ -1143,7 +1223,9 @@ void EditorInstance::Update(sf::Time deltaTime) {
             // Move Entity
             else {
                 if (m_currentSelectedObject != nullptr && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                    // Get mouse position
                     sf::Vector2f mousePos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
+                    
                     m_currentSelectedObject->SetPosition(mousePos);
                 }
             }
