@@ -70,7 +70,7 @@ namespace Rendering {
                             sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Red)
                         };
 
-                        /*
+                        // /*
                         sf::RectangleShape topRect;
                         topRect.setPosition(e->topRect.getPosition());
                         topRect.setSize(e->topRect.getSize());
@@ -80,7 +80,7 @@ namespace Rendering {
                         rightRect.setPosition(e->rightRect.getPosition());
                         rightRect.setSize(e->rightRect.getSize());
                         window.draw(rightRect);
-                        */
+                        // */
 
                         window.draw(lines, 5, sf::LinesStrip);
                     }

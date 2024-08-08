@@ -113,7 +113,13 @@ void GameManager::SaveEditorState(sf::RenderWindow& window, std::string filename
 void GameManager::RestoreEditorState(sf::RenderWindow& window, std::string filename) {
     // Delete Editor stuff
     for (Entity* e : GameManager::Entities) {
-        delete(e);
+        //delete(e);
+
+        // TODO
+        // For some reason, calling delete causes the program to segfault
+        // We don't strictly need to here, since we just clear everything anyways,
+        // but this could be a massive issue in the future
+        free(e);
     }
     for (TextObj* text : GameManager::TextObjects) {
         delete(text);

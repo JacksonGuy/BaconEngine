@@ -451,6 +451,10 @@ void savePrefab(std::string filename, Entity* e) {
     data["physicsObject"] = e->physicsObject;
     data["mass"] = e->mass;
     data["isVisible"] = e->isVisible;
+    data["hitbox"] = {
+        {"position", {e->rect.getPosition().x, e->rect.getPosition().y}},
+        {"size", {e->rect.getSize().x, e->rect.getSize().y}}
+    };
 
     for (size_t i = 0; i < e->lua_scripts.size(); i++) {
         data["scripts"][i] = e->lua_scripts[i].path;
@@ -511,6 +515,10 @@ Entity* loadPrefab(std::string filename) {
     e->physicsObject = data["physicsObject"];
     e->mass = data["mass"];
     e->isVisible = data["isVisible"];
+    e->rect = sf::Rect<float>(
+        data["hitbox"]["position"][0], data["hitbox"]["position"][1],
+        data["hitbox"]["size"][0], data["hitbox"]["size"][1]
+    );
 
     for (json::iterator it = data["scripts"].begin(); it != data["scripts"].end(); ++it) {
         ScriptItem script;

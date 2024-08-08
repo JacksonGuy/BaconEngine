@@ -98,6 +98,13 @@ void Entity::Overwrite(Entity& e) {
     this->entity_strings = e.entity_strings;
 
     this->SetSprite(e.texturePath, false);
+
+    sf::Vector2f delta = e.rect.getPosition() - e.position;
+    this->rect.left = this->position.x + delta.x;
+    this->rect.top = this->position.y + delta.y;
+    this->rect.width = e.rect.width;
+    this->rect.height = e.rect.height;
+    
     this->SetPosition(this->position);
 }
 
@@ -170,27 +177,27 @@ void Entity::UpdateRect(sf::Vector2f change) {
  */
 void Entity::UpdateCollisionRects() {
     sf::Vector2f rectPos = this->rect.getPosition();
-    sf::Vector2f size = sf::Vector2f(5, 5);
+    sf::Vector2f size = sf::Vector2f(1, 1);
 
     const float gap = 1;
 
     this->topRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x, rectPos.y - size.y),
-        sf::Vector2f(this->rect.width, size.x - gap)
+        sf::Vector2f(this->rect.width, size.x)
     );
 
     this->bottomRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x, rectPos.y + this->rect.height + gap),
+        sf::Vector2f(rectPos.x, rectPos.y + this->rect.height),
         sf::Vector2f(this->rect.width, size.y)
     );
 
     this->leftRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x - gap, rectPos.y),
-        sf::Vector2f(size.x, this->rect.height)
+        sf::Vector2f(rectPos.x - size.x, rectPos.y),
+        sf::Vector2f(size.x, this->rect.height - gap)
     );
 
     this->rightRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x + this->rect.width + gap, rectPos.y),
-        sf::Vector2f(size.x, this->rect.height)
+        sf::Vector2f(rectPos.x + this->rect.width, rectPos.y),
+        sf::Vector2f(size.x, this->rect.height - gap)
     );
 }

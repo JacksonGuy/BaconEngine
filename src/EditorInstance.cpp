@@ -1292,6 +1292,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                 bool collision = false;
                 bool bottomCollision = false;
                 bool topCollision = false;
+                Entity* floorEntity = nullptr;
                 for (Entity* other : GameManager::Entities) {
                     if (e->ID == other->ID) continue;
                     if (!other->isSolid) continue;
@@ -1300,6 +1301,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                     if (e->bottomRect.intersects(other->rect)) {
                         collision = true;
                         bottomCollision = true;
+                        floorEntity = other;
                     }
 
                     // Did the top of our entity hit something?
@@ -1319,6 +1321,14 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                             e->grounded = true;
                             e->acceleration.y = 0;
                             e->velocity.y = 0;
+
+                            // Are we stuck?
+                            if (e->position.y + e->height/2 > floorEntity->position.y - floorEntity->height/2) {
+                                float diff = (e->position.y + e->height/2) - (floorEntity->position.y - floorEntity->height/2);
+                                float newY = e->position.y -= diff;
+                                e->SetPosition(sf::Vector2f(e->position.x, newY));
+                                floorEntity = nullptr;
+                            }
                         }
                         // Else, do nothing
                     }

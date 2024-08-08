@@ -1,6 +1,6 @@
 CC = g++
 
-CFLAGS = 
+CFLAGS = -I. -L.
 CFLAGS += -Iinclude/SFML/include/
 CFLAGS += -Linclude/SFML/lib
 CFLAGS += -DSFML_STATIC
@@ -8,6 +8,7 @@ CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 CFLAGS += -Iinclude/lua -Linclude/lua
 CFLAGS += -Iinclude/nativefiledialog/src/include
 CFLAGS += -Linclude/nativefiledialog/build/lib/Release/x64
+CFLAGS += -Iinclude/box2d/include -Linclude/box2d/build/bin/Debug
 #CFLAGS += -Iinclude/tracy
 
 BUILD_DIR = bin
@@ -57,6 +58,7 @@ ifeq ($(OS), Windows_NT)
 	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s
 	LIBS += -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua -lnfd -lcomctl32 -lole32 -luuid
 	LIBS += -lopenal32 -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
+	LIBS += -lbox2d
 	ifeq ($(target), editor_debug)
 		EXE = editor.exe
 	else ifeq ($(target), editor_release)
@@ -70,7 +72,7 @@ endif
 
 $(BUILD_DIR)/%.o : %.cpp
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) -lbox2d $(CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/%.o : libs/imgui/%.cpp
 	@mkdir -p $(@D)

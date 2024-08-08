@@ -38,6 +38,7 @@ GameObject::GameObject(GameObject& obj) {
     this->height = obj.height;
     this->rotation = obj.rotation;
     this->isVisible = obj.isVisible;
+    this->layer = obj.layer;
 
     this->parent = obj.parent;
     this->children = obj.children;
@@ -90,6 +91,10 @@ void GameObject::Overwrite(GameObject& obj) {
     this->height = obj.height;
     this->rotation = obj.rotation;
     this->isVisible = obj.isVisible; 
+    
+    Rendering::RemoveFromLayer(this);
+    this->layer = obj.layer;
+    Rendering::AddToLayer(this);
 } 
 
 /**
