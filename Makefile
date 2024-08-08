@@ -42,7 +42,7 @@ EXE =
 ifeq ($(UNAME), Linux)
 	LIBS += -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 	LIBS += -llua -lGL -lglfw
-	LIBS += -lopenal32 -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
+	LIBS += -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
 	ifeq ($(target), editor_debug)
 		EXE = editor
 	else ifeq ($(target), editor_release)

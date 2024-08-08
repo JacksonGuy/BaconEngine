@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "Lua/luaApi.hpp"
+#include "Lua/LuaApi.hpp"
 #include "Rendering.hpp"
 
 File::ConfigState GameManager::config;

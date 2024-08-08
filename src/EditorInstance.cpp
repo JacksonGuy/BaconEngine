@@ -160,7 +160,8 @@ void EditorInstance::Run() {
     originDot.setPosition(0.0f, 0.0f);
 
     // DEBUG
-    std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
+    // std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
+    std::string demoPath = "/home/jack/BaconProjects/Test/Game.json";
     std::filesystem::path demo = std::filesystem::relative(demoPath);
     m_projectTitle = demoPath;
     m_loadedProject = true;
@@ -1292,7 +1293,6 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                 bool collision = false;
                 bool bottomCollision = false;
                 bool topCollision = false;
-                Entity* floorEntity = nullptr;
                 for (Entity* other : GameManager::Entities) {
                     if (e->ID == other->ID) continue;
                     if (!other->isSolid) continue;
@@ -1301,7 +1301,6 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                     if (e->bottomRect.intersects(other->rect)) {
                         collision = true;
                         bottomCollision = true;
-                        floorEntity = other;
                     }
 
                     // Did the top of our entity hit something?
@@ -1321,14 +1320,6 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                             e->grounded = true;
                             e->acceleration.y = 0;
                             e->velocity.y = 0;
-
-                            // Are we stuck?
-                            if (e->position.y + e->height/2 > floorEntity->position.y - floorEntity->height/2) {
-                                float diff = (e->position.y + e->height/2) - (floorEntity->position.y - floorEntity->height/2);
-                                float newY = e->position.y -= diff;
-                                e->SetPosition(sf::Vector2f(e->position.x, newY));
-                                floorEntity = nullptr;
-                            }
                         }
                         // Else, do nothing
                     }
