@@ -86,9 +86,13 @@ EditorInstance::EditorInstance() {
     Settings::ApplySettings(settings);
     Settings::ChangeResolution(*m_window);
 
+    // Rendering
+    Rendering::frame.create(1280, 720);
+
     // Set Camera
     this->m_camera = new sf::View(sf::Vector2f(0,0), sf::Vector2f(GameManager::screenWidth, GameManager::screenHeight));
-    m_window->setView(*m_camera);
+    Rendering::frame.setView(*m_camera);
+    // m_window->setView(*m_camera);
     this->m_cameraZoom = 1.0f;
 
     // Default Font
@@ -204,7 +208,22 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     float fps = 1.0f / currentTime;
 
     ImGui::SFML::Update(*m_window, deltaTime);
-    if (m_showDockSpace) ImGui::DockSpaceOverViewport();
+    // if (m_showDockSpace) ImGui::DockSpaceOverViewport();
+    ImGui::DockSpaceOverViewport();
+
+    // Game Window
+    ImGui::Begin("Scene");
+        m_swindowpos = (sf::Vector2f)ImGui::GetWindowPos();
+        m_swindowsize = (sf::Vector2f)ImGui::GetContentRegionAvail();
+
+        sf::Vector2f frameSize = (sf::Vector2f)Rendering::frame.getSize();
+        if (frameSize.x != m_swindowsize.x || frameSize.y != m_swindowsize.y) {
+            Rendering::frame.create(m_swindowsize.x, m_swindowsize.y);
+            Rendering::frame.setView(*m_camera);
+        }
+
+        ImGui::Image(Rendering::frame);
+    ImGui::End();
 
     // Top menu bar
     if (ImGui::BeginMainMenuBar()) {
@@ -396,7 +415,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
 
                     if (ImGui::Button("Testing")) {
-                        std::cout << GameManager::player->grounded << std::endl;
+                        std::cout << m_swindowpos.x << "," << m_swindowpos.y << std::endl;
                     }
                     
                     if (ImGui::Button("Print Layers")) {
@@ -1108,6 +1127,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 void EditorInstance::Update(sf::Time deltaTime) {    
     GameManager::windowHasFocus = m_window->hasFocus();
 
+    // m_sceneMousePos = (sf::Vector2f)sf::Mouse::getPosition() - m_swindowpos;
+    // m_sceneMousePos = Rendering::frame.mapPixelToCoords((sf::Vector2i)m_sceneMousePos);
+
+    sf::Vector2f worldMPos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
+
     // Process events
     sf::Event event;
     while (m_window->pollEvent(event)) {
@@ -1133,8 +1157,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
         if (m_keypresses[sf::Keyboard::LControl] && m_keypresses[sf::Keyboard::V]) {
             if (m_copyObject != nullptr) {
                 GameObject* copy = (GameObject*)CopyTree(m_copyObject);
-                sf::Vector2f converted = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
-                copy->SetPosition(converted);
+                copy->SetPosition(worldMPos);
 
                 m_keypresses[sf::Keyboard::V] = false;
             }
@@ -1150,23 +1173,22 @@ void EditorInstance::Update(sf::Time deltaTime) {
         // Mouse Button Pressed
         if (event.type == sf::Event::MouseButtonPressed) {
             // If left mouse buttton is pressed, and we aren't clicking on an ImGui window
-            if (event.mouseButton.button == 0 && !io.WantCaptureMouse) {
+            // if (event.mouseButton.button == 0 && !io.WantCaptureMouse) {
+            if (event.mouseButton.button == 0) {
                 // Editing Game
                 if (!GameManager::isPlayingGame) {
-                    sf::Vector2f converted = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
-
                     // Check if we clicked on a Gameobject
                     // If so, set as selected
                     bool selectedSomething = false;
                     for (Entity* e : GameManager::Entities) {
-                        if (e->rect.contains(converted.x, converted.y)) {
+                        if (e->rect.contains(worldMPos.x, worldMPos.y)) {
                             m_currentSelectedObject = e;
                             selectedSomething = true;
                             break;
                         }
                     }
                     for (TextObj* text : GameManager::TextObjects) {
-                        if (text->text.getGlobalBounds().contains(converted.x, converted.y)) {
+                        if (text->text.getGlobalBounds().contains(worldMPos.x, worldMPos.y)) {
                             m_currentSelectedObject = text;
                             selectedSomething = true;
                             break;
@@ -1175,10 +1197,8 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     
                     if (!selectedSomething) {
                         // Camera drag move
-                        // Get starting position as reference for movement
-                        
-                        //mousePos = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
-                        m_mousePos = converted;
+                        // m_mousePos = worldMPos;
+                        m_mousePos = (sf::Vector2f)sf::Mouse::getPosition(*m_window);
                         m_cameraMove = true;
                         m_currentSelectedObject = nullptr;
                     }
@@ -1187,17 +1207,17 @@ void EditorInstance::Update(sf::Time deltaTime) {
 
             // Right Mouse
             else if (event.mouseButton.button == 1) {
-                sf::Vector2f converted = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
-                
+                // sf::Vector2f converted = m_sceneMousePos;
+
                 for (Entity* e : GameManager::Entities) {
-                    if (e->rect.contains(converted.x, converted.y)) {
+                    if (e->rect.contains(worldMPos.x, worldMPos.y)) {
                         // Toggle details menu visability
                         e->showDetails = !e->showDetails;
                     }
                 }
 
                 for (TextObj* text : GameManager::TextObjects) {
-                    if (text->text.getGlobalBounds().contains(converted.x, converted.y)) {
+                    if (text->text.getGlobalBounds().contains(worldMPos.x, worldMPos.y)) {
                         text->showDetails = !text->showDetails;
                     }
                 }
@@ -1214,27 +1234,25 @@ void EditorInstance::Update(sf::Time deltaTime) {
             // Move Camera
             if (m_cameraMove) {
                 // Calculate change
-                sf::Vector2f currentPos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
-                sf::Vector2f change = (sf::Vector2f)(m_mousePos - currentPos);
+                sf::Vector2f change = (sf::Vector2f)(m_mousePos - (sf::Vector2f)sf::Mouse::getPosition(*m_window));
 
                 // Update position
                 m_camera->setCenter(m_camera->getCenter() + change);
-                m_window->setView(*m_camera);
+                Rendering::frame.setView(*m_camera);
+                // m_window->setView(*m_camera);
             } 
             // Move Entity
             else {
                 if (m_currentSelectedObject != nullptr && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-                    // Get mouse position
-                    sf::Vector2f mousePos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
-                    
-                    m_currentSelectedObject->SetPosition(mousePos);
+                    m_currentSelectedObject->SetPosition(worldMPos);
                 }
             }
         }
 
         // Mouse Wheel
         if (event.type == sf::Event::MouseWheelMoved) {
-            if (!GameManager::isPlayingGame && !io.WantCaptureMouse) {
+            // if (!GameManager::isPlayingGame && !io.WantCaptureMouse) {
+            if (!GameManager::isPlayingGame) {
                 // Mouse wheel moved forwards
                 if (event.mouseWheel.delta == 1) {
                     m_camera->zoom(0.8);
@@ -1247,7 +1265,8 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     m_cameraZoom *= 0.8;
                 }
 
-                m_window->setView(*m_camera);
+                Rendering::frame.setView(*m_camera);
+                // m_window->setView(*m_camera);
             }
         }
     }
@@ -1277,10 +1296,12 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             GameManager::player->SetPosition(GameManager::player->position);
 
             if (GameManager::camera != nullptr) {
-                m_window->setView(*GameManager::camera->view);
+                // m_window->setView(*GameManager::camera->view);
+                Rendering::frame.setView(*GameManager::camera->view);
             }
             else {
-                m_window->setView(*m_camera);
+                // m_window->setView(*m_camera);
+                Rendering::frame.setView(*m_camera);
             }
         }
 

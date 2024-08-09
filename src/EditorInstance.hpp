@@ -29,6 +29,9 @@ class EditorInstance {
         sf::Vector2f m_cameraPos;
         sf::Vector2f m_cameraSize;
         float m_cameraZoom;
+        sf::Vector2f m_swindowpos;
+        sf::Vector2f m_swindowsize;
+        sf::Vector2f m_sceneMousePos;
 
         // Engine Variables
         sf::Clock m_clock;
