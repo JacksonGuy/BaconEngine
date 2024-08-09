@@ -27,6 +27,11 @@ namespace Lua {
                 char* str = current_lua_object->entity_strings[name].data();
                 lua_pushstring(L, str);
         }
+        else {
+            std::string message = "[ERROR] Variable \"" + std::string(name) + "\" does not exist!";
+            GameManager::ConsoleWrite(message);
+            lua_pushnil(L);
+        }
 
         return 1;
     }

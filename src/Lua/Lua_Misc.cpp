@@ -99,9 +99,20 @@ namespace Lua {
     }
 
     int ConsoleWrite(lua_State* L) {
-        const char* text = lua_tostring(L, 1);
-
-        GameManager::ConsoleWrite(text);
+        if (lua_isstring(L, 1)) {
+            const char* text = lua_tostring(L, 1);
+            GameManager::ConsoleWrite(text);
+        }
+        else if (lua_isnumber(L, 1)) {
+            double num = lua_tonumber(L, 1);
+            GameManager::ConsoleWrite(std::to_string(num));
+        }
+        else if (lua_isnil(L, 1)) {
+            GameManager::ConsoleWrite("Nil");
+        }
+        else {
+            GameManager::ConsoleWrite("[ERROR] Can't write value to console");
+        }
 
         return 0;
     }
