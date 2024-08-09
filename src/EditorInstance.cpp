@@ -566,10 +566,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         free(loadpath);
                     }
 
-                    if (ImGui::Button("Copy")) {
-                        m_copyObject = e;
-                    }
-
                     if (ImGui::Button("Delete")) {
                         delete(e);
                         m_viewObject = nullptr;
@@ -818,7 +814,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             }
         
             // Show Text Details
-            if (m_viewObject->type == TEXT) {
+            else if (m_viewObject->type == TEXT) {
                 TextObj* text = (TextObj*)m_viewObject;
 
                 std::string idText = "ID: " + std::to_string(text->ID);
@@ -882,10 +878,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     text->text.setString(text_buffer);
                 }
 
-                if (ImGui::Button("Copy")) {
-                    m_copyObject = text;
-                }
-
                 if (ImGui::Button("Delete")) {
                     delete(text);
                     m_viewObject = nullptr;
@@ -893,7 +885,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             }
         
             // Show Camera Details
-            if (m_viewObject->type == CAMERA) {
+            else if (m_viewObject->type == CAMERA) {
                 Camera* camera = (Camera*)m_viewObject;
                 
                 std::string idText = "ID: " + std::to_string(camera->ID);
@@ -1164,7 +1156,13 @@ void EditorInstance::Update(sf::Time deltaTime) {
         }
 
 
-        // Paste GameObject
+        // Copy/Paste GameObject
+        if (m_keypresses[sf::Keyboard::LControl] && m_keypresses[sf::Keyboard::C]) {
+            if (m_viewObject != nullptr) {
+                m_copyObject = m_viewObject;
+            }
+        }
+        
         if (m_keypresses[sf::Keyboard::LControl] && m_keypresses[sf::Keyboard::V]) {
             if (m_copyObject != nullptr) {
                 GameObject* copy = (GameObject*)CopyTree(m_copyObject);
