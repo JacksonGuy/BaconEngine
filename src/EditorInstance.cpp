@@ -1289,6 +1289,13 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             for (Entity* e : GameManager::Entities) {
                 if (!e->physicsObject) continue;
 
+                // Incase of collisions
+                sf::Vector2f prevPos = e->position;
+
+                // Apply Changes
+                e->velocity += e->acceleration;
+                e->SetPosition(e->position + e->velocity);
+
                 // Gravity and collisions
                 bool collision = false;
                 bool bottomCollision = false;
@@ -1301,6 +1308,9 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                     if (e->bottomRect.intersects(other->rect)) {
                         collision = true;
                         bottomCollision = true;
+
+                        // Adjust incase we clipped through the entity
+                        e->SetPosition(prevPos);
                     }
 
                     // Did the top of our entity hit something?
@@ -1336,10 +1346,6 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                     e->acceleration.y = GameManager::gravity;
                     e->grounded = false;
                 }
-
-                // Apply Velocity
-                e->velocity += e->acceleration;
-                e->SetPosition(e->position + e->velocity);
             }
         }
     }
