@@ -17,7 +17,6 @@ class Entity : public GameObject {
         sf::Rect<float> bottomRect;
         sf::Rect<float> leftRect;
         sf::Rect<float> rightRect;
-        float hitboxSize;
         
         bool isSolid;           // Can collide with things
         bool physicsObject;     // Is affected by gravity
@@ -43,7 +42,8 @@ class Entity : public GameObject {
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position) override;
         void SetSpriteScale(sf::Vector2f scale);
-        void UpdateRect();
+        void InitRect();
+        void UpdateRect(sf::Vector2f change);
         void UpdateCollisionRects();
 };
 

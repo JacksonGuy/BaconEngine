@@ -2,12 +2,12 @@
 
 #include <iostream>
 
-#include "Lua/luaApi.hpp"
+#include "Lua/LuaApi.hpp"
 #include "Rendering.hpp"
 
 File::ConfigState GameManager::config;
 std::vector<GameObject*> GameManager::GameObjects;
-std::vector<Entity*> GameManager::Entities;
+std::vector<Entity*> GameManager::Entities = {};
 std::vector<TextObj*> GameManager::TextObjects;
 sf::Font GameManager::font;
 unsigned int GameManager::screenWidth = 1280;
@@ -113,7 +113,13 @@ void GameManager::SaveEditorState(sf::RenderWindow& window, std::string filename
 void GameManager::RestoreEditorState(sf::RenderWindow& window, std::string filename) {
     // Delete Editor stuff
     for (Entity* e : GameManager::Entities) {
-        delete(e);
+        //delete(e);
+
+        // TODO
+        // For some reason, calling delete causes the program to segfault
+        // We don't strictly need to here, since we just clear everything anyways,
+        // but this could be a massive issue in the future
+        free(e);
     }
     for (TextObj* text : GameManager::TextObjects) {
         delete(text);

@@ -10,14 +10,11 @@ Entity::Entity() : GameObject() {
     this->type = ENTITY;
     
     this->texturePath = "";
-    this->width = 64;
-    this->height = 64;
 
     this->showHitbox = false;
     this->isPlayer = false;
     this->isSolid = false;
     this->physicsObject = false;
-    this->hitboxSize = 5.0f;
 
     this->lua_scripts = std::vector<ScriptItem>();
 
@@ -25,6 +22,8 @@ Entity::Entity() : GameObject() {
     this->grounded = false;
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
+
+    this->InitRect();
 
     GameManager::Entities.push_back(this);
 }
@@ -41,7 +40,6 @@ Entity::Entity(Entity& e) : GameObject(e) {
     this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
     this->isPlayer = e.isPlayer;
-    this->hitboxSize = e.hitboxSize;
     
     this->mass = e.mass;
     this->grounded = false;
@@ -55,7 +53,12 @@ Entity::Entity(Entity& e) : GameObject(e) {
 
     this->SetSprite(e.texturePath, false);
     this->sprite.setPosition(this->position);
-    this->UpdateRect();
+    
+    this->rect = e.rect;
+    this->topRect = e.topRect;
+    this->bottomRect = e.bottomRect;
+    this->leftRect = e.leftRect;
+    this->rightRect = e.rightRect;
 
     GameManager::Entities.push_back(this);
 }
@@ -83,7 +86,6 @@ void Entity::Overwrite(Entity& e) {
     this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
     this->isPlayer = false;
-    this->hitboxSize = e.hitboxSize;
     
     this->mass = e.mass;
     this->grounded = false;
@@ -96,6 +98,13 @@ void Entity::Overwrite(Entity& e) {
     this->entity_strings = e.entity_strings;
 
     this->SetSprite(e.texturePath, false);
+
+    sf::Vector2f delta = e.rect.getPosition() - e.position;
+    this->rect.left = this->position.x + delta.x;
+    this->rect.top = this->position.y + delta.y;
+    this->rect.width = e.rect.width;
+    this->rect.height = e.rect.height;
+    
     this->SetPosition(this->position);
 }
 
@@ -117,7 +126,6 @@ void Entity::SetSprite(std::string path, bool autoScale) {
     this->sprite.setPosition(this->position);
     this->sprite.setOrigin((sf::Vector2f)texture->getSize()/2.0f);
     this->sprite.setScale(this->scale);
-    this->UpdateRect();
 }
 
 /**
@@ -130,7 +138,7 @@ void Entity::SetPosition(sf::Vector2f position) {
 
     this->position = position;
     this->sprite.setPosition(this->position);
-    this->UpdateRect();
+    this->UpdateRect(delta);
 
     this->UpdateChildrenPositions(delta);
 }
@@ -145,16 +153,22 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
     this->sprite.setScale(this->scale);
 }
 
+void Entity::InitRect() {
+    this->rect = sf::Rect<float>(
+        this->position.x - this->width/2,
+        this->position.y - this->height/2, 
+        this->width, this->height);
+
+    this->UpdateCollisionRects();
+}
+
 /**
  * @brief Updates the border rect and side rects
  */
-void Entity::UpdateRect() {
-    sf::Rect spriteRect = this->sprite.getGlobalBounds();
-    sf::Vector2f pos = spriteRect.getPosition();
-    sf::Vector2f size = spriteRect.getSize();
-    sf::Rect newRect = sf::Rect(pos.x - this->hitboxSize, pos.y - this->hitboxSize, 
-        size.x + (this->hitboxSize * 2), size.y + (this->hitboxSize * 2));
-    this->rect = newRect;
+void Entity::UpdateRect(sf::Vector2f change) {
+    this->rect.left += change.x;
+    this->rect.top += change.y;
+
     this->UpdateCollisionRects();
 }
 
@@ -163,28 +177,27 @@ void Entity::UpdateRect() {
  */
 void Entity::UpdateCollisionRects() {
     sf::Vector2f rectPos = this->rect.getPosition();
-    // This fixes some issues we have with physics collisions occurring 
-    // with our left and right rects when jumping/falling.
-    // If it works, don't change it...
-    const float gap = 5;
+    sf::Vector2f size = sf::Vector2f(1, 1);
+
+    const float gap = 1;
 
     this->topRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x, rectPos.y - this->hitboxSize),
-        sf::Vector2f(this->rect.width, this->hitboxSize)
+        sf::Vector2f(rectPos.x, rectPos.y - size.y),
+        sf::Vector2f(this->rect.width, size.x)
     );
 
     this->bottomRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x, rectPos.y + this->rect.height),
-        sf::Vector2f(this->rect.width, this->hitboxSize)
+        sf::Vector2f(this->rect.width, size.y)
     );
 
     this->leftRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x - this->hitboxSize, rectPos.y),
-        sf::Vector2f(this->hitboxSize, this->rect.height - gap)
+        sf::Vector2f(rectPos.x - size.x, rectPos.y),
+        sf::Vector2f(size.x, this->rect.height - gap)
     );
 
     this->rightRect = sf::Rect<float>(
         sf::Vector2f(rectPos.x + this->rect.width, rectPos.y),
-        sf::Vector2f(this->hitboxSize, this->rect.height - gap)
+        sf::Vector2f(size.x, this->rect.height - gap)
     );
 }

@@ -44,10 +44,13 @@ void save(std::string filename) {
             {"isPlayer", e->isPlayer},
             {"isSolid", e->isSolid},
             {"physicsObject", e->physicsObject},
-            {"hitboxSize", e->hitboxSize},
             {"mass", e->mass},
             {"isVisible", e->isVisible},
-            {"layer", e->layer}
+            {"layer", e->layer},
+            {"hitbox", {
+                {"position", {e->rect.getPosition().x, e->rect.getPosition().y}},
+                {"size", {e->rect.getSize().x, e->rect.getSize().y}}
+            }}
         };
 
         int i = 0;
@@ -192,7 +195,13 @@ bool load(std::string filename) {
         e->width = entity["width"];
         e->height = entity["height"];
         e->rotation = entity["rotation"];
-        e->UpdateRect();
+
+        e->InitRect();
+        e->rect.left = entity["hitbox"]["position"][0];
+        e->rect.top = entity["hitbox"]["position"][1];
+        e->rect.width = entity["hitbox"]["size"][0];
+        e->rect.height = entity["hitbox"]["size"][1];
+        
         e->SetSprite(toAbsolute(entity["texturePath"]), false);
         e->isPlayer = entity["isPlayer"];
         if (e->isPlayer) {
@@ -200,7 +209,6 @@ bool load(std::string filename) {
         }
         e->isSolid = entity["isSolid"];
         e->physicsObject = entity["physicsObject"];
-        e->hitboxSize = entity["hitboxSize"];
         e->mass = entity["mass"];
         e->isVisible = entity["isVisible"];
         e->layer = entity["layer"];
@@ -441,9 +449,12 @@ void savePrefab(std::string filename, Entity* e) {
     data["isPlayer"] = e->isPlayer;
     data["isSolid"] = e->isSolid;
     data["physicsObject"] = e->physicsObject;
-    data["hitboxSize"] = e->hitboxSize;
     data["mass"] = e->mass;
     data["isVisible"] = e->isVisible;
+    data["hitbox"] = {
+        {"position", {e->rect.getPosition().x, e->rect.getPosition().y}},
+        {"size", {e->rect.getSize().x, e->rect.getSize().y}}
+    };
 
     for (size_t i = 0; i < e->lua_scripts.size(); i++) {
         data["scripts"][i] = e->lua_scripts[i].path;
@@ -502,9 +513,12 @@ Entity* loadPrefab(std::string filename) {
     }
     e->isSolid = data["isSolid"];
     e->physicsObject = data["physicsObject"];
-    e->hitboxSize = data["hitboxSize"];
     e->mass = data["mass"];
     e->isVisible = data["isVisible"];
+    e->rect = sf::Rect<float>(
+        data["hitbox"]["position"][0], data["hitbox"]["position"][1],
+        data["hitbox"]["size"][0], data["hitbox"]["size"][1]
+    );
 
     for (json::iterator it = data["scripts"].begin(); it != data["scripts"].end(); ++it) {
         ScriptItem script;

@@ -59,6 +59,7 @@ class EditorInstance {
         int m_AddVariableType;
         double m_AddVariableNumber;
         char m_AddVariableString[256];
+        float m_HitboxAdjust;
 
         char m_PrefabPath[256];
 
