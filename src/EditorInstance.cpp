@@ -74,12 +74,13 @@ EditorInstance::EditorInstance() {
         "Bacon - " + this->m_projectTitle, sf::Style::Default);
     
     // Create ImGui Context
-    if (!ImGui::SFML::Init(*m_window)) {
+    if (!ImGui::SFML::Init(*m_window, false)) {
         std::cout << "[ERROR] Failed to initialize ImGui" << std::endl;
         return;
     }
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    SetImGuiStyle();
 
     // Load Editor Settings
     File::ConfigState settings = File::loadConfig();
@@ -209,17 +210,24 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     float fps = 1.0f / currentTime;
 
     ImGui::SFML::Update(*m_window, deltaTime);
-    // if (m_showDockSpace) ImGui::DockSpaceOverViewport();
     ImGui::DockSpaceOverViewport();
 
     // Game Window
     ImGui::Begin("Scene");
+        m_swindowFocused = ImGui::IsWindowFocused(); 
         m_swindowpos = (sf::Vector2f)ImGui::GetWindowPos();
         m_swindowsize = (sf::Vector2f)ImGui::GetContentRegionAvail();
+        m_sceneMouseCapture = ImGui::IsWindowHovered();
 
         sf::Vector2f frameSize = (sf::Vector2f)Rendering::frame.getSize();
         if (frameSize.x != m_swindowsize.x || frameSize.y != m_swindowsize.y) {
+            
+            sf::Vector2u prevSize = Rendering::frame.getSize();
+            sf::Vector2f ratio = sf::Vector2f(m_swindowsize.x/prevSize.x, m_swindowsize.y/prevSize.y);
+            sf::Vector2f prevCamSize = m_camera->getSize();
+
             Rendering::frame.create(m_swindowsize.x, m_swindowsize.y);
+            m_camera->setSize(prevCamSize.x * ratio.x, prevCamSize.y * ratio.y);
             Rendering::frame.setView(*m_camera);
         }
 
@@ -388,15 +396,14 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     ImGui::Text("Position");
                     if (ImGui::InputFloat2("##", cameraPos)) {
                         m_camera->setCenter(sf::Vector2f(cameraPos[0], cameraPos[1]));
-                        m_window->setView(*m_camera);
+                        Rendering::frame.setView(*m_camera);
                     }
 
-                    float oldZoom = m_cameraZoom;
-                    ImGui::Text("Zoom");
-                    if (ImGui::InputFloat("##", &m_cameraZoom)) {
-                        float zoomFactor = oldZoom / m_cameraZoom;
-                        m_camera->zoom(zoomFactor);
-                        m_window->setView(*m_camera);
+                    float cameraSize[] = {m_camera->getSize().x, m_camera->getSize().y};
+                    ImGui::Text("Size");
+                    if (ImGui::InputFloat2("##", cameraSize)) {
+                        m_camera->setSize(cameraSize[0], cameraSize[1]);
+                        Rendering::frame.setView(*m_camera);
                     }
                     ImGui::EndTabItem();
                 }
@@ -595,7 +602,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                         sf::Vector2f pos = e->rect.getPosition();
                         float hitboxPos[2] = {pos.x, pos.y};
-                        if (ImGui::InputFloat2("Hitbox Position", hitboxPos)) {
+                        if (ImGui::InputFloat2("Position", hitboxPos)) {
                             e->rect.left = hitboxPos[0];
                             e->rect.top = hitboxPos[1];
                             e->UpdateCollisionRects();
@@ -603,7 +610,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                         sf::Vector2f size = e->rect.getSize();
                         float hitboxSize[2] = {size.x, size.y};
-                        if (ImGui::InputFloat2("Hitbox Size", hitboxSize)) {
+                        if (ImGui::InputFloat2("Size", hitboxSize)) {
                             e->rect.width = hitboxSize[0];
                             e->rect.height = hitboxSize[1];
                             e->UpdateCollisionRects();
@@ -689,7 +696,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         if (ImGui::InputFloat2("Acceleration", acceleration)) {
                             e->acceleration = sf::Vector2f(acceleration[0], acceleration[1]);
                         }
-                        ImGui::Checkbox("Grounded", &e->grounded);
+                        // ImGui::Checkbox("Grounded", &e->grounded);
                     }
                     
                     ImGui::EndTabItem();
@@ -1132,10 +1139,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 void EditorInstance::Update(sf::Time deltaTime) {    
     GameManager::windowHasFocus = m_window->hasFocus();
 
-    // m_sceneMousePos = (sf::Vector2f)sf::Mouse::getPosition() - m_swindowpos;
-    // m_sceneMousePos = Rendering::frame.mapPixelToCoords((sf::Vector2i)m_sceneMousePos);
-
-    sf::Vector2f worldMPos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
+    m_sceneMousePos = (sf::Vector2f)sf::Mouse::getPosition(*m_window) - m_swindowpos;
+    m_sceneMousePos -= sf::Vector2f(10, 30);
+    sf::Vector2f worldMPos = Rendering::frame.mapPixelToCoords((sf::Vector2i)m_sceneMousePos);
 
     // Process events
     sf::Event event;
@@ -1177,9 +1183,8 @@ void EditorInstance::Update(sf::Time deltaTime) {
 
         // Mouse Button Pressed
         if (event.type == sf::Event::MouseButtonPressed) {
-            // If left mouse buttton is pressed, and we aren't clicking on an ImGui window
-            if (event.mouseButton.button == 0 && !io.WantCaptureMouse) {
-            // if (event.mouseButton.button == 0) {
+            // If left mouse buttton is pressed, and we are on the Scene window
+            if (event.mouseButton.button == 0 && m_swindowFocused) {
                 // Editing Game
                 if (!GameManager::isPlayingGame) {
                     // Check if we clicked on a Gameobject
@@ -1201,29 +1206,23 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     }
                     
                     if (!selectedSomething) {
-                        // Camera drag move
-                        // m_mousePos = worldMPos;
-                        m_mousePos = (sf::Vector2f)sf::Mouse::getPosition(*m_window);
-                        m_cameraMove = true;
+                        // Clear selected object
                         m_currentSelectedObject = nullptr;
                     }
                 }
             }
 
             // Right Mouse
-            else if (event.mouseButton.button == 1) {
-                // sf::Vector2f converted = m_sceneMousePos;
-
+            else if (event.mouseButton.button == 1 && m_swindowFocused) {
                 for (Entity* e : GameManager::Entities) {
                     if (e->rect.contains(worldMPos.x, worldMPos.y)) {
-                        // Toggle details menu visability
-                        e->showDetails = !e->showDetails;
+                        m_viewObject = e;
                     }
                 }
 
                 for (TextObj* text : GameManager::TextObjects) {
                     if (text->text.getGlobalBounds().contains(worldMPos.x, worldMPos.y)) {
-                        text->showDetails = !text->showDetails;
+                        m_viewObject = text;
                     }
                 }
             }
@@ -1236,28 +1235,14 @@ void EditorInstance::Update(sf::Time deltaTime) {
         }
 
         if (event.type == sf::Event::MouseMoved) {
-            // Move Camera
-            if (m_cameraMove) {
-                // Calculate change
-                sf::Vector2f change = (sf::Vector2f)(m_mousePos - (sf::Vector2f)sf::Mouse::getPosition(*m_window));
-
-                // Update position
-                m_camera->setCenter(m_camera->getCenter() + change);
-                Rendering::frame.setView(*m_camera);
-                // m_window->setView(*m_camera);
-            } 
-            // Move Entity
-            else {
-                if (m_currentSelectedObject != nullptr && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-                    m_currentSelectedObject->SetPosition(worldMPos);
-                }
+            if (m_currentSelectedObject != nullptr && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                m_currentSelectedObject->SetPosition(worldMPos);
             }
         }
 
         // Mouse Wheel
         if (event.type == sf::Event::MouseWheelMoved) {
-            if (!GameManager::isPlayingGame && !io.WantCaptureMouse) {
-            // if (!GameManager::isPlayingGame) {
+            if (!GameManager::isPlayingGame && m_sceneMouseCapture) {
                 // Mouse wheel moved forwards
                 if (event.mouseWheel.delta == 1) {
                     m_camera->zoom(0.8);
@@ -1271,41 +1256,36 @@ void EditorInstance::Update(sf::Time deltaTime) {
                 }
 
                 Rendering::frame.setView(*m_camera);
-                // m_window->setView(*m_camera);
             }
         }
+    }
 
-        // Camera Movement
-        if (event.type == sf::Event::KeyPressed) {
-            sf::Vector2f camCenter = m_camera->getCenter();
-            
-            if (event.key.code == sf::Keyboard::Up) {
-                m_camera->setCenter(camCenter.x, camCenter.y - 10);
-                Rendering::frame.setView(*m_camera);
-            }
-            if (event.key.code == sf::Keyboard::Down) {
-                m_camera->setCenter(camCenter.x, camCenter.y + 10);
-                Rendering::frame.setView(*m_camera);
-            }
-            if (event.key.code == sf::Keyboard::Left) {
-                m_camera->setCenter(camCenter.x - 10, camCenter.y);
-                Rendering::frame.setView(*m_camera);
-            }
-            if (event.key.code == sf::Keyboard::Right) {
-                m_camera->setCenter(camCenter.x + 10, camCenter.y);
-                Rendering::frame.setView(*m_camera);
-            }
 
-            if (event.key.code == sf::Keyboard::Period) {
-                m_camera->zoom(0.8);
-                m_cameraZoom *= 1.2;
-                Rendering::frame.setView(*m_camera);
-            }
-            if (event.key.code == sf::Keyboard::Comma) {
-                m_camera->zoom(1.2);
-                m_cameraZoom *= 0.8;
-                Rendering::frame.setView(*m_camera);
-            }
+    // Camera Movement
+    sf::Vector2f camCenter = m_camera->getCenter();
+
+    if (m_swindowFocused && !GameManager::isPlayingGame && GameManager::windowHasFocus) {
+        float camSpeed = 10.f;
+        
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+            camSpeed = 50.f;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+            m_camera->setCenter(camCenter.x, camCenter.y - camSpeed);
+            Rendering::frame.setView(*m_camera);
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+            m_camera->setCenter(camCenter.x, camCenter.y + camSpeed);
+            Rendering::frame.setView(*m_camera);
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+            m_camera->setCenter(camCenter.x - camSpeed, camCenter.y);
+            Rendering::frame.setView(*m_camera);
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+            m_camera->setCenter(camCenter.x + camSpeed, camCenter.y);
+            Rendering::frame.setView(*m_camera);
         }
     }
 
@@ -1322,7 +1302,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
         m_lastFixedUpdate -= m_TimePerFrame;
 
         // Get info
-        GameManager::mousePos = m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
+        GameManager::mousePos = m_mousePos;
 
         // Run Lua Scripts
         if (GameManager::isPlayingGame) {
@@ -1601,4 +1581,58 @@ void* EditorInstance::CopyTree(GameObject* obj) {
     }
 
     return nullptr;
+}
+
+/**
+ * @brief Prints the details of a sf::Vector2f to cout
+ * 
+ * @param vec the vector to print
+ */
+void EditorInstance::PrintVector(sf::Vector2f vec) {
+    std::cout << "(" << vec.x << "," << vec.y << ")\n";
+}
+
+/**
+ * @brief Sets up ImGui styling (font and colors)
+ */
+void EditorInstance::SetImGuiStyle() {
+    auto& colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.105f, 0.11f, 1.0f };
+
+    // Headers
+    colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+    colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+    colors[ImGuiCol_HeaderActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    
+    // Buttons
+    colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+    colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+    colors[ImGuiCol_ButtonActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+    // Frame BG
+    colors[ImGuiCol_FrameBg] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+    colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+    colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+    // Tabs
+    colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
+    colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
+    colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+
+    // Title
+    colors[ImGuiCol_TitleBg] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+    // Font
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    
+    float fontSize = 18.f;
+    io.Fonts->AddFontFromFileTTF("Roboto-Regular.ttf", fontSize);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("Roboto-Regular.ttf", fontSize);
+
+    ImGui::SFML::UpdateFontTexture();
 }
