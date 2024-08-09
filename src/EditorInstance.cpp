@@ -443,6 +443,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             if (m_viewObject->type == ENTITY) {
                 Entity* e = (Entity*)m_viewObject;
 
+                std::string idText = "ID: " + std::to_string(e->ID);
+                ImGui::Text(idText.c_str());
+
                 char nameBuff[256];
                 strcpy(nameBuff, e->name.data());
                 if (ImGui::InputText("Name", nameBuff, 256)) {
@@ -811,6 +814,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             if (m_viewObject->type == TEXT) {
                 TextObj* text = (TextObj*)m_viewObject;
 
+                std::string idText = "ID: " + std::to_string(text->ID);
+                ImGui::Text(idText.c_str());
+                
                 char nameBuff[256];
                 strcpy(nameBuff, text->name.data());
                 if (ImGui::InputText("Name", nameBuff, 256)) {
@@ -882,6 +888,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             // Show Camera Details
             if (m_viewObject->type == CAMERA) {
                 Camera* camera = (Camera*)m_viewObject;
+                
+                std::string idText = "ID: " + std::to_string(camera->ID);
+                ImGui::Text(idText.c_str());
                 
                 char nameBuff[256];
                 strcpy(nameBuff, camera->name.data());

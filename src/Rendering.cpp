@@ -51,7 +51,7 @@ namespace Rendering {
      * @param window The game window to draw to
      */
     void DrawGameObjects(sf::RenderWindow& window) {
-        frame.clear(sf::Color::Transparent);
+        frame.clear(sf::Color(40, 40, 40));
 
         for (RenderingLayer layer : m_layers) {
             for (GameObject* obj : layer.objects) {
