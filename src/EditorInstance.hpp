@@ -32,6 +32,7 @@ class EditorInstance {
         sf::Vector2f m_swindowpos;
         sf::Vector2f m_swindowsize;
         sf::Vector2f m_sceneMousePos;
+        GameObject* m_viewObject;
 
         // Engine Variables
         sf::Clock m_clock;
