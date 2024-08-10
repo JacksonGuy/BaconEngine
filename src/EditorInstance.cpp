@@ -368,6 +368,8 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         m_window->setView(*GameManager::camera->view);
                     }
 
+                    GameManager::clock.restart();
+
                     GameManager::ConsoleWrite("[PLAYER] Editor data saved. Starting game...");
                     GameManager::isPlayingGame = true;
                 }

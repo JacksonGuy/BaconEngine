@@ -86,11 +86,12 @@ namespace Lua {
 
     int get_entity_list(lua_State* L);
     int get_entity_by_name(lua_State* L);
-    int get_objects_by_tag(lua_State* L);
+    int get_entities_by_tag(lua_State* L);
 
     int create_entity(lua_State* L);
     int check_collision(lua_State* L);
     int check_collision_side(lua_State* L);
+    int get_collision_entities(lua_State* L);
     int delete_entity(lua_State* L);
     int delete_entity_id(lua_State* L);
 

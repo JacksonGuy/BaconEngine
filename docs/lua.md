@@ -361,6 +361,96 @@ Example
 
     set_tag("Enemy")
 
+---
+
+### create_entity(path)
+Creates a new entity from a given prefab
+
+Parameters
+
+    path (string) : the relative path of the prefab
+
+Returns
+
+    id (number) : the unique ID of the created entity
+
+Example
+
+    if get_input_single("SPACE") then
+        rocket = create_entity("prefabs/rocket.json")
+        ConsoleWrite("Rocket ID: " + rocket)
+    end
+
+--- 
+
+### delete_entity()
+Deletes the entity
+
+Example
+
+    if check_collision() then
+        delete_entity()
+    end
+
+---
+
+### check_collision()
+Checks if the entity has collided with any other entity
+
+Returns
+
+    True if the entity has collided with something, false otherwise
+
+Example
+
+    if check_collision() then
+        health = get_variable("Health")
+        set_variable("Health", health - 5)
+    end
+
+---
+
+### check_collision_side(side)
+Checks if one side of an entity is colliding with any other entity.
+Valid sides are: TOP, BOTTOM, LEFT, RIGHT
+
+Parameters
+
+    side (string) : the side of the entity to check
+
+Returns
+
+    True is the given side is colliding with an entity, otherwise false
+
+Example
+
+    if get_input("A") then
+        if not check_collision_side("LEFT") then
+            x,y = get_position()
+            set_position(x - 5, y)
+        end
+    end
+
+---
+
+### get_collision_entities()
+Returns a table of entity IDs that this entity is colliding with
+
+Returns
+
+    Table of IDs of entities being collided with. If no entities are
+    begin collided with, returns nil.
+
+Example
+
+    colliding = get_collision_entities()
+    if colliding ~= nil then
+        for _, id in ipairs(colliding) do
+            ConsoleWrite(id)
+        end
+    end
+
+---
 
 ## Text
 
@@ -369,3 +459,214 @@ Example
 ## Sound
 
 ## Gameplay
+
+### ConsoleWrite(text)
+Writes a string to the editor's console
+
+Parameters
+
+    text (string) : the string to write to the console
+
+Example
+
+    if get_input_single("SPACE") then
+        ConsoleWrite("Jump!")
+    end
+
+---
+
+### get_time_seconds()
+Gets the number of seconds which has passed since the start of the game
+
+Returns
+
+    The number of seconds since the game started
+
+Example
+
+    -- 5 second timer
+    timer = get_variable("timer")
+    current_time = get_time_seconds()
+    if current_time >= timer + 5 then
+        -- Do something here
+
+        set_variable("timer", current_time)
+    end
+
+--- 
+
+## Input
+The input codes for keyboard and mouse are the following: 
+
+    Keys = {
+        A, B, C, ..., Y, Z,
+        ESC, LCONTROL, LSHIFT, LALT, 
+        RCONTROL, RSHIFT, RALT, SPACE, TAB, 
+        UP, DOWN, LEFT, RIGHT,
+        LBRACKET, RBRACKET
+    }
+
+    Mouse = {
+        MOUSE_LEFT, MOUSE_RIGHT, MOUSE_MIDDLE,
+        MOUSE_BUTTON_4, MOUSE_BUTTON_5
+    }
+
+### get_input(key)
+Checks if a key is being held down.
+
+Parameters
+
+    key (string) : the keycode to check
+
+Returns
+
+    True if the key is pressed, otherwise false.
+
+Example
+
+    if get_input("W") then
+        x,y = get_position()
+        if get_input("LSHIFT") then
+            set_position(x, y - 10)
+        else
+            set_position(x, y - 5)
+        end
+    end
+
+---
+
+### get_input_single(key)
+Checks if a key was pressed. Only returns once per key press.
+
+Parameters
+
+    key (string) : the keycode to check
+
+Returns
+
+    True if the key is pressed, otherwise false.
+
+Example
+
+    if get_input_single("T") then
+        create_entity("prefabs/enemy.json")
+    end
+
+---
+
+### get_mouse_input(button)
+Checks if a mouse button is being pressed.
+
+Parameters
+
+    button (string) : the mouse button to check
+
+Returns
+
+    True if the button is being pressed, otherwise false
+
+Example
+
+    if get_mouse_input("MOUSE_LEFT") then
+        bullet = create_entity("prefabs/bullet.json")
+        set_entity_velocity(bullet, 5, 0)
+    end
+
+---
+
+### get_mouse_input_single(button)
+Checks if a mouse button was pressed. Only returns once per click.
+
+Parameters
+
+    button (string) : the mouse button to check
+
+Returns
+
+    True is the button was pressed, otherwise false
+
+Example
+
+    if get_mouse_input_single("MOUSE_RIGHT") then
+        mx,my = get_mouse_position()
+        set_position(mx, my)
+    end
+
+---
+
+### get_mouse_position()
+Gets the position of the mouse cursor
+
+Returns
+
+    mx (number) : the x coordinate of the mouse
+    my (number) : the y coordinate of the mouse
+
+Example
+
+    mx, my = get_mouse_position()
+
+--- 
+
+### get_entity_list()
+Returns a table containing the IDs of every entity in the game
+
+Returns
+
+    Table containing the IDs of every entity in the game.
+    If no entities exist, returns nil.
+
+Example
+
+    entities = get_entity_list()
+    if entities ~= nil then
+        ConsoleWrite("Entity List: ")
+        for _, id in ipairs(entities) do
+            ConsoleWrite(id)
+        end
+        ConsoleWrite("")
+    end
+
+---
+
+### get_entities_by_tag(tag)
+Returns a table containing the IDs of every entity with a given tag
+
+Parameters
+
+    tag (string) : the tag for search for
+
+Returns
+
+    Table containing the IDs of every entity with the tag
+    in the game. If no entities with the tag exist, returns nil.
+
+Example
+
+    entities = get_entities_by_tag("Enemy")
+    if entities ~= nil then
+        ConsoleWrite("Entity List: ")
+        for _, id in ipairs(entities) do
+            ConsoleWrite(id)
+        end
+        ConsoleWrite("")
+    end
+
+---
+
+### get_entity_by_name(name)
+Returns the ID of the first entity found with the given name
+
+Parameters
+
+    name (string) : the name to search for
+
+Returns
+
+    The ID of the entity with the given name
+
+Example
+
+    door = get_entity_by_name("BossDoor")
+
+---
