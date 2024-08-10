@@ -53,6 +53,7 @@ namespace Lua {
     int get_velocity(lua_State* L);
     int set_velocity(lua_State* L);
     int get_acceleration(lua_State* L);
+    int set_acceleration(lua_State* L);
     int get_grounded(lua_State* L);
     int set_visible(lua_State* L);
     int get_visible(lua_State* L);

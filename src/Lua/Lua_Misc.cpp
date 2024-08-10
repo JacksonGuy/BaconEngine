@@ -41,6 +41,7 @@ namespace Lua {
         lua_register(LuaState, "get_velocity", get_velocity);
         lua_register(LuaState, "set_velocity", set_velocity);
         lua_register(LuaState, "get_acceleration", get_acceleration);
+        lua_register(LuaState, "set_acceleration", set_acceleration);
         lua_register(LuaState, "get_grounded", get_grounded);
         lua_register(LuaState, "set_visible", set_visible);
         lua_register(LuaState, "get_visible", get_visible);

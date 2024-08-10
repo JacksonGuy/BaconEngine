@@ -1134,6 +1134,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
     m_sceneMousePos = (sf::Vector2f)sf::Mouse::getPosition(*m_window) - m_swindowpos;
     m_sceneMousePos -= sf::Vector2f(10, 30);
     sf::Vector2f worldMPos = Rendering::frame.mapPixelToCoords((sf::Vector2i)m_sceneMousePos);
+    GameManager::mousePos = worldMPos;
 
     // Process events
     sf::Event event;
@@ -1211,7 +1212,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
             }
 
             // Right Mouse
-            else if (event.mouseButton.button == 1 && m_swindowFocused) {
+            else if (event.mouseButton.button == 1 && m_sceneMouseCapture) {
                 for (Entity* e : GameManager::Entities) {
                     if (e->rect.contains(worldMPos.x, worldMPos.y)) {
                         m_viewObject = e;
@@ -1299,9 +1300,6 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
     if (m_lastFixedUpdate > m_TimePerFrame) {
         m_lastFixedUpdate -= m_TimePerFrame;
 
-        // Get info
-        GameManager::mousePos = m_mousePos;
-
         // Run Lua Scripts
         if (GameManager::isPlayingGame) {
             Lua::RunLuaUpdates();
@@ -1364,11 +1362,10 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                         // weren't already on ground
                         if (!e->grounded) {
                             // Stop Moving
-                            e->grounded = true;
                             e->acceleration.y = 0;
                             e->velocity.y = 0;
                         }
-                        // Else, do nothing
+                        e->grounded = true;
                     }
 
                     // We bonked our head
