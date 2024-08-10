@@ -495,6 +495,70 @@ Example
 
 --- 
 
+### get_entity_list()
+Returns a table containing the IDs of every entity in the game
+
+Returns
+
+    Table containing the IDs of every entity in the game.
+    If no entities exist, returns nil.
+
+Example
+
+    entities = get_entity_list()
+    if entities ~= nil then
+        ConsoleWrite("Entity List: ")
+        for _, id in ipairs(entities) do
+            ConsoleWrite(id)
+        end
+        ConsoleWrite("")
+    end
+
+---
+
+### get_entities_by_tag(tag)
+Returns a table containing the IDs of every entity with a given tag
+
+Parameters
+
+    tag (string) : the tag for search for
+
+Returns
+
+    Table containing the IDs of every entity with the tag
+    in the game. If no entities with the tag exist, returns nil.
+
+Example
+
+    entities = get_entities_by_tag("Enemy")
+    if entities ~= nil then
+        ConsoleWrite("Entity List: ")
+        for _, id in ipairs(entities) do
+            ConsoleWrite(id)
+        end
+        ConsoleWrite("")
+    end
+
+---
+
+### get_entity_by_name(name)
+Returns the ID of the first entity found with the given name
+
+Parameters
+
+    name (string) : the name to search for
+
+Returns
+
+    The ID of the entity with the given name
+
+Example
+
+    door = get_entity_by_name("BossDoor")
+
+---
+
+
 ## Input
 The input codes for keyboard and mouse are the following: 
 
@@ -605,68 +669,5 @@ Returns
 Example
 
     mx, my = get_mouse_position()
-
---- 
-
-### get_entity_list()
-Returns a table containing the IDs of every entity in the game
-
-Returns
-
-    Table containing the IDs of every entity in the game.
-    If no entities exist, returns nil.
-
-Example
-
-    entities = get_entity_list()
-    if entities ~= nil then
-        ConsoleWrite("Entity List: ")
-        for _, id in ipairs(entities) do
-            ConsoleWrite(id)
-        end
-        ConsoleWrite("")
-    end
-
----
-
-### get_entities_by_tag(tag)
-Returns a table containing the IDs of every entity with a given tag
-
-Parameters
-
-    tag (string) : the tag for search for
-
-Returns
-
-    Table containing the IDs of every entity with the tag
-    in the game. If no entities with the tag exist, returns nil.
-
-Example
-
-    entities = get_entities_by_tag("Enemy")
-    if entities ~= nil then
-        ConsoleWrite("Entity List: ")
-        for _, id in ipairs(entities) do
-            ConsoleWrite(id)
-        end
-        ConsoleWrite("")
-    end
-
----
-
-### get_entity_by_name(name)
-Returns the ID of the first entity found with the given name
-
-Parameters
-
-    name (string) : the name to search for
-
-Returns
-
-    The ID of the entity with the given name
-
-Example
-
-    door = get_entity_by_name("BossDoor")
 
 ---
