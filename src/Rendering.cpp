@@ -5,6 +5,7 @@ namespace Rendering {
     std::unordered_map<std::string, sf::Texture*> m_textures;
     std::unordered_map<std::string, sf::Font*> m_fonts;
     std::vector<RenderingLayer> m_layers;
+    sf::RenderTexture frame;
 
     /**
      * @brief Loads new Texture
@@ -50,12 +51,15 @@ namespace Rendering {
      * @param window The game window to draw to
      */
     void DrawGameObjects(sf::RenderWindow& window) {
+        frame.clear(sf::Color(40, 40, 40));
+
         for (RenderingLayer layer : m_layers) {
             for (GameObject* obj : layer.objects) {
                 if (obj->type == ENTITY) {
                     Entity* e = (Entity*)obj;
                     if (e->isVisible) {
-                        window.draw(e->sprite);
+                        // window.draw(e->sprite);
+                        frame.draw(e->sprite);
                     }
 
                     if (e->showHitbox) {
@@ -82,13 +86,15 @@ namespace Rendering {
                         window.draw(rightRect);
                         */
 
-                        window.draw(lines, 5, sf::LinesStrip);
+                        frame.draw(lines, 5, sf::LinesStrip);
+                        // window.draw(lines, 5, sf::LinesStrip);
                     }
                 }
                 else if (obj->type == TEXT) {
                     TextObj* text = (TextObj*)obj;
                     if (text->isVisible) {
-                        window.draw(text->text);
+                        frame.draw(text->text);
+                        // window.draw(text->text);
                     }
                 }
                 else if (obj->type == CAMERA) {
@@ -105,7 +111,8 @@ namespace Rendering {
                             sf::Vertex(sf::Vector2f(pos.x - size.x/2, pos.y - size.y/2), sf::Color::Red)
                         };
 
-                        window.draw(lines, 5, sf::LinesStrip);
+                        frame.draw(lines, 5, sf::LinesStrip);
+                        // window.draw(lines, 5, sf::LinesStrip);
                     }
                 }
                 else {
@@ -113,6 +120,8 @@ namespace Rendering {
                 }
             }
         }
+
+        frame.display();
     }
 
     /**

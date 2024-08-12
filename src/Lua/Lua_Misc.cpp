@@ -41,6 +41,7 @@ namespace Lua {
         lua_register(LuaState, "get_velocity", get_velocity);
         lua_register(LuaState, "set_velocity", set_velocity);
         lua_register(LuaState, "get_acceleration", get_acceleration);
+        lua_register(LuaState, "set_acceleration", set_acceleration);
         lua_register(LuaState, "get_grounded", get_grounded);
         lua_register(LuaState, "set_visible", set_visible);
         lua_register(LuaState, "get_visible", get_visible);
@@ -52,12 +53,9 @@ namespace Lua {
         lua_register(LuaState, "set_name", set_name);
         lua_register(LuaState, "get_tag", get_tag);
         lua_register(LuaState, "set_tag", set_tag);
-
-        lua_register(LuaState, "check_collision", check_collision);
-        lua_register(LuaState, "check_collision_side", check_collision_side);
         
         lua_register(LuaState, "get_entity_by_name", get_entity_by_name);
-        lua_register(LuaState, "get_objects_by_tag", get_objects_by_tag);
+        lua_register(LuaState, "get_entities_by_tag", get_entities_by_tag);
         lua_register(LuaState, "get_entity_list", get_entity_list);
 
         lua_register(LuaState, "get_entity_position", get_entity_position);
@@ -68,6 +66,10 @@ namespace Lua {
         lua_register(LuaState, "set_entity_name", set_entity_name);
 
         lua_register(LuaState, "create_entity", create_entity);
+        lua_register(LuaState, "check_collision", check_collision);
+        lua_register(LuaState, "check_collision_side", check_collision_side);
+        lua_register(LuaState, "get_collision_entities", get_collision_entities);
+        lua_register(LuaState, "delete_entity", delete_entity);
         
         lua_register(LuaState, "play_sound", play_sound);
         lua_register(LuaState, "play_music", play_music);
@@ -99,15 +101,27 @@ namespace Lua {
     }
 
     int ConsoleWrite(lua_State* L) {
-        const char* text = lua_tostring(L, 1);
-
-        GameManager::ConsoleWrite(text);
+        if (lua_isstring(L, 1)) {
+            const char* text = lua_tostring(L, 1);
+            GameManager::ConsoleWrite(text);
+        }
+        else if (lua_isnumber(L, 1)) {
+            double num = lua_tonumber(L, 1);
+            GameManager::ConsoleWrite(std::to_string(num));
+        }
+        else if (lua_isnil(L, 1)) {
+            GameManager::ConsoleWrite("Nil");
+        }
+        else {
+            GameManager::ConsoleWrite("[ERROR] Can't write value to console");
+        }
 
         return 0;
     }
 
     int get_time_seconds(lua_State* L) {
         float time = GameManager::clock.getElapsedTime().asSeconds();
+        // GameManager::clock.restart();
         lua_pushnumber(L, time);
         return 1;
     }
@@ -192,7 +206,7 @@ namespace Lua {
     }
 
     int get_mouse_position(lua_State* L) {
-        sf::Vector2i pos = sf::Mouse::getPosition();
+        sf::Vector2f pos = GameManager::mousePos;
         lua_pushnumber(L, pos.x);
         lua_pushnumber(L, pos.y);
         return 2;
@@ -237,6 +251,25 @@ namespace Lua {
         return 1;
     }
 
+    int get_collision_entities(lua_State* L) {
+        std::vector<Entity*> entities = GameManager::getCollidingWith(*current_lua_object);
+
+        if (entities.size() > 0) {
+            lua_createtable(L, 0, entities.size());
+            for (size_t i = 0; i < entities.size(); i++) {
+                Entity* e = entities[i];
+                
+                lua_pushinteger(L, i+1);
+                lua_pushinteger(L, e->ID);
+                lua_settable(L, -3);
+            }
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
     int get_entity_by_name(lua_State* L) {
         std::string name = lua_tostring(L, 1);
 
@@ -250,14 +283,14 @@ namespace Lua {
         return 0;
     }
 
-    int get_objects_by_tag(lua_State* L) {
+    int get_entities_by_tag(lua_State* L) {
         std::string tag = lua_tostring(L, 1);
 
-        std::vector<GameObject*> found = GameManager::FindObjectsByTag(tag);
+        std::vector<Entity*> found = GameManager::FindEntitiesByTag(tag);
         if (found.size() > 0) {
             lua_createtable(L, 0, found.size());
             for (size_t i = 0; i < found.size(); i++) {
-                GameObject* obj = found[i];
+                Entity* obj = found[i];
                 int id = obj->ID;
 
                 lua_pushinteger(L, i+1);

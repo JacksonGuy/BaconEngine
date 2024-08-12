@@ -30,6 +30,13 @@ class EditorInstance {
         sf::Vector2f m_cameraSize;
         float m_cameraZoom;
 
+        bool m_swindowFocused;
+        sf::Vector2f m_swindowpos;
+        sf::Vector2f m_swindowsize;
+        sf::Vector2f m_sceneMousePos;
+        bool m_sceneMouseCapture;
+        GameObject* m_viewObject;
+
         // Engine Variables
         sf::Clock m_clock;
         sf::Vector2f m_mousePos;
@@ -90,6 +97,10 @@ class EditorInstance {
         // UI Functions
         void DisplayEntityTree(GameObject* e);
         void* CopyTree(GameObject* obj);
+
+    private:
+        void PrintVector(sf::Vector2f vec);
+        void SetImGuiStyle();
 };
 
 #endif

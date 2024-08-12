@@ -1,5 +1,6 @@
 #include "LuaApi.hpp"
 
+#include <filesystem>
 #include "../GameManager.hpp"
 
 namespace Lua {
@@ -26,6 +27,11 @@ namespace Lua {
             != current_lua_object->entity_strings.end()) {
                 char* str = current_lua_object->entity_strings[name].data();
                 lua_pushstring(L, str);
+        }
+        else {
+            std::string message = "[ERROR] Variable \"" + std::string(name) + "\" does not exist!";
+            GameManager::ConsoleWrite(message);
+            lua_pushnil(L);
         }
 
         return 1;
@@ -120,6 +126,15 @@ namespace Lua {
         return 2;
     }
 
+    int set_acceleration(lua_State* L) {
+        double ax = lua_tonumber(L, 1);
+        double ay = lua_tonumber(L, 2);
+
+        current_lua_object->acceleration = sf::Vector2f(ax, ay);
+
+        return 0;
+    }
+
     int get_grounded(lua_State* L) {
         lua_pushboolean(L, current_lua_object->grounded);
         return 1;
@@ -155,6 +170,7 @@ namespace Lua {
         lua_pushinteger(L, e->ID);
         return 1;
     }
+
     int set_visible(lua_State* L) {
         bool v = lua_toboolean(L, 1);
         current_lua_object->isVisible = v;
@@ -210,7 +226,8 @@ namespace Lua {
     }
 
     int get_sprite(lua_State* L) {
-        lua_pushstring(L, current_lua_object->texturePath.data());
+        std::string path = std::filesystem::relative(current_lua_object->texturePath, GameManager::entryPoint);
+        lua_pushstring(L, path.c_str());
         return 1;
     }
 
