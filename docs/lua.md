@@ -156,7 +156,7 @@ Example
 
 ---
 
-## get_visible()
+### get_visible()
 Gets whether the entity is visible
 
 Returns

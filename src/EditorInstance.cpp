@@ -228,6 +228,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
             Rendering::frame.create(m_swindowsize.x, m_swindowsize.y);
             m_camera->setSize(prevCamSize.x * ratio.x, prevCamSize.y * ratio.y);
+            if (GameManager::camera != nullptr) {
+                prevCamSize = GameManager::camera->view->getSize(); 
+                GameManager::camera->view->setSize(prevCamSize.x * ratio.x, prevCamSize.y * ratio.y);
+            }
             Rendering::frame.setView(*m_camera);
         }
 
@@ -1340,6 +1344,11 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                 for (Entity* other : GameManager::Entities) {
                     if (e->ID == other->ID) continue;
                     if (!other->isSolid) continue;
+
+                    // General collision
+                    if (e->rect.intersects(other->rect)) {
+                        collision = true;
+                    }
 
                     // Have we hit the ground?
                     if (e->bottomRect.intersects(other->rect)) {
