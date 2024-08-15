@@ -21,49 +21,54 @@ extern "C" {
     #include <lualib.h>
 }
 
-class GameManager {
-    public:
-        static File::ConfigState config;
-        static unsigned int screenWidth;
-        static unsigned int screenHeight;
-        static unsigned int framerateLimit;
+namespace GameManager {
+    extern File::ConfigState config;
+    extern unsigned int screenWidth;
+    extern unsigned int screenHeight;
+    extern unsigned int framerateLimit;
 
-        static std::vector<GameObject*> GameObjects;
-        static std::vector<Entity*> Entities;
-        static std::vector<TextObj*> TextObjects;
-        static std::vector<Camera*> Cameras;
-        
-        static sf::Font font;
-        static Entity* player;
-        static Camera* camera;
-        static bool isPlayingGame;
-        static bool windowHasFocus;
-        static std::string entryPoint;
-        static sf::Keyboard::Key lastKeyboardInput;
-        static sf::Mouse::Button lastMouseInput;
-        static sf::Vector2f mousePos;
-        static ImGuiTextBuffer ConsoleLog;
-        
-        static float gravity;
-        static sf::Clock clock;
+    extern std::vector<GameObject*> GameObjects;
+    extern std::vector<Entity*> Entities;
+    extern std::vector<TextObj*> TextObjects;
+    extern std::vector<Camera*> Cameras;
+    
+    extern sf::Font font;
+    extern Entity* player;
+    extern Camera* camera;
+    extern bool isPlayingGame;
+    extern bool windowHasFocus;
+    extern std::string entryPoint;
+    extern sf::Keyboard::Key lastKeyboardInput;
+    extern std::unordered_map<sf::Keyboard::Key, bool> keypresses;
+    extern sf::Mouse::Button lastMouseInput;
+    extern sf::Vector2f mousePos;
+    extern ImGuiTextBuffer ConsoleLog;
+    
+    extern float gravity;
+    extern sf::Clock clock; 
 
-        static bool checkCollision(const Entity& e1, const Entity& e2);
-        static bool checkCollision(const Entity& e1);
-        static std::vector<Entity*> getCollidingWith(const Entity& e1);
-        static bool checkCollisionSide(const sf::Rect<float> rect);
+    bool CheckCollisionLines(sf::Vector2f s1, sf::Vector2f e1,
+        sf::Vector2f s2, sf::Vector2f e2);
+    bool CheckCollisionPointLine(sf::Vector2f point, sf::Vector2f s, sf::Vector2f e);
+    bool CheckCollisionPointRect(sf::Vector2f point, sf::FloatRect rect);
 
-        static void SaveEditorState(sf::RenderWindow& window, std::string filename);
-        static void RestoreEditorState(sf::RenderWindow& window, std::string filename);
+    bool checkCollision(const Entity& e1, const Entity& e2);
+    bool checkCollision(const Entity& e1);
+    std::vector<Entity*> getCollidingWith(const Entity& e1);
+    bool checkCollisionSide(const Entity& e, const std::string side);
 
-        static GameObject* FindObjectByID(int id);
-        static Entity* FindEntityByID(int id);
-        static Entity* FindEntityByName(std::string name);
-        static std::vector<Entity*> FindEntitiesByTag(std::string tag);
-        static TextObj* FindTextByID(int id);
+    void SaveEditorState(sf::RenderWindow& window, std::string filename);
+    void RestoreEditorState(sf::RenderWindow& window, std::string filename);
 
-        static void SortObjectsByID();
+    GameObject* FindObjectByID(int id);
+    Entity* FindEntityByID(int id);
+    Entity* FindEntityByName(std::string name);
+    std::vector<Entity*> FindEntitiesByTag(std::string tag);
+    TextObj* FindTextByID(int id);
 
-        static void ConsoleWrite(std::string text);
+    void SortObjectsByID();
+
+    void ConsoleWrite(std::string text);
 };
 
 #endif

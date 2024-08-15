@@ -11,7 +11,11 @@ Entity::Entity() : GameObject() {
     
     this->texturePath = "";
 
+    this->width = 64;
+    this->height = 64;
+
     this->showHitbox = false;
+    this->editHitbox = false;
     this->isPlayer = false;
     this->isSolid = false;
     this->physicsObject = false;
@@ -23,7 +27,7 @@ Entity::Entity() : GameObject() {
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
 
-    this->InitRect();
+    this->CreateHitbox();
 
     GameManager::Entities.push_back(this);
 }
@@ -39,26 +43,25 @@ Entity::Entity(Entity& e) : GameObject(e) {
     this->isSolid = e.isSolid;
     this->physicsObject = e.physicsObject;
     this->showHitbox = e.showHitbox;
-    this->isPlayer = e.isPlayer;
+    this->editHitbox = e.editHitbox;
     
+    this->isPlayer = e.isPlayer;
+    if (this->isPlayer) {
+        GameManager::player = this;
+    }
+
     this->mass = e.mass;
     this->grounded = false;
     this->velocity = sf::Vector2f(0, 0);
     this->acceleration = sf::Vector2f(0, 0);
 
     this->lua_scripts = e.lua_scripts;
-    this->entity_variables = e.entity_variables;
-    this->entity_numbers = e.entity_numbers;
-    this->entity_strings = e.entity_strings;
+    this->variables = e.variables;
 
     this->SetSprite(e.texturePath, false);
     this->sprite.setPosition(this->position);
     
-    this->rect = e.rect;
-    this->topRect = e.topRect;
-    this->bottomRect = e.bottomRect;
-    this->leftRect = e.leftRect;
-    this->rightRect = e.rightRect;
+    this->CreateHitbox();
 
     GameManager::Entities.push_back(this);
 }
@@ -93,17 +96,15 @@ void Entity::Overwrite(Entity& e) {
     this->acceleration = sf::Vector2f(0, 0);
 
     this->lua_scripts = e.lua_scripts;
-    this->entity_variables = e.entity_variables;
-    this->entity_numbers = e.entity_numbers;
-    this->entity_strings = e.entity_strings;
+    this->variables = e.variables;
 
     this->SetSprite(e.texturePath, false);
 
-    sf::Vector2f delta = e.rect.getPosition() - e.position;
-    this->rect.left = this->position.x + delta.x;
-    this->rect.top = this->position.y + delta.y;
-    this->rect.width = e.rect.width;
-    this->rect.height = e.rect.height;
+    sf::Vector2f delta = this->position - e.position; 
+    for (int i = 0; i < 5; i++) {
+        this->hitbox[i] = e.hitbox[i];
+    }
+    this->UpdateHitbox(delta);
     
     this->SetPosition(this->position);
 }
@@ -138,7 +139,7 @@ void Entity::SetPosition(sf::Vector2f position) {
 
     this->position = position;
     this->sprite.setPosition(this->position);
-    this->UpdateRect(delta);
+    this->UpdateHitbox(delta);
 
     this->UpdateChildrenPositions(delta);
 }
@@ -153,51 +154,29 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
     this->sprite.setScale(this->scale);
 }
 
-void Entity::InitRect() {
-    this->rect = sf::Rect<float>(
-        this->position.x - this->width/2,
-        this->position.y - this->height/2, 
-        this->width, this->height);
+/**
+ * @brief Creates a new hitbox with points located at the corners
+ * of the entity's sprite
+ * 
+ */
+void Entity::CreateHitbox() {
+    sf::Vector2f p = position;
+    sf::Vector2f s = sf::Vector2f(width/2, height/2);
 
-    this->UpdateCollisionRects();
+    hitbox[0] = sf::Vector2f(p.x - s.x, p.y - s.y); // Top Left
+    hitbox[1] = sf::Vector2f(p.x + s.x, p.y - s.y); // Top Right
+    hitbox[2] = sf::Vector2f(p.x + s.x, p.y + s.y); // Bottom Right
+    hitbox[3] = sf::Vector2f(p.x - s.x, p.y + s.y); // Bottom Left
+    hitbox[4] = sf::Vector2f(p.x - s.x, p.y - s.y); // Top Left
 }
 
 /**
- * @brief Updates the border rect and side rects
+ * @brief Updates the vertices of the hitbox
+ * 
  */
-void Entity::UpdateRect(sf::Vector2f change) {
-    this->rect.left += change.x;
-    this->rect.top += change.y;
-
-    this->UpdateCollisionRects();
-}
-
-/**
- * @brief Updates the side rects
- */
-void Entity::UpdateCollisionRects() {
-    sf::Vector2f rectPos = this->rect.getPosition();
-    sf::Vector2f size = sf::Vector2f(1, 1);
-
-    const float gap = 1;
-
-    this->topRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x, rectPos.y - size.y),
-        sf::Vector2f(this->rect.width, size.x)
-    );
-
-    this->bottomRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x, rectPos.y + this->rect.height),
-        sf::Vector2f(this->rect.width, size.y)
-    );
-
-    this->leftRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x - size.x, rectPos.y),
-        sf::Vector2f(size.x, this->rect.height - gap)
-    );
-
-    this->rightRect = sf::Rect<float>(
-        sf::Vector2f(rectPos.x + this->rect.width, rectPos.y),
-        sf::Vector2f(size.x, this->rect.height - gap)
-    );
+void Entity::UpdateHitbox(sf::Vector2f delta) {
+    for (int i = 0; i < 5; i++) {
+        hitbox[i].x += delta.x;
+        hitbox[i].y += delta.y;
+    }
 }

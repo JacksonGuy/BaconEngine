@@ -48,8 +48,11 @@ void save(std::string filename) {
             {"isVisible", e->isVisible},
             {"layer", e->layer},
             {"hitbox", {
-                {"position", {e->rect.getPosition().x, e->rect.getPosition().y}},
-                {"size", {e->rect.getSize().x, e->rect.getSize().y}}
+                {e->hitbox[0].x, e->hitbox[0].y},
+                {e->hitbox[1].x, e->hitbox[1].y},
+                {e->hitbox[2].x, e->hitbox[2].y},
+                {e->hitbox[3].x, e->hitbox[3].y},
+                {e->hitbox[4].x, e->hitbox[4].y}
             }}
         };
 
@@ -61,20 +64,19 @@ void save(std::string filename) {
         }
 
         i = 0;
-        for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
-            std::string key = it->second;
-            if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
+        for (EntityVar var : e->variables) {
+            if (var.type == NUMBER) {
                 level_data["Entities"][index]["variables"][i++] = {
-                    {"name", key},
+                    {"name", var.name},
                     {"type", "number"},
-                    {"value", e->entity_numbers[key]}
+                    {"value", var.numval}
                 };
             }
-            else if (e->entity_strings.find(key) != e->entity_strings.end()) {
+            else {
                 level_data["Entities"][index]["variables"][i++] = {
-                    {"name", key},
+                    {"name", var.name},
                     {"type", "string"},
-                    {"value", e->entity_strings[key]}
+                    {"value", var.stringval}
                 };
             }
         }
@@ -196,11 +198,12 @@ bool load(std::string filename) {
         e->height = entity["height"];
         e->rotation = entity["rotation"];
 
-        e->InitRect();
-        e->rect.left = entity["hitbox"]["position"][0];
-        e->rect.top = entity["hitbox"]["position"][1];
-        e->rect.width = entity["hitbox"]["size"][0];
-        e->rect.height = entity["hitbox"]["size"][1];
+        e->CreateHitbox();
+        e->hitbox[0] = sf::Vector2f(entity["hitbox"][0][0], entity["hitbox"][0][1]);
+        e->hitbox[1] = sf::Vector2f(entity["hitbox"][1][0], entity["hitbox"][1][1]);
+        e->hitbox[2] = sf::Vector2f(entity["hitbox"][2][0], entity["hitbox"][2][1]);
+        e->hitbox[3] = sf::Vector2f(entity["hitbox"][3][0], entity["hitbox"][3][1]);
+        e->hitbox[4] = sf::Vector2f(entity["hitbox"][4][0], entity["hitbox"][4][1]);
         
         e->SetSprite(toAbsolute(entity["texturePath"]), false);
         e->isPlayer = entity["isPlayer"];
@@ -221,19 +224,24 @@ bool load(std::string filename) {
         }
 
         for (auto& it : entity["variables"].items()) {
-            int order = stoi(it.key());
             std::string name = it.value()["name"];
             std::string type = it.value()["type"];
 
-            e->entity_variables[order] = name;
+            EntityVar var;
+            var.name = name;
+
             if (type == "number") {
                 double value = it.value()["value"];
-                e->entity_numbers[name] = value;
+                var.type = NUMBER;
+                var.numval = value;
             }
-            else if (type == "string") {
+            else {
                 std::string value = it.value()["value"];
-                e->entity_strings[name] = value.data();
+                var.type = STRING;
+                var.stringval = value;
             }
+
+            e->variables.push_back(var);
         }
     }
 
@@ -452,8 +460,11 @@ void savePrefab(std::string filename, Entity* e) {
     data["mass"] = e->mass;
     data["isVisible"] = e->isVisible;
     data["hitbox"] = {
-        {"position", {e->rect.getPosition().x, e->rect.getPosition().y}},
-        {"size", {e->rect.getSize().x, e->rect.getSize().y}}
+        {e->hitbox[0].x, e->hitbox[0].y},
+        {e->hitbox[1].x, e->hitbox[1].y},
+        {e->hitbox[2].x, e->hitbox[2].y},
+        {e->hitbox[3].x, e->hitbox[3].y},
+        {e->hitbox[4].x, e->hitbox[4].y}
     };
 
     for (size_t i = 0; i < e->lua_scripts.size(); i++) {
@@ -461,20 +472,19 @@ void savePrefab(std::string filename, Entity* e) {
     }
 
     int i = 0;
-    for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
-        std::string key = it->second;
-        if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
+    for (EntityVar var : e->variables) {
+        if (var.type == NUMBER) {
             data["variables"][i++] = {
-                {"name", key},
+                {"name", var.name},
                 {"type", "number"},
-                {"value", e->entity_numbers[key]}
+                {"value", var.numval}
             };
         }
-        else if (e->entity_strings.find(key) != e->entity_strings.end()) {
+        else {
             data["variables"][i++] = {
-                {"name", key},
+                {"name", var.name},
                 {"type", "string"},
-                {"value", e->entity_strings[key]}
+                {"value", var.stringval}
             };
         }
     }
@@ -515,10 +525,12 @@ Entity* loadPrefab(std::string filename) {
     e->physicsObject = data["physicsObject"];
     e->mass = data["mass"];
     e->isVisible = data["isVisible"];
-    e->rect = sf::Rect<float>(
-        data["hitbox"]["position"][0], data["hitbox"]["position"][1],
-        data["hitbox"]["size"][0], data["hitbox"]["size"][1]
-    );
+    e->CreateHitbox();
+    e->hitbox[0] = sf::Vector2f(data["hitbox"][0][0], data["hitbox"][0][1]);
+    e->hitbox[1] = sf::Vector2f(data["hitbox"][1][0], data["hitbox"][1][1]);
+    e->hitbox[2] = sf::Vector2f(data["hitbox"][2][0], data["hitbox"][2][1]);
+    e->hitbox[3] = sf::Vector2f(data["hitbox"][3][0], data["hitbox"][3][1]);
+    e->hitbox[4] = sf::Vector2f(data["hitbox"][4][0], data["hitbox"][4][1]);
 
     for (json::iterator it = data["scripts"].begin(); it != data["scripts"].end(); ++it) {
         ScriptItem script;
@@ -532,15 +544,21 @@ Entity* loadPrefab(std::string filename) {
         std::string name = it.value()["name"];
         std::string type = it.value()["type"];
 
-        e->entity_variables[index] = name;
+        EntityVar var;
+        var.name = name;
+
         if (type == "number") {
             double value = it.value()["value"];
-            e->entity_numbers[name] = value;
+            var.type = NUMBER;
+            var.numval = value;
         }
-        else if (type == "string") {
+        else {
             std::string value = it.value()["value"];
-            e->entity_strings[name] = value;
+            var.type = STRING;
+            var.stringval = value;
         }
+
+        e->variables.push_back(var);
     }
 
     return e;

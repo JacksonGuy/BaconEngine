@@ -6,12 +6,16 @@
 namespace Lua {
     int set_variable(lua_State* L) {
         const char* name = lua_tostring(L, 1);
-        if (lua_isnumber(L, 2)) {
-            current_lua_object->entity_numbers[name] = lua_tonumber(L, 2);
-        }
-        else if (lua_isstring(L, 2)) {
-            std::string str = lua_tostring(L, 2);
-            current_lua_object->entity_strings[name] = str.data();
+        
+        for (EntityVar& var : current_lua_object->variables) {
+            if (var.name != name) continue; 
+
+            if (var.type == NUMBER && lua_isnumber(L, 2)) {
+                var.numval = lua_tonumber(L, 2);
+            }
+            else if (var.type == STRING && lua_isstring(L, 2)) {
+                var.stringval = lua_tostring(L, 2);
+            }
         }
 
         return 0;
@@ -19,16 +23,22 @@ namespace Lua {
 
     int get_variable(lua_State* L) {
         const char* name = lua_tostring(L, 1);
-        if (current_lua_object->entity_numbers.find(name)
-            != current_lua_object->entity_numbers.end()) {
-                lua_pushnumber(L, current_lua_object->entity_numbers[name]);
-        }
-        else if (current_lua_object->entity_strings.find(name)
-            != current_lua_object->entity_strings.end()) {
-                char* str = current_lua_object->entity_strings[name].data();
-                lua_pushstring(L, str);
-        }
-        else {
+
+        bool found = false;
+        for (EntityVar var : current_lua_object->variables) {
+            if (var.name != name) continue;
+
+            if (var.type == NUMBER) {
+                lua_pushnumber(L, var.numval);
+            }
+            else if (var.type == STRING) {
+                lua_pushstring(L, var.stringval.data());
+            }
+
+            found = true;
+        } 
+
+        if (!found) {
             std::string message = "[ERROR] Variable \"" + std::string(name) + "\" does not exist!";
             GameManager::ConsoleWrite(message);
             lua_pushnil(L);
@@ -65,12 +75,29 @@ namespace Lua {
 
         // If we found entity
         if (target != nullptr) {
-            if (lua_isnumber(L, 3)) {
-                target->entity_numbers[varName] = lua_tonumber(L, 3);
+            bool found = false;
+
+            for (EntityVar& var : target->variables) {
+                if (var.name != varName) continue;
+
+                if (var.type == NUMBER && lua_isnumber(L, 3)) {
+                    var.numval = lua_tonumber(L, 3);
+                }
+                else if (var.type == STRING && lua_isstring(L, 3)) {
+                    var.stringval = lua_tostring(L, 3);
+                }
+
+                found = true;
+            } 
+
+            if (!found) {
+                std::string message = "[ERROR] Entity does not have the variable \"" + varName + "\"";
+                GameManager::ConsoleWrite(message);
             }
-            else if (lua_isstring(L, 3)) {
-                target->entity_strings[varName] = lua_tostring(L, 3);
-            }
+        }
+        else {
+            std::string message = "[ERROR] Entity does not exist!";
+            GameManager::ConsoleWrite(message);
         }
 
         return 0;
@@ -87,16 +114,29 @@ namespace Lua {
         }
 
         if (target != nullptr) {
-            if (target->entity_numbers.find(varName) != target->entity_numbers.end()) {
-                lua_pushnumber(L, target->entity_numbers[varName]);
+            for (EntityVar var : target->variables) {
+                if (var.name != varName) continue;
+
+                if (var.type == NUMBER) {
+                    lua_pushnumber(L, var.numval);
+                }
+                else if (var.type == STRING) {
+                    lua_pushstring(L, var.stringval.data());
+                }
+                return 1;
             }
-            else if (target->entity_strings.find(varName) != target->entity_strings.end()) {
-                lua_pushstring(L, target->entity_strings[varName].c_str());
-            }
+
+            std::string message = "[ERROR] Variable \"" + varName + "\" does not exist!";
+            GameManager::ConsoleWrite(message);
+            lua_pushnil(L);
             return 1;
         }
-
-        return 0;
+        else {
+            std::string message = "[ERROR] Entity does not exist!";
+            GameManager::ConsoleWrite(message);
+            lua_pushnil(L);
+            return 1;
+        }
     }
 
     int get_velocity(lua_State* L) {
@@ -204,7 +244,10 @@ namespace Lua {
 
     int get_clicked(lua_State* L) {
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            if (current_lua_object->rect.contains(GameManager::mousePos)) {
+            sf::Vector2f size = current_lua_object->hitbox[0] - current_lua_object->hitbox[2];
+            sf::FloatRect rect(current_lua_object->hitbox[0], size);
+
+            if (rect.contains(GameManager::mousePos)) {
                 lua_pushboolean(L, 1);
                 return 1;
             }
@@ -215,7 +258,10 @@ namespace Lua {
 
     int get_clicked_single(lua_State* L) {
         if (GameManager::lastMouseInput == sf::Mouse::Button::Left) {
-            if (current_lua_object->rect.contains(GameManager::mousePos)) {
+            sf::Vector2f size = current_lua_object->hitbox[0] - current_lua_object->hitbox[2];
+            sf::FloatRect rect(current_lua_object->hitbox[0], size);
+
+            if (rect.contains(GameManager::mousePos)) {
                 lua_pushboolean(L, 1);
                 GameManager::lastMouseInput = sf::Mouse::Button(-1);
                 return 1;

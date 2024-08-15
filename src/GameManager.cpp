@@ -4,6 +4,7 @@
 
 #include "Lua/LuaApi.hpp"
 #include "Rendering.hpp"
+#include "BaconMath.h"
 
 File::ConfigState GameManager::config;
 std::vector<GameObject*> GameManager::GameObjects;
@@ -25,6 +26,68 @@ std::string GameManager::entryPoint = "";
 sf::Clock GameManager::clock;
 Camera* GameManager::camera;
 std::vector<Camera*> GameManager::Cameras;
+std::unordered_map<sf::Keyboard::Key, bool> GameManager::keypresses;
+
+/**
+ * @brief Check if two lines intersect each other
+ * 
+ * @param s1 start point for line 1
+ * @param e1 end point for line 1
+ * @param s2 start point for line 2
+ * @param e2 end point for line 2
+ * @return true if they intersect 
+ * @return false if they don't
+ */
+bool GameManager::CheckCollisionLines(sf::Vector2f s1, sf::Vector2f e1, 
+    sf::Vector2f s2, sf::Vector2f e2) {
+    
+    int o1 = bmath::orientation(s1, e1, s2);
+    int o2 = bmath::orientation(s1, e1, e2);
+    int o3 = bmath::orientation(s2, e2, s1);
+    int o4 = bmath::orientation(s2, e2, e1);
+
+    if (o1 != o2 && o3 != o4) return true;
+
+    if (o1 == 0 && bmath::onSegment(s1, s2, e1)) return true;
+    if (o2 == 0 && bmath::onSegment(s1, e2, e1)) return true;
+    if (o3 == 0 && bmath::onSegment(s2, s1, e2)) return true;
+    if (o4 == 0 && bmath::onSegment(s2, e1, e2)) return true;
+
+    return false;
+}
+
+/**
+ * @brief Checks if a point lies on a line segment
+ * 
+ * @param point the point to check
+ * @param s line start point
+ * @param e line end point
+ * @return true if point lies on the line se
+ * @return false if it doesn't
+ */
+bool GameManager::CheckCollisionPointLine(sf::Vector2f point, 
+        sf::Vector2f s, sf::Vector2f e) {
+    float crossproduct = (point.y - s.y) * (e.x - s.x) - (point.x - s.x) * (e.y - s.y);
+
+    float epsilon = 0.1f; // Error tolerance
+    if (bmath::abs(crossproduct) > epsilon) return false;
+
+    float dotproduct = (point.x - s.x) * (e.x - s.x) + (point.y - s.y) * (e.y - s.y);
+    if (dotproduct < 0) return false;
+
+    float squaredlength = (e.x - s.x) * (e.x - s.x) + (e.y - s.y) * (e.y - s.y);
+    if (dotproduct > squaredlength) return false;
+
+    return true;
+}
+
+bool GameManager::CheckCollisionPointRect(sf::Vector2f point, sf::FloatRect rect) {
+    if (point.x >= rect.left && point.x <= rect.left + rect.width &&
+            point.y >= rect.top && point.y <= rect.top + rect.height) { 
+        return true;
+    }
+    return false;
+}
 
 /**
  * @brief Check for collision between two specific Entities
@@ -35,7 +98,16 @@ std::vector<Camera*> GameManager::Cameras;
  */
 bool GameManager::checkCollision(const Entity& e1, const Entity& e2) {
     if (!e1.isSolid || !e2.isSolid) return false;
-    return e1.rect.intersects(e2.rect);
+    
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (CheckCollisionLines(e1.hitbox[i], e1.hitbox[i+1], 
+                e2.hitbox[j], e2.hitbox[j+1])) {
+                    return true;
+            }
+        }
+    }
+    return false;
 }
 
 /**
@@ -49,7 +121,7 @@ bool GameManager::checkCollision(const Entity& e1) {
     for (Entity* e2 : GameManager::Entities) {
         if (!e2->isSolid) continue;
         if (e1.ID == e2->ID) continue;
-        if (e1.rect.intersects(e2->rect)) {
+        if (checkCollision(e1, *e2)) {
             return true;
         }
     }
@@ -70,7 +142,7 @@ std::vector<Entity*> GameManager::getCollidingWith(const Entity& e1) {
     for (Entity* e2 : GameManager::Entities) {
         if (!e2->isSolid) continue;
         if (e1.ID == e2->ID) continue;
-        if (e1.rect.intersects(e2->rect)) {
+        if (checkCollision(e1, *e2)) {
             collidingWith.push_back(e2);
         }
     }
@@ -78,17 +150,90 @@ std::vector<Entity*> GameManager::getCollidingWith(const Entity& e1) {
 }
 
 /**
- * @brief Checks if a given side of an Entity is being collided with
+ * @brief Checks if a given side of an Entity is being collided with by any other Entity
  * 
- * @param side The rectangle side to check
+ * @param e The Entity to check
+ * @param side (string) The rectangle side to check (TOP/BOTTOM/LEFT/RIGHT)
  * @return boolean: if the side is being collided with 
  */
-bool GameManager::checkCollisionSide(const sf::Rect<float> side) {
-    for (Entity* e : GameManager::Entities) {
-        if (e->ID == GameManager::player->ID) continue;
-        if (!e->isSolid) continue;
-        if (side.intersects(e->rect)) {
-            return true;
+bool GameManager::checkCollisionSide(const Entity& e, const std::string side) {
+    if (!e.isSolid) return false;
+    
+    for (Entity* other : GameManager::Entities) {
+        if (e.ID == other->ID) continue;
+        if (!other->isSolid) continue;
+
+        if (side == "TOP") {
+            float width = e.hitbox[1].x - e.hitbox[0].x;
+
+            sf::Vector2f point;
+            point.x = e.hitbox[0].x + width/2;
+            point.y = e.hitbox[0].y - 1;
+            
+            sf::FloatRect rect(
+                other->position.x - other->width/2,
+                other->position.y - other->height/2, 
+                other->width,
+                other->height
+            );
+
+            return CheckCollisionPointRect(point, rect);
+        }
+        else if (side == "BOTTOM") {
+            float width = e.hitbox[2].x - e.hitbox[3].x;
+            
+            sf::Vector2f point;
+            point.x = e.hitbox[3].x + width/2;
+            point.y = e.hitbox[3].y + 1;
+
+            sf::FloatRect rect(
+                other->position.x - other->width/2,
+                other->position.y - other->height/2, 
+                other->width,
+                other->height
+            );
+
+            bool result = CheckCollisionPointRect(point, rect);
+
+            if (result) {
+                std::cout << result << std::endl;
+            }
+
+            // return CheckCollisionPointRect(point, rect);
+            return result;
+        }
+        else if (side == "LEFT") {
+            float height = e.hitbox[3].y - e.hitbox[0].y;
+            
+            sf::Vector2f point;
+            point.x = e.hitbox[0].x - 1;
+            point.y = e.hitbox[0].y + height/2;
+
+            sf::FloatRect rect(
+                other->position.x - other->width/2,
+                other->position.y - other->height/2, 
+                other->width,
+                other->height
+            );
+
+            return CheckCollisionPointRect(point, rect);
+        }
+        else if (side == "RIGHT") {
+            float height = e.hitbox[3].y - e.hitbox[0].y;
+            float width = e.hitbox[1].x - e.hitbox[0].x;
+
+            sf::Vector2f point;
+            point.x = e.hitbox[0].x + width + 1;
+            point.y = e.hitbox[0].y + height/2;
+
+            sf::FloatRect rect(
+                other->position.x - other->width/2,
+                other->position.y - other->height/2, 
+                other->width,
+                other->height
+            );
+
+            return CheckCollisionPointRect(point, rect);
         }
     } 
     return false;

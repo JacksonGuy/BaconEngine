@@ -2,8 +2,12 @@
 
 #include <iostream>
 #include <filesystem>
+
 #include <nfd.h>
 
+#include "GameManager.hpp"
+#include "File.hpp"
+#include "Text.hpp"
 #include "Lua/LuaApi.hpp"
 #include "Sound.hpp"
 #include "Input.hpp"
@@ -13,7 +17,7 @@
 namespace Settings {
     int selectedResolution = 2;         // Default Resolution
     const int resolutionsCount = 6;     // Size of resolutions array below
-    std::string EngineVersion = "";     // Engine Version
+    std::string EngineVersion;          // Engine Version
     
     // Possible resolutions 
     const char* resolutions[] = {
@@ -160,11 +164,6 @@ EditorInstance::~EditorInstance() {
 
 // Main Game Loop
 void EditorInstance::Run() {
-    // Origin
-    sf::CircleShape originDot(5);
-    originDot.setFillColor(sf::Color::White);
-    originDot.setPosition(0.0f, 0.0f);
-
     // DEBUG
     // std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
     std::string demoPath = "/home/jack/BaconProjects/Test/Game.json";
@@ -182,11 +181,6 @@ void EditorInstance::Run() {
         this->Update(deltaTime);         // Input
         this->FixedUpdate(deltaTime);    // Physics and Lua
 
-        m_window->clear(sf::Color(40, 40, 40));
-        if (!GameManager::isPlayingGame) {
-            m_window->draw(originDot);
-        }
-        
         Rendering::DrawGameObjects(*m_window);
         ImGui::SFML::Render(*this->m_window);
         this->m_window->display();
@@ -385,7 +379,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     // Restore editor camera
                     m_camera->setCenter(m_cameraPos);
                     m_camera->setSize(m_cameraSize);
-                    // m_window->setView(*m_camera);
                     Rendering::frame.setView(*m_camera);
                     
                     // Stop in game sounds
@@ -430,7 +423,16 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
 
                     if (ImGui::Button("Testing")) {
-                        std::cout << m_swindowpos.x << "," << m_swindowpos.y << std::endl;
+                        std::cout << "Var Count: " << GameManager::player->variables.size() << std::endl;
+                        for (EntityVar var : GameManager::player->variables) {
+                            std::cout << var.name;
+                            if (var.type == NUMBER) {
+                                std::cout << ": " <<  var.numval << "\n";
+                            }
+                            else if (var.type == STRING) {
+                                std::cout << ": " << var.stringval << "\n";
+                            }
+                        }
                     }
                     
                     if (ImGui::Button("Print Layers")) {
@@ -459,15 +461,15 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 std::string idText = "ID: " + std::to_string(e->ID);
                 ImGui::Text(idText.c_str());
 
-                char nameBuff[256];
+                char nameBuff[BUFFSIZE];
                 strcpy(nameBuff, e->name.data());
-                if (ImGui::InputText("Name", nameBuff, 256)) {
+                if (ImGui::InputText("Name", nameBuff, BUFFSIZE)) {
                     e->name = nameBuff;
                 }
 
-                char tagBuff[256];
+                char tagBuff[BUFFSIZE];
                 strcpy(tagBuff, e->tag.data());
-                if (ImGui::InputText("Tag", tagBuff, 256)) {
+                if (ImGui::InputText("Tag", tagBuff, BUFFSIZE)) {
                     e->tag = tagBuff;
                 }
 
@@ -496,10 +498,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 ImGui::BeginTabBar("EntityDetails");
                 if (ImGui::BeginTabItem("Details")) {
-                    char textBuff[256];
+                    char textBuff[BUFFSIZE];
                     std::string relpath = std::filesystem::relative(e->texturePath.data(), GameManager::entryPoint).generic_string();
                     strcpy(textBuff, relpath.data());
-                    ImGui::InputText("Texture", textBuff, 256);
+                    ImGui::InputText("Texture", textBuff, BUFFSIZE);
                     if (ImGui::Button("Change Texture")) {
                         nfdchar_t* outpath = NULL;
                         nfdresult_t result = NFD_OpenDialog("png,jpg", NULL, &outpath);
@@ -598,90 +600,40 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     }
 
                     if (e->isSolid) {
-                        ImGui::Separator();
-                        ImGui::Text("Hitbox");
                         ImGui::Checkbox("Show Hitbox", &e->showHitbox);
-
-                        sf::Vector2f pos = e->rect.getPosition();
-                        float hitboxPos[2] = {pos.x, pos.y};
-                        if (ImGui::InputFloat2("Position", hitboxPos)) {
-                            e->rect.left = hitboxPos[0];
-                            e->rect.top = hitboxPos[1];
-                            e->UpdateCollisionRects();
+                        
+                        if (e->showHitbox) {
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Edit Hitbox", &e->editHitbox);
                         }
 
-                        sf::Vector2f size = e->rect.getSize();
-                        float hitboxSize[2] = {size.x, size.y};
-                        if (ImGui::InputFloat2("Size", hitboxSize)) {
-                            e->rect.width = hitboxSize[0];
-                            e->rect.height = hitboxSize[1];
-                            e->UpdateCollisionRects();
+                        if (e->editHitbox && e->showHitbox) {
+                            for (int i = 0; i < 4; i++) {
+                                float pointCoords[] = {e->hitbox[i].x, e->hitbox[i].y};
+                                
+                                std::string pointName;
+                                if (i == 0) pointName = "Top Left";
+                                else if (i == 1) pointName = "Top Right";
+                                else if (i == 2) pointName = "Bottom Right";
+                                else if (i == 3) pointName = "Bottom Left";
+
+                                if (ImGui::InputFloat2(pointName.data(), pointCoords)) {
+                                    e->hitbox[i].x = pointCoords[0];
+                                    e->hitbox[i].y = pointCoords[1];
+                                
+                                    if (i == 0) {
+                                        e->hitbox[4].x = pointCoords[0];
+                                        e->hitbox[4].y = pointCoords[1];
+                                    }
+                                }
+
+                                // free(pointCoords);
+                            }
                         }
 
-                        ImGui::Text("Top");
-                        ImGui::SameLine();
-                        ImGui::Text("\tButtom");
-                        ImGui::SameLine();
-                        ImGui::Text("\tLeft");
-                        ImGui::SameLine();
-                        ImGui::Text("\tRight");
-
-                        // Top
-                        if (ImGui::Button("-")) {
-                            e->rect.top += m_HitboxAdjust;
-                            e->rect.height -= m_HitboxAdjust;
+                        if (ImGui::Button("Reset Hitbox")) {
+                            e->CreateHitbox();
                         }
-                        ImGui::SameLine();
-                        if (ImGui::Button("+")) {
-                            e->rect.top -= m_HitboxAdjust;
-                            e->rect.height += m_HitboxAdjust;
-                        }
-
-                        // Bottom
-                        ImGui::SameLine();
-                        ImGui::Text(" ");
-                        ImGui::SameLine();
-                        ImGui::PushID(1);
-                        if (ImGui::Button("-")) {
-                            e->rect.height -= m_HitboxAdjust;
-                        }
-                        ImGui::SameLine();
-                        if (ImGui::Button("+")) {
-                            e->rect.height += m_HitboxAdjust;
-                        }
-                        ImGui::PopID();
-
-                        // Left
-                        ImGui::SameLine();
-                        ImGui::Text("   ");
-                        ImGui::SameLine();
-                        ImGui::PushID(2);
-                        if (ImGui::Button("-")) {
-                            e->rect.left += m_HitboxAdjust;
-                            e->rect.width -= m_HitboxAdjust;
-                        }
-                        ImGui::SameLine();
-                        if (ImGui::Button("+")) {
-                            e->rect.left -= m_HitboxAdjust;
-                            e->rect.width += m_HitboxAdjust;
-                        }
-                        ImGui::PopID();
-
-                        // Right
-                        ImGui::SameLine();
-                        ImGui::Text("  ");
-                        ImGui::SameLine();
-                        ImGui::PushID(3);
-                        if (ImGui::Button("-")) {
-                            e->rect.width -= m_HitboxAdjust;
-                        }
-                        ImGui::SameLine();
-                        if (ImGui::Button("+")) {
-                            e->rect.width += m_HitboxAdjust;
-                        }
-                        ImGui::PopID();
-
-                        ImGui::InputFloat("Adjust Amount", &m_HitboxAdjust);
 
                         ImGui::Separator();
                     }
@@ -744,31 +696,28 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                     ImGui::Text("Custom Variables");
 
-                    for (auto it = e->entity_variables.begin(); it != e->entity_variables.end(); it++) {
-                        std::string key = it->second;
-                        if (e->entity_numbers.find(key) != e->entity_numbers.end()) {
-                            ImGui::InputDouble(key.c_str(), &e->entity_numbers[key]);
+                    for (size_t i = 0; i < e->variables.size(); i++) {
+                        
+                        EntityVar var = e->variables[i];
+                        if (var.type == NUMBER) {
+                            ImGui::InputDouble(var.name.data(), &e->variables[i].numval);
+
                             ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-                            
-                            ImGui::PushID(key.c_str());
+                            ImGui::PushID(var.name.data());
                             if (ImGui::Button("X")) {
-                                e->entity_numbers.erase(key);
-                                e->entity_variables.erase(it);
+                                e->variables.erase(e->variables.begin() + i);
                             }
                             ImGui::PopID();
                         }
-                        else if (e->entity_strings.find(key) != e->entity_strings.end()) {
-                            char textBuff[256];
-                            strcpy(textBuff, e->entity_strings[key].data());
-                            if (ImGui::InputText(key.c_str(), textBuff, 256)) {
-                                e->entity_strings[key] = textBuff;
-                            }
+                        else if (var.type == STRING) {
+                            char textBuff[512];
+                            strcpy(textBuff, e->variables[i].stringval.data());
+                            ImGui::InputText(var.name.data(), textBuff, 512);
+
                             ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-                            
-                            ImGui::PushID(key.c_str());
+                            ImGui::PushID(var.name.data());
                             if (ImGui::Button("X")) {
-                                e->entity_strings.erase(key);
-                                e->entity_variables.erase(it);
+                                e->variables.erase(e->variables.begin() + i);
                             }
                             ImGui::PopID();
                         }
@@ -782,7 +731,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                     if (ImGui::BeginPopupModal("AddVariableEntity", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
                         ImGui::Text("Add Variable");
                         ImGui::Separator();
-                        ImGui::InputText("Name", m_AddVariableName, 256);
+                        ImGui::InputText("Name", m_AddVariableName, 512);
                         
                         ImGui::RadioButton("Number", &m_AddVariableType, 0);
                         ImGui::SameLine();
@@ -792,18 +741,25 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                             ImGui::InputDouble("Value", &m_AddVariableNumber);
                         }
                         else if (m_AddVariableType == 1) {
-                            ImGui::InputText("Value", m_AddVariableString, 256);
+                            ImGui::InputText("Value", m_AddVariableString, 512);
                         }
 
                         if (ImGui::Button("Add")) {
-                            int count = e->entity_variables.size();
-                            e->entity_variables[count] = m_AddVariableName;
+
+                            int count = e->variables.size();
+                            EntityVar var;
+                            var.name = m_AddVariableName;
                             if (m_AddVariableType == 0) {
-                                e->entity_numbers[m_AddVariableName] = m_AddVariableNumber;
+                                var.type = NUMBER;
+                                var.numval = m_AddVariableNumber;
                             }
                             else {
-                                e->entity_strings[m_AddVariableName] = m_AddVariableString;
+                                var.type = STRING;
+                                var.stringval = m_AddVariableString;
                             }
+
+                            e->variables.push_back(var);
+
                             ImGui::CloseCurrentPopup();
                         }
                         ImGui::SameLine();
@@ -826,15 +782,15 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 std::string idText = "ID: " + std::to_string(text->ID);
                 ImGui::Text(idText.c_str());
                 
-                char nameBuff[256];
+                char nameBuff[BUFFSIZE];
                 strcpy(nameBuff, text->name.data());
-                if (ImGui::InputText("Name", nameBuff, 256)) {
+                if (ImGui::InputText("Name", nameBuff, BUFFSIZE)) {
                     text->name = nameBuff;
                 }
 
-                char tagBuff[256];
+                char tagBuff[BUFFSIZE];
                 strcpy(tagBuff, text->tag.data());
-                if (ImGui::InputText("Tag", tagBuff, 256)) {
+                if (ImGui::InputText("Tag", tagBuff, BUFFSIZE)) {
                     text->tag = tagBuff;
                 }
 
@@ -897,9 +853,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 std::string idText = "ID: " + std::to_string(camera->ID);
                 ImGui::Text(idText.c_str());
                 
-                char nameBuff[256];
+                char nameBuff[BUFFSIZE];
                 strcpy(nameBuff, camera->name.data());
-                if (ImGui::InputText("Name", nameBuff, 256)) {
+                if (ImGui::InputText("Name", nameBuff, BUFFSIZE)) {
                     camera->name = nameBuff;
                 }
 
@@ -960,9 +916,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     if (m_showEntityCreate) {
         ImGui::Begin("Create new entity", &m_showEntityCreate);
             // Displays
-            ImGui::InputText("Name", m_createNameBuffer, 256);
+            ImGui::InputText("Name", m_createNameBuffer, BUFFSIZE);
             ImGui::InputFloat2("Position", m_createPosition);
-            ImGui::InputText("Image Path", m_createImagePath, 256);
+            ImGui::InputText("Image Path", m_createImagePath, BUFFSIZE);
             if (ImGui::Button("Select Image")) {
                 nfdchar_t* imagepath = NULL;
                 nfdresult_t result = NFD_OpenDialog("png,jpg", NULL, &imagepath);
@@ -984,6 +940,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 entity->name = m_createNameBuffer;
                 entity->width = m_createDimension[0];
                 entity->height = m_createDimension[1];
+                entity->CreateHitbox();
                 entity->SetSprite(m_createImagePath);
 
                 Rendering::AddToLayer(entity);
@@ -996,9 +953,9 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     // Create new Text Object
     if (m_showTextCreate) {
         ImGui::Begin("Create Text Object", &m_showTextCreate);
-            ImGui::InputText("Name", m_createTextName, 256);
+            ImGui::InputText("Name", m_createTextName, BUFFSIZE);
             ImGui::InputFloat2("Position", m_createTextPosition);
-            ImGui::InputText("Text", m_createTextDetails, 8*256);
+            ImGui::InputText("Text", m_createTextDetails, 64*BUFFSIZE);
 
             if (ImGui::Button("Create")) {
                 TextObj* text = new TextObj();
@@ -1017,7 +974,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     // Create new Camera
     if (m_showCameraCreate) {
         ImGui::Begin("Create Camera", &m_showCameraCreate);
-            ImGui::InputText("Name", m_createCameraName, 256);
+            ImGui::InputText("Name", m_createCameraName, BUFFSIZE);
             ImGui::InputFloat2("Position", m_createCameraPosition);
             ImGui::InputInt2("Size", m_createCameraSize);
 
@@ -1157,9 +1114,11 @@ void EditorInstance::Update(sf::Time deltaTime) {
         if (event.type == sf::Event::KeyPressed) {
             GameManager::lastKeyboardInput = event.key.code;
             m_keypresses[event.key.code] = true;
+            GameManager::keypresses[event.key.code] = true;
         }
         if (event.type == sf::Event::KeyReleased) {
             m_keypresses[event.key.code] = false;
+            GameManager::keypresses[event.key.code] = false;
         }
 
 
@@ -1196,14 +1155,17 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     // If so, set as selected
                     bool selectedSomething = false;
                     for (Entity* e : GameManager::Entities) {
-                        if (e->rect.contains(worldMPos.x, worldMPos.y)) {
+                        sf::Vector2f size = e->hitbox[2] - e->hitbox[0];
+                        sf::FloatRect rect(e->hitbox[0], size);
+
+                        if (rect.contains(worldMPos)) {
                             m_currentSelectedObject = e;
                             selectedSomething = true;
                             break;
                         }
                     }
                     for (TextObj* text : GameManager::TextObjects) {
-                        if (text->text.getGlobalBounds().contains(worldMPos.x, worldMPos.y)) {
+                        if (text->text.getGlobalBounds().contains(worldMPos)) {
                             m_currentSelectedObject = text;
                             selectedSomething = true;
                             break;
@@ -1220,13 +1182,16 @@ void EditorInstance::Update(sf::Time deltaTime) {
             // Right Mouse
             else if (event.mouseButton.button == 1 && m_sceneMouseCapture) {
                 for (Entity* e : GameManager::Entities) {
-                    if (e->rect.contains(worldMPos.x, worldMPos.y)) {
+                    sf::Vector2f size = e->hitbox[2] - e->hitbox[0];
+                    sf::FloatRect rect(e->hitbox[0], size);
+                    
+                    if (rect.contains(worldMPos)) {
                         m_viewObject = e;
                     }
                 }
 
                 for (TextObj* text : GameManager::TextObjects) {
-                    if (text->text.getGlobalBounds().contains(worldMPos.x, worldMPos.y)) {
+                    if (text->text.getGlobalBounds().contains(worldMPos)) {
                         m_viewObject = text;
                     }
                 }
@@ -1240,8 +1205,32 @@ void EditorInstance::Update(sf::Time deltaTime) {
         }
 
         if (event.type == sf::Event::MouseMoved) {
-            if (m_currentSelectedObject != nullptr && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-                m_currentSelectedObject->SetPosition(worldMPos);
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                if (m_currentSelectedObject != nullptr) {
+                    if (m_currentSelectedObject->type == ENTITY) {
+                        Entity* e = (Entity*)m_currentSelectedObject;
+                        if (e->editHitbox) {
+                            for (int i = 0; i < 4; i++) {
+                                sf::CircleShape point(15);
+                                point.setPosition(e->hitbox[i]);
+                                point.setOrigin(15, 15);
+                                
+                                if (point.getGlobalBounds().contains(worldMPos)) {
+                                    e->hitbox[i] = worldMPos;
+                                    if (i == 0) {
+                                        e->hitbox[4] = worldMPos;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            e->SetPosition(worldMPos);
+                        }
+                    }
+                    else {
+                        m_currentSelectedObject->SetPosition(worldMPos);
+                    }
+                }
             }
         }
 
@@ -1333,63 +1322,16 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                 // Incase of collisions
                 sf::Vector2f prevPos = e->position;
 
+                // Gravity
+                e->acceleration = sf::Vector2f(0, GameManager::gravity);
+
                 // Apply Changes
                 e->velocity += e->acceleration;
                 e->SetPosition(e->position + e->velocity);
 
-                // Gravity and collisions
-                bool collision = false;
-                bool bottomCollision = false;
-                bool topCollision = false;
-                for (Entity* other : GameManager::Entities) {
-                    if (e->ID == other->ID) continue;
-                    if (!other->isSolid) continue;
-
-                    // General collision
-                    if (e->rect.intersects(other->rect)) {
-                        collision = true;
-                    }
-
-                    // Have we hit the ground?
-                    if (e->bottomRect.intersects(other->rect)) {
-                        collision = true;
-                        bottomCollision = true;
-
-                        // Adjust incase we clipped through the entity
-                        e->SetPosition(prevPos);
-                    }
-
-                    // Did the top of our entity hit something?
-                    if (e->topRect.intersects(other->rect)) {
-                        collision = true;
-                        topCollision = true;
-                    }
-                }
-
-                // We hit something
-                if (collision) {
-                    // Landed on ground
-                    if (bottomCollision) {
-                        // weren't already on ground
-                        if (!e->grounded) {
-                            // Stop Moving
-                            e->acceleration.y = 0;
-                            e->velocity.y = 0;
-                        }
-                        e->grounded = true;
-                    }
-
-                    // We bonked our head
-                    if (topCollision) {
-                        if (!bottomCollision) {
-                            e->velocity.y = 1; // DEBUG
-                        }
-                    }
-                }
-                // Free Fall
-                else {
-                    e->acceleration.y = GameManager::gravity;
-                    e->grounded = false;
+                if (GameManager::checkCollisionSide(*e, "BOTTOM")) {
+                    e->velocity.y = 0;
+                    e->SetPosition(prevPos);
                 }
             }
         }

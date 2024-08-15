@@ -6,17 +6,25 @@
 #include "GameObject.hpp"
 #include "ScriptItem.hpp"
 
+enum EntityVar_t {
+    NUMBER,
+    STRING
+};
+
+typedef struct {
+    std::string name;
+    EntityVar_t type;
+    std::string stringval;
+    double numval;
+} EntityVar;
+
 class Entity : public GameObject {
     public:
         std::string name;
         std::string texturePath;
 
         sf::Sprite sprite;
-        sf::Rect<float> rect;       // Whole sprite
-        sf::Rect<float> topRect;    // Sides (for collision)
-        sf::Rect<float> bottomRect;
-        sf::Rect<float> leftRect;
-        sf::Rect<float> rightRect;
+        sf::Vector2f hitbox[5] = {};
         
         bool isSolid;           // Can collide with things
         bool physicsObject;     // Is affected by gravity
@@ -26,11 +34,10 @@ class Entity : public GameObject {
         sf::Vector2f acceleration;
 
         std::vector<ScriptItem> lua_scripts;
-        std::map<int, std::string> entity_variables;
-        std::map<std::string, double> entity_numbers;
-        std::map<std::string, std::string> entity_strings;
+        std::vector<EntityVar> variables;
 
         bool showHitbox;
+        bool editHitbox;
         bool isPlayer;
 
         Entity();
@@ -42,9 +49,9 @@ class Entity : public GameObject {
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position) override;
         void SetSpriteScale(sf::Vector2f scale);
-        void InitRect();
-        void UpdateRect(sf::Vector2f change);
-        void UpdateCollisionRects();
+
+        void CreateHitbox();
+        void UpdateHitbox(sf::Vector2f delta);
 };
 
 #endif

@@ -53,48 +53,49 @@ namespace Rendering {
     void DrawGameObjects(sf::RenderWindow& window) {
         frame.clear(sf::Color(40, 40, 40));
 
+        if (!GameManager::isPlayingGame) {
+            // Dot at origin for orientation
+            sf::CircleShape originDot(5);
+            originDot.setFillColor(sf::Color::White);
+            originDot.setPosition(sf::Vector2f(0,0));
+
+            frame.draw(originDot);
+        }
+
         for (RenderingLayer layer : m_layers) {
             for (GameObject* obj : layer.objects) {
                 if (obj->type == ENTITY) {
                     Entity* e = (Entity*)obj;
                     if (e->isVisible) {
-                        // window.draw(e->sprite);
                         frame.draw(e->sprite);
                     }
 
                     if (e->showHitbox) {
-                        sf::Vector2f pos = e->rect.getPosition();
-                        sf::Vector2f size = e->rect.getSize();
-
                         sf::Vertex lines[] = {
-                            sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Red),
-                            sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y), sf::Color::Red),
-                            sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y + size.y), sf::Color::Red),
-                            sf::Vertex(sf::Vector2f(pos.x, pos.y + size.y), sf::Color::Red),
-                            sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Red)
+                            sf::Vertex(e->hitbox[0], sf::Color::Red),
+                            sf::Vertex(e->hitbox[1], sf::Color::Red),
+                            sf::Vertex(e->hitbox[2], sf::Color::Red),
+                            sf::Vertex(e->hitbox[3], sf::Color::Red),
+                            sf::Vertex(e->hitbox[4], sf::Color::Red)
                         };
 
-                        /*
-                        sf::RectangleShape topRect;
-                        topRect.setPosition(e->topRect.getPosition());
-                        topRect.setSize(e->topRect.getSize());
-                        window.draw(topRect);
-
-                        sf::RectangleShape rightRect;
-                        rightRect.setPosition(e->rightRect.getPosition());
-                        rightRect.setSize(e->rightRect.getSize());
-                        window.draw(rightRect);
-                        */
-
                         frame.draw(lines, 5, sf::LinesStrip);
-                        // window.draw(lines, 5, sf::LinesStrip);
+                    }
+
+                    if (e->editHitbox && e->showHitbox) {
+                        for (int i = 0; i < 4; i++) {
+                            sf::CircleShape point(5);
+                            point.setPosition(e->hitbox[i]);
+                            point.setOrigin(sf::Vector2f(5, 5));
+                            point.setFillColor(sf::Color::Blue);
+                            frame.draw(point);
+                        }
                     }
                 }
                 else if (obj->type == TEXT) {
                     TextObj* text = (TextObj*)obj;
                     if (text->isVisible) {
                         frame.draw(text->text);
-                        // window.draw(text->text);
                     }
                 }
                 else if (obj->type == CAMERA) {
@@ -112,7 +113,6 @@ namespace Rendering {
                         };
 
                         frame.draw(lines, 5, sf::LinesStrip);
-                        // window.draw(lines, 5, sf::LinesStrip);
                     }
                 }
                 else {
