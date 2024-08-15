@@ -8,7 +8,7 @@
 
 File::ConfigState GameManager::config;
 std::vector<GameObject*> GameManager::GameObjects;
-std::vector<Entity*> GameManager::Entities = {};
+std::vector<Entity*> GameManager::Entities;
 std::vector<TextObj*> GameManager::TextObjects;
 sf::Font GameManager::font;
 unsigned int GameManager::screenWidth = 1280;
@@ -158,11 +158,12 @@ std::vector<Entity*> GameManager::getCollidingWith(const Entity& e1) {
  */
 bool GameManager::checkCollisionSide(const Entity& e, const std::string side) {
     if (!e.isSolid) return false;
-    
-    for (Entity* other : GameManager::Entities) {
-        if (e.ID == other->ID) continue;
-        if (!other->isSolid) continue;
 
+    bool result = false;
+    for (Entity* e2 : Entities) {
+        if (e.ID == e2->ID) continue;
+        if (!e2->isSolid) continue;
+    
         if (side == "TOP") {
             float width = e.hitbox[1].x - e.hitbox[0].x;
 
@@ -171,36 +172,35 @@ bool GameManager::checkCollisionSide(const Entity& e, const std::string side) {
             point.y = e.hitbox[0].y - 1;
             
             sf::FloatRect rect(
-                other->position.x - other->width/2,
-                other->position.y - other->height/2, 
-                other->width,
-                other->height
+                e2->position.x - e2->width/2,
+                e2->position.y - e2->height/2, 
+                e2->width,
+                e2->height
             );
 
-            return CheckCollisionPointRect(point, rect);
+            if (CheckCollisionPointRect(point, rect)) {
+                result = true;
+                break;
+            }
         }
         else if (side == "BOTTOM") {
             float width = e.hitbox[2].x - e.hitbox[3].x;
-            
+
             sf::Vector2f point;
             point.x = e.hitbox[3].x + width/2;
             point.y = e.hitbox[3].y + 1;
 
             sf::FloatRect rect(
-                other->position.x - other->width/2,
-                other->position.y - other->height/2, 
-                other->width,
-                other->height
+                e2->position.x - e2->width/2,
+                e2->position.y - e2->height/2, 
+                e2->width,
+                e2->height
             );
-
-            bool result = CheckCollisionPointRect(point, rect);
-
-            if (result) {
-                std::cout << result << std::endl;
+ 
+            if (CheckCollisionPointRect(point, rect)) {
+                result = true;
+                break;
             }
-
-            // return CheckCollisionPointRect(point, rect);
-            return result;
         }
         else if (side == "LEFT") {
             float height = e.hitbox[3].y - e.hitbox[0].y;
@@ -210,13 +210,16 @@ bool GameManager::checkCollisionSide(const Entity& e, const std::string side) {
             point.y = e.hitbox[0].y + height/2;
 
             sf::FloatRect rect(
-                other->position.x - other->width/2,
-                other->position.y - other->height/2, 
-                other->width,
-                other->height
+                e2->position.x - e2->width/2,
+                e2->position.y - e2->height/2, 
+                e2->width,
+                e2->height
             );
 
-            return CheckCollisionPointRect(point, rect);
+            if (CheckCollisionPointRect(point, rect)) {
+                result = true;
+                break;
+            }
         }
         else if (side == "RIGHT") {
             float height = e.hitbox[3].y - e.hitbox[0].y;
@@ -227,16 +230,19 @@ bool GameManager::checkCollisionSide(const Entity& e, const std::string side) {
             point.y = e.hitbox[0].y + height/2;
 
             sf::FloatRect rect(
-                other->position.x - other->width/2,
-                other->position.y - other->height/2, 
-                other->width,
-                other->height
+                e2->position.x - e2->width/2,
+                e2->position.y - e2->height/2, 
+                e2->width,
+                e2->height
             );
 
-            return CheckCollisionPointRect(point, rect);
+            if (CheckCollisionPointRect(point, rect)) {
+                result = true;
+                break;
+            }
         }
     } 
-    return false;
+    return result;
 }
 
 /**

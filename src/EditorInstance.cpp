@@ -413,15 +413,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (ImGui::BeginTabItem("Testing")) {
-                    ImGui::InputInt("Test ID", &m_DebugIntInput);
-
-                    if (ImGui::Button("Add Entity")) {
-                        Entity* parent = GameManager::FindEntityByID(m_DebugIntInput);
-                        Entity* newChild = new Entity();
-                        newChild->parent = parent;
-                        parent->children.push_back(newChild);
-                    }
-
                     if (ImGui::Button("Testing")) {
                         std::cout << "Var Count: " << GameManager::player->variables.size() << std::endl;
                         for (EntityVar var : GameManager::player->variables) {
@@ -441,6 +432,13 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                             for (GameObject* obj : layer.objects) {
                                 std::cout << "\t" << obj->ID << ": " << obj->name << "\n";
                             }
+                        }
+                        std::cout << "\n";
+                    }
+
+                    if (ImGui::Button("Print Entities")) {
+                        for (Entity* e : GameManager::Entities) {
+                            std::cout << e->ID << ": " << e->name << "\n"; 
                         }
                         std::cout << "\n";
                     }
@@ -650,7 +648,10 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                         if (ImGui::InputFloat2("Acceleration", acceleration)) {
                             e->acceleration = sf::Vector2f(acceleration[0], acceleration[1]);
                         }
-                        // ImGui::Checkbox("Grounded", &e->grounded);
+                        
+                        ImGui::BeginDisabled();
+                            ImGui::Checkbox("Grounded", &e->grounded);
+                        ImGui::EndDisabled();
                     }
                     
                     ImGui::EndTabItem();
@@ -1319,6 +1320,10 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             for (Entity* e : GameManager::Entities) {
                 if (!e->physicsObject) continue;
 
+                // Reset
+                e->acceleration = sf::Vector2f(0,0);
+                e->grounded = false;
+
                 // Incase of collisions
                 sf::Vector2f prevPos = e->position;
 
@@ -1330,6 +1335,7 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
                 e->SetPosition(e->position + e->velocity);
 
                 if (GameManager::checkCollisionSide(*e, "BOTTOM")) {
+                    e->grounded = true;
                     e->velocity.y = 0;
                     e->SetPosition(prevPos);
                 }
