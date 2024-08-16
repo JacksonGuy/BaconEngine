@@ -42,7 +42,9 @@ namespace GameManager {
     extern std::unordered_map<sf::Keyboard::Key, bool> keypresses;
     extern sf::Mouse::Button lastMouseInput;
     extern sf::Vector2f mousePos;
+
     extern ImGuiTextBuffer ConsoleLog;
+    extern std::vector<std::string> ConsoleMessages;
     
     extern float gravity;
     extern sf::Clock clock; 

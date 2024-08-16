@@ -16,6 +16,7 @@ unsigned int GameManager::screenHeight = 720;
 Entity* GameManager::player = nullptr;
 bool GameManager::isPlayingGame;
 ImGuiTextBuffer GameManager::ConsoleLog;
+std::vector<std::string> GameManager::ConsoleMessages;
 unsigned int GameManager::framerateLimit = 500;
 float GameManager::gravity = 0.2f;
 sf::Keyboard::Key GameManager::lastKeyboardInput;
@@ -295,7 +296,8 @@ void GameManager::RestoreEditorState(sf::RenderWindow& window, std::string filen
  */
 void GameManager::ConsoleWrite(std::string text) {
     std::string newText = text + "\n";
-    GameManager::ConsoleLog.append(newText.c_str());
+    // GameManager::ConsoleLog.append(newText.c_str());
+    GameManager::ConsoleMessages.push_back(newText);
 }
 
 /**

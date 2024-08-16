@@ -165,8 +165,8 @@ EditorInstance::~EditorInstance() {
 // Main Game Loop
 void EditorInstance::Run() {
     // DEBUG
-    // std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
-    std::string demoPath = "/home/jack/BaconProjects/Test/Game.json";
+    std::string demoPath = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
+    // std::string demoPath = "/home/jack/BaconProjects/Test/Game.json";
     std::filesystem::path demo = std::filesystem::relative(demoPath);
     m_projectTitle = demoPath;
     m_loadedProject = true;
@@ -182,6 +182,48 @@ void EditorInstance::Run() {
         this->FixedUpdate(deltaTime);    // Physics and Lua
 
         Rendering::DrawGameObjects(*m_window);
+
+        if (m_viewObject != nullptr) {
+            float gap = 5.f;
+            
+            if (m_viewObject->type == ENTITY) {
+                Entity* e = (Entity*)m_viewObject;
+                sf::Vector2f pos = e->position - sf::Vector2f(gap, gap) - sf::Vector2f(e->width/2 , e->height/2);
+                sf::Vector2f size = sf::Vector2f(e->width + gap * 2, e->height + gap * 2);
+
+                sf::Vertex border[] = {
+                    sf::Vertex(sf::Vector2f(pos.x, pos.y)),
+                    sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y)),
+                    sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y + size.y)),
+                    sf::Vertex(sf::Vector2f(pos.x, pos.y + size.y)),
+                    sf::Vertex(sf::Vector2f(pos.x, pos.y)),
+                };
+                Rendering::frame.draw(border, 5, sf::LinesStrip);
+            }
+            else if (m_viewObject->type == TEXT) {
+                TextObj* text = (TextObj*)m_viewObject;
+                sf::FloatRect rect = text->text.getGlobalBounds();
+                sf::Vector2f pos(rect.left - gap, rect.top - gap);
+                sf::Vector2f size(rect.width + gap*2, rect.height + gap*2);
+                
+                sf::Vertex border[] = {
+                    sf::Vertex(sf::Vector2f(pos.x, pos.y)),
+                    sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y)),
+                    sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y + size.y)),
+                    sf::Vertex(sf::Vector2f(pos.x, pos.y + size.y)),
+                    sf::Vertex(sf::Vector2f(pos.x, pos.y)),
+                };
+
+                Rendering::frame.draw(border, 5, sf::LinesStrip);
+            }
+            else if (m_viewObject->type == CAMERA) {
+                Camera* cam = (Camera*)m_viewObject;
+                cam->isVisible = true;
+            }
+
+            Rendering::frame.display();
+        }
+
         ImGui::SFML::Render(*this->m_window);
         this->m_window->display();
     }
@@ -414,14 +456,21 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
                 if (ImGui::BeginTabItem("Testing")) {
                     if (ImGui::Button("Testing")) {
-                        std::cout << "Var Count: " << GameManager::player->variables.size() << std::endl;
-                        for (EntityVar var : GameManager::player->variables) {
-                            std::cout << var.name;
-                            if (var.type == NUMBER) {
-                                std::cout << ": " <<  var.numval << "\n";
-                            }
-                            else if (var.type == STRING) {
-                                std::cout << ": " << var.stringval << "\n";
+                        const char* consoleBuff = GameManager::ConsoleLog.begin();
+                        int size = GameManager::ConsoleLog.size();
+                        std::vector<char> parseBuff;
+                        for (int i = 0; i < size; i++) {
+                            parseBuff.push_back(consoleBuff[i]); 
+                            if (parseBuff.size() == 8) {
+                                std::string str;
+                                for (char c : parseBuff) {
+                                    str.push_back(c);
+                                }
+
+                                if (str == "[ENGINE]") {
+                                    std::cout << "engine message found\n";
+                                }
+                                parseBuff.pop_back();
                             }
                         }
                     }
@@ -449,7 +498,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
         ImGui::End();
     }
 
-    // Display GameObject
+    // Display GameObjects
     ImGui::Begin("Properties");
         if (m_viewObject != nullptr) {
             // Show Entity Details
@@ -1042,10 +1091,31 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     if (m_showConsole) {
         ImGui::Begin("Console", &m_showConsole);
             if (ImGui::Button("Clear")) {
+                GameManager::ConsoleMessages.clear();
                 GameManager::ConsoleLog.clear();
             }
+            ImGui::SameLine();
+            ImGui::Checkbox("Engine Messages", &m_ConsoleEngineMessages);
             ImGui::Separator();
+            
+            GameManager::ConsoleLog.clear();
+            for (std::string str : GameManager::ConsoleMessages) {
+                std::string prefix = str.substr(0, 8);
+                
+                if (prefix == "[ENGINE]") {
+                    if (m_ConsoleEngineMessages) {
+                        GameManager::ConsoleLog.append(str.data());
+                    }
+                }
+                else {
+                    GameManager::ConsoleLog.append(str.data());
+                }
+            }
             ImGui::TextUnformatted(GameManager::ConsoleLog.begin(), GameManager::ConsoleLog.end());
+            
+            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                ImGui::SetScrollHereY(1.0f);
+            }
         ImGui::End();
     }
 

@@ -272,7 +272,7 @@ namespace Lua {
     }
 
     int get_sprite(lua_State* L) {
-        std::string path = std::filesystem::relative(current_lua_object->texturePath, GameManager::entryPoint);
+        std::string path = std::filesystem::relative(current_lua_object->texturePath, GameManager::entryPoint).generic_string();
         lua_pushstring(L, path.c_str());
         return 1;
     }

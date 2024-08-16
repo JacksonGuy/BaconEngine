@@ -57,6 +57,7 @@ class EditorInstance {
         std::string m_failedMessage;
         GameObject* m_currentSelectedObject;
         GameObject* m_copyObject;
+        bool m_ConsoleEngineMessages = true;
         int m_DebugIntInput = 0;
 
         Entity* m_AddAttributeEntity;
