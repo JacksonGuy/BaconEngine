@@ -38,7 +38,7 @@ class EditorInstance {
 
         // Engine Variables
         sf::Clock m_clock;
-        sf::Vector2f m_mousePos;
+        sf::Vector2i m_mousePos;
         sf::Time m_lastFixedUpdate;
         unsigned int m_frameLimit;
         sf::Time m_TimePerFrame;

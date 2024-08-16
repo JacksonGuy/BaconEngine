@@ -433,20 +433,24 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::Separator();
             ImGui::BeginTabBar("EngineItems");
                 if (ImGui::BeginTabItem("Camera")) {
-                    float cameraPos[] = {m_camera->getCenter().x, m_camera->getCenter().y};
-                    ImGui::Text("Position");
-                    if (ImGui::InputFloat2("##", cameraPos)) {
+                    float cameraPos[2] = {m_camera->getCenter().x, m_camera->getCenter().y};
+                    if (ImGui::InputFloat2("Position", cameraPos)) {
                         m_camera->setCenter(sf::Vector2f(cameraPos[0], cameraPos[1]));
                         Rendering::frame.setView(*m_camera);
                     }
 
-                    float cameraSize[] = {m_camera->getSize().x, m_camera->getSize().y};
-                    ImGui::Text("Size");
-                    if (ImGui::InputFloat2("##", cameraSize)) {
+                    float cameraSize[2] = {m_camera->getSize().x, m_camera->getSize().y};
+                    if (ImGui::InputFloat2("Size", cameraSize)) {
                         m_camera->setSize(cameraSize[0], cameraSize[1]);
                         Rendering::frame.setView(*m_camera);
                     }
                     ImGui::EndTabItem();
+
+                    if (ImGui::Button("Reset Camera")) {
+                        m_camera->setCenter(0,0);
+                        m_camera->setSize(m_swindowsize);
+                        Rendering::frame.setView(*m_camera);
+                    }
                 }
 
                 if (ImGui::BeginTabItem("Game Settings")) {
@@ -1097,11 +1101,11 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::SameLine();
             ImGui::Checkbox("Engine Messages", &m_ConsoleEngineMessages);
             ImGui::Separator();
-            
+
             GameManager::ConsoleLog.clear();
             for (std::string str : GameManager::ConsoleMessages) {
                 std::string prefix = str.substr(0, 8);
-                
+
                 if (prefix == "[ENGINE]") {
                     if (m_ConsoleEngineMessages) {
                         GameManager::ConsoleLog.append(str.data());
@@ -1267,15 +1271,26 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     }
                 }
             }
+        
+            // Middle
+            else if (event.mouseButton.button == 2 && m_sceneMouseCapture) {
+                m_mousePos = sf::Mouse::getPosition(*m_window);
+                m_cameraMove = true;
+            }
         }
         
+        // Mouse button released
         if (event.type == sf::Event::MouseButtonReleased) {
-            // Turn off camera move 
-            m_cameraMove = false;
-            m_currentSelectedObject = nullptr;
+            if (event.mouseButton.button == 2) {
+                // Turn off camera move 
+                m_cameraMove = false;
+                m_currentSelectedObject = nullptr;
+            }
         }
 
+        // Mouse moved
         if (event.type == sf::Event::MouseMoved) {
+            // Left Mouse
             if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
                 if (m_currentSelectedObject != nullptr) {
                     if (m_currentSelectedObject->type == ENTITY) {
@@ -1303,6 +1318,19 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     }
                 }
             }
+        
+            // Middle Mouse 
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Middle)) {
+                if (m_cameraMove) {
+                    sf::Vector2i mpos = sf::Mouse::getPosition(*m_window);
+                    sf::Vector2i delta = mpos - m_mousePos;
+                    delta.x *= -1.2f;
+                    delta.y *= -1.2f;
+                    m_camera->move(delta.x, delta.y);
+                    Rendering::frame.setView(*m_camera);
+                    m_mousePos = mpos;
+                }
+            }
         }
 
         // Mouse Wheel
@@ -1326,9 +1354,8 @@ void EditorInstance::Update(sf::Time deltaTime) {
     }
 
 
-    // Camera Movement
+    // Keyboard Camera Movement
     sf::Vector2f camCenter = m_camera->getCenter();
-
     if (m_swindowFocused && !GameManager::isPlayingGame && GameManager::windowHasFocus) {
         float camSpeed = 10.f;
         

@@ -8,6 +8,7 @@ CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 CFLAGS += -Iinclude/lua -Linclude/lua
 CFLAGS += -Iinclude/nativefiledialog/src/include
 CFLAGS += -Linclude/nativefiledialog/build/lib/Release/x64
+CFLAGS += -Iinclude/box2d/include -Linclude/box2d/build/bin/Debug 
 
 # Linux 
 ifeq ($(UNAME), Linux)
@@ -64,6 +65,7 @@ ifeq ($(OS), Windows_NT)
 	LIBS += -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s
 	LIBS += -lwinmm -lgdi32 -lopengl32 -lglfw3 -lfreetype  -llua -lnfd -lcomctl32 -lole32 -luuid
 	LIBS += -lopenal32 -lFLAC -lvorbisenc -lvorbisfile -lvorbis -logg
+	LIBS += -lbox2d
 	ifeq ($(target), editor_debug)
 		EXE = editor.exe
 	else ifeq ($(target), editor_release)

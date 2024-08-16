@@ -21,7 +21,7 @@ extern "C" {
     #include <lualib.h>
 }
 
-namespace GameManager {
+namespace GameManager {    
     extern File::ConfigState config;
     extern unsigned int screenWidth;
     extern unsigned int screenHeight;
