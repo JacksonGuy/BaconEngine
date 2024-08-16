@@ -8,12 +8,15 @@ CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 CFLAGS += -Iinclude/lua -Linclude/lua
 CFLAGS += -Iinclude/nativefiledialog/src/include
 CFLAGS += -Linclude/nativefiledialog/build/lib/Release/x64
+CFLAGS += -Iinclude/box2d/include -Linclude/box2d/build/bin/Debug 
 
 # Linux 
-CFLAGS += -I/usr/include/gtk-3.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/harfbuzz 
-CFLAGS += -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/fribidi -I/usr/include/cairo -I/usr/include/pixman-1
-CFLAGS += -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/x86_64-linux-gnu -I/usr/include/webp -I/usr/include/gio-unix-2.0 -I/usr/include/atk-1.0 -I/usr/include/at-spi2-atk/2.0
-CFLAGS += -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include
+ifeq ($(UNAME), Linux)
+	CFLAGS += -I/usr/include/gtk-3.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/harfbuzz 
+	CFLAGS += -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/fribidi -I/usr/include/cairo -I/usr/include/pixman-1
+	CFLAGS += -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/x86_64-linux-gnu -I/usr/include/webp -I/usr/include/gio-unix-2.0 -I/usr/include/atk-1.0 -I/usr/include/at-spi2-atk/2.0
+	CFLAGS += -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include
+endif
 
 BUILD_DIR = bin
 
@@ -76,7 +79,7 @@ endif
 
 $(BUILD_DIR)/%.o : %.cpp
 	@mkdir -p $(@D)
-	$(CC) -lbox2d $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/%.o : libs/imgui/%.cpp
 	@mkdir -p $(@D)

@@ -1,16 +1,15 @@
 #ifndef EDITOR_INSTANCE_H
 #define EDITOR_INSTANCE_H
 
-#include <iostream>
-#include <queue>
+#include <vector>
+#include <unordered_map>
 
 #include "imgui.h"
 #include "imgui-SFML.h"
 
-#include "GameManager.hpp"
 #include "Entity.hpp"
-#include "File.hpp"
-#include "Text.hpp"
+
+#define BUFFSIZE 512
 
 namespace Settings {};
 
@@ -39,7 +38,7 @@ class EditorInstance {
 
         // Engine Variables
         sf::Clock m_clock;
-        sf::Vector2f m_mousePos;
+        sf::Vector2i m_mousePos;
         sf::Time m_lastFixedUpdate;
         unsigned int m_frameLimit;
         sf::Time m_TimePerFrame;
@@ -58,31 +57,32 @@ class EditorInstance {
         std::string m_failedMessage;
         GameObject* m_currentSelectedObject;
         GameObject* m_copyObject;
+        bool m_ConsoleEngineMessages = true;
         int m_DebugIntInput = 0;
 
         Entity* m_AddAttributeEntity;
-        char m_AddScriptName[256];
-        char m_AddVariableName[256];
+        char m_AddScriptName[BUFFSIZE];
+        char m_AddVariableName[BUFFSIZE];
         int m_AddVariableType;
         double m_AddVariableNumber;
-        char m_AddVariableString[256];
+        char m_AddVariableString[BUFFSIZE];
         float m_HitboxAdjust;
 
-        char m_PrefabPath[256];
+        char m_PrefabPath[BUFFSIZE];
 
         // Create Entity Variables
-        char m_createNameBuffer[256];
+        char m_createNameBuffer[BUFFSIZE];
         float m_createPosition[2];
-        char m_createImagePath[256];
+        char m_createImagePath[BUFFSIZE];
         int m_createDimension[2];
 
         // Create Text Variables
-        char m_createTextName[256];
-        char m_createTextDetails[1024 * 16];
+        char m_createTextName[BUFFSIZE];
+        char m_createTextDetails[BUFFSIZE * 64];
         float m_createTextPosition[2];
 
         // Create Camera Variables
-        char m_createCameraName[256];
+        char m_createCameraName[BUFFSIZE];
         float m_createCameraPosition[2];
         int m_createCameraSize[2];
 

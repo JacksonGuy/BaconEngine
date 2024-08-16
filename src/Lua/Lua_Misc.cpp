@@ -134,7 +134,8 @@ namespace Lua {
             return 1;
         }
 
-        if (sf::Keyboard::isKeyPressed(Input::key_map[input])) {
+        // if (sf::Keyboard::isKeyPressed(Input::key_map[input])) {
+        if (GameManager::keypresses[Input::key_map[input]]) {
             lua_pushboolean(L, 1);
         }
         else {
@@ -229,16 +230,20 @@ namespace Lua {
         bool collision = false;
 
         if (side == "TOP") {
-            collision = GameManager::checkCollisionSide(current_lua_object->topRect);
+            collision = GameManager::checkCollisionSide(*current_lua_object, "TOP");
         }
         else if (side == "BOTTOM") {
-            collision = GameManager::checkCollisionSide(current_lua_object->bottomRect);
+            collision = GameManager::checkCollisionSide(*current_lua_object, "BOTTOM");
         }
         else if (side == "LEFT") {
-            collision = GameManager::checkCollisionSide(current_lua_object->leftRect);
+            collision = GameManager::checkCollisionSide(*current_lua_object, "LEFT");
         }
         else if (side == "RIGHT") {
-            collision = GameManager::checkCollisionSide(current_lua_object->rightRect);
+            collision = GameManager::checkCollisionSide(*current_lua_object, "RIGHT");
+        }
+        else {
+            GameManager::ConsoleWrite("[ERROR] Not a valid side!");
+            return 0;
         }
 
         if (collision) {
