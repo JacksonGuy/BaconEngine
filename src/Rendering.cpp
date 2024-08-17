@@ -1,5 +1,6 @@
 #include "Rendering.hpp"
 #include "GameManager.hpp"
+#include "BaconMath.h"
 
 namespace Rendering {
     std::unordered_map<std::string, sf::Texture*> m_textures;
@@ -69,27 +70,24 @@ namespace Rendering {
                     if (e->isVisible) {
                         frame.draw(e->sprite);
                     }
-
                     if (e->showHitbox) {
-                        sf::Vertex lines[] = {
-                            sf::Vertex(e->hitbox[0], sf::Color::Red),
-                            sf::Vertex(e->hitbox[1], sf::Color::Red),
-                            sf::Vertex(e->hitbox[2], sf::Color::Red),
-                            sf::Vertex(e->hitbox[3], sf::Color::Red),
-                            sf::Vertex(e->hitbox[4], sf::Color::Red)
+                        sf::Vector2f pos = sf::Vector2f(
+                            e->body->GetPosition().x * bmath::PPM,
+                            e->body->GetPosition().y * bmath::PPM
+                        );
+                        sf::Vector2f size = sf::Vector2f(
+                            (e->width/2), (e->height/2)
+                        );
+
+                        sf::Vertex points[] = {
+                            sf::Vertex(sf::Vector2f(pos.x - size.x, pos.y - size.y), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y - size.y), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x + size.x, pos.y + size.y), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x - size.x, pos.y + size.y), sf::Color::Red),
+                            sf::Vertex(sf::Vector2f(pos.x - size.x, pos.y - size.y), sf::Color::Red)
                         };
 
-                        frame.draw(lines, 5, sf::LinesStrip);
-                    }
-
-                    if (e->editHitbox && e->showHitbox) {
-                        for (int i = 0; i < 4; i++) {
-                            sf::CircleShape point(5);
-                            point.setPosition(e->hitbox[i]);
-                            point.setOrigin(sf::Vector2f(5, 5));
-                            point.setFillColor(sf::Color::Blue);
-                            frame.draw(point);
-                        }
+                        frame.draw(points, 5, sf::LinesStrip);
                     }
                 }
                 else if (obj->type == TEXT) {

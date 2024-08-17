@@ -8,7 +8,7 @@ CFLAGS += -Iinclude/imgui -Iinclude/imgui/backends
 CFLAGS += -Iinclude/lua -Linclude/lua
 CFLAGS += -Iinclude/nativefiledialog/src/include
 CFLAGS += -Linclude/nativefiledialog/build/lib/Release/x64
-CFLAGS += -Iinclude/box2d/include -Linclude/box2d/build/bin/Debug 
+CFLAGS += -Iinclude/box2d/include -Linclude/box2d/lib
 
 # Linux 
 ifeq ($(UNAME), Linux)
@@ -27,6 +27,7 @@ else ifeq ($(target), editor_debug)
 	CFLAGS += -ggdb -Wall -Wextra -pedantic-errors
 	SOURCES += Program.cpp
 else ifeq ($(target), test)
+	CFLAGS += -ggdb -Wall -Wextra -pedantic-errors
 	SOURCES += Test.cpp
 else
 	SOURCES += player.cpp
@@ -39,6 +40,7 @@ SOURCES += include/imgui/imgui_tables.cpp
 SOURCES += include/imgui/imgui_widgets.cpp
 SOURCES += include/imgui/imgui-SFML.cpp
 SOURCES += include/imgui/imgui_demo.cpp
+SOURCES += $(wildcard include/box2d/src/**/*.cpp)
 OBJS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 
 UNAME = $(shell uname -s)
@@ -79,11 +81,11 @@ endif
 
 $(BUILD_DIR)/%.o : %.cpp
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $< -lbox2d
 
 $(BUILD_DIR)/%.o : libs/imgui/%.cpp
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $< -lbox2d
 
 all: $(OBJS)
 	@echo $(OBJS) 

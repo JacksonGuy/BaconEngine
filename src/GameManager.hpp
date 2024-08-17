@@ -9,6 +9,7 @@
 
 #include <SFML/Graphics.hpp>
 #include "imgui.h"
+#include "box2d/box2d.h"
 
 #include "Entity.hpp"
 #include "Text.hpp"
@@ -46,18 +47,9 @@ namespace GameManager {
     extern ImGuiTextBuffer ConsoleLog;
     extern std::vector<std::string> ConsoleMessages;
     
-    extern float gravity;
+    extern b2Vec2 gravity;
+    extern b2World* world;
     extern sf::Clock clock; 
-
-    bool CheckCollisionLines(sf::Vector2f s1, sf::Vector2f e1,
-        sf::Vector2f s2, sf::Vector2f e2);
-    bool CheckCollisionPointLine(sf::Vector2f point, sf::Vector2f s, sf::Vector2f e);
-    bool CheckCollisionPointRect(sf::Vector2f point, sf::FloatRect rect);
-
-    bool checkCollision(const Entity& e1, const Entity& e2);
-    bool checkCollision(const Entity& e1);
-    std::vector<Entity*> getCollidingWith(const Entity& e1);
-    bool checkCollisionSide(const Entity& e, const std::string side);
 
     void SaveEditorState(sf::RenderWindow& window, std::string filename);
     void RestoreEditorState(sf::RenderWindow& window, std::string filename);

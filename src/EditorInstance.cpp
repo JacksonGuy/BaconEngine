@@ -4,7 +4,9 @@
 #include <filesystem>
 
 #include <nfd.h>
+#include "box2d/box2d.h"
 
+#include "BaconMath.h"
 #include "GameManager.hpp"
 #include "File.hpp"
 #include "Text.hpp"
@@ -97,14 +99,11 @@ EditorInstance::EditorInstance() {
     // Set Camera
     this->m_camera = new sf::View(sf::Vector2f(0,0), sf::Vector2f(GameManager::screenWidth, GameManager::screenHeight));
     Rendering::frame.setView(*m_camera);
-    // m_window->setView(*m_camera);
-    this->m_cameraZoom = 1.0f;
 
     // Default Font
     GameManager::font.loadFromFile("arial.ttf");
 
     // Set Engine UI Variables
-    this->m_showDockSpace = false;
     this->m_cameraMove = false;                                       // Is the Camera Moving?
     this->m_showEntityCreate = false;                                 // Entity Create Menu
     this->m_showMainMenu = true;                                      // General Main Menu
@@ -124,7 +123,6 @@ EditorInstance::EditorInstance() {
     this->m_createDimension[0] = 128;                                 // Default Entity Dimensions
     this->m_createDimension[1] = 128;
 
-    this->m_HitboxAdjust = 1.f;
     this->m_viewObject = nullptr;
 
     // Create Text Variables
@@ -249,6 +247,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
     ImGui::DockSpaceOverViewport();
 
     // Game Window
+    {
     ImGui::Begin("Scene");
         m_swindowFocused = ImGui::IsWindowFocused(); 
         m_swindowpos = (sf::Vector2f)ImGui::GetWindowPos();
@@ -273,6 +272,7 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
 
         ImGui::Image(Rendering::frame);
     ImGui::End();
+    }
 
     // Top menu bar
     if (ImGui::BeginMainMenuBar()) {
@@ -374,7 +374,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
             ImGui::MenuItem("Object List", NULL, &m_showEntityList);
             ImGui::MenuItem("Game Details", NULL, &m_showMainMenu);
             ImGui::MenuItem("Console", NULL, &m_showConsole);
-            ImGui::MenuItem("Menu Docking", NULL, &m_showDockSpace);
             ImGui::MenuItem("Editor Settings", NULL, &m_showSettingsMenu);
             ImGui::EndMenu();
         }
@@ -454,29 +453,18 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (ImGui::BeginTabItem("Game Settings")) {
-                    ImGui::InputFloat("Gravity", &GameManager::gravity);
+                    float gravity[] = {GameManager::gravity.x, GameManager::gravity.y};
+                    if (ImGui::InputFloat("Gravity", &gravity[1])) {
+                        GameManager::gravity.x = gravity[0];
+                        GameManager::gravity.y = gravity[1];
+                        GameManager::world->SetGravity(GameManager::gravity);
+                    }
                     ImGui::EndTabItem();
                 }
 
                 if (ImGui::BeginTabItem("Testing")) {
                     if (ImGui::Button("Testing")) {
-                        const char* consoleBuff = GameManager::ConsoleLog.begin();
-                        int size = GameManager::ConsoleLog.size();
-                        std::vector<char> parseBuff;
-                        for (int i = 0; i < size; i++) {
-                            parseBuff.push_back(consoleBuff[i]); 
-                            if (parseBuff.size() == 8) {
-                                std::string str;
-                                for (char c : parseBuff) {
-                                    str.push_back(c);
-                                }
-
-                                if (str == "[ENGINE]") {
-                                    std::cout << "engine message found\n";
-                                }
-                                parseBuff.pop_back();
-                            }
-                        }
+                        // Add things here
                     }
                     
                     if (ImGui::Button("Print Layers")) {
@@ -634,79 +622,36 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 }
 
                 if (ImGui::BeginTabItem("Physics")) {
-                    if (ImGui::Checkbox("Solid", &e->isSolid)) {
-                        // Can't be a physics objects without being solid
-                        if (!e->isSolid) {
-                            e->physicsObject = false;
-                            e->showHitbox = false;
-                            e->velocity = sf::Vector2f(0, 0);
-                            e->acceleration = sf::Vector2f(0, 0);
-                            e->grounded = false;
+                    const char* bodyTypes[] = {
+                        "Static",
+                        "Dynamic"
+                    };
+                    int selectedType;
+                    if (e->bodytype == STATIC) selectedType = 0;
+                    else if (e->bodytype == DYNAMIC) selectedType = 1;
+                    if (ImGui::Combo("Body Type", &selectedType, bodyTypes, 2)) {
+                        switch (selectedType) {
+                            case 0:
+                                e->bodytype = STATIC;
+                                e->CreateBody();
+                                break;
+                            case 1:
+                                e->bodytype = DYNAMIC;
+                                e->CreateBody();
+                                break;
                         }
+                    } 
+
+                    ImGui::Checkbox("Show Hitbox", &e->showHitbox);
+
+                    float hitboxPos[] = {
+                        e->body->GetPosition().x * bmath::PPM, 
+                        e->body->GetPosition().y * bmath::PPM
+                    };
+                    if (ImGui::InputFloat2("Position", hitboxPos)) {
+                        // e->body->SetTransform({hitboxPos[0], hitboxPos[1]}, e->body->GetAngle());
                     }
 
-                    if (e->isSolid) {
-                        ImGui::SameLine();
-                        ImGui::Checkbox("Physics Object", &e->physicsObject);
-                    }
-
-                    if (e->isSolid) {
-                        ImGui::Checkbox("Show Hitbox", &e->showHitbox);
-                        
-                        if (e->showHitbox) {
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Edit Hitbox", &e->editHitbox);
-                        }
-
-                        if (e->editHitbox && e->showHitbox) {
-                            for (int i = 0; i < 4; i++) {
-                                float pointCoords[] = {e->hitbox[i].x, e->hitbox[i].y};
-                                
-                                std::string pointName;
-                                if (i == 0) pointName = "Top Left";
-                                else if (i == 1) pointName = "Top Right";
-                                else if (i == 2) pointName = "Bottom Right";
-                                else if (i == 3) pointName = "Bottom Left";
-
-                                if (ImGui::InputFloat2(pointName.data(), pointCoords)) {
-                                    e->hitbox[i].x = pointCoords[0];
-                                    e->hitbox[i].y = pointCoords[1];
-                                
-                                    if (i == 0) {
-                                        e->hitbox[4].x = pointCoords[0];
-                                        e->hitbox[4].y = pointCoords[1];
-                                    }
-                                }
-
-                                // free(pointCoords);
-                            }
-                        }
-
-                        if (ImGui::Button("Reset Hitbox")) {
-                            e->CreateHitbox();
-                        }
-
-                        ImGui::Separator();
-                    }
-
-                    if (e->physicsObject) {
-                        ImGui::InputFloat("Mass", &e->mass);
-                        ImGui::SetItemTooltip("This doesn't do anything currently");
-                        
-                        float velocity[] = {e->velocity.x, e->velocity.y};
-                        float acceleration[] = {e->acceleration.x, e->acceleration.y};
-                        if (ImGui::InputFloat2("Velocity", velocity)) {
-                            e->velocity = sf::Vector2f(velocity[0], velocity[1]);
-                        }
-                        if (ImGui::InputFloat2("Acceleration", acceleration)) {
-                            e->acceleration = sf::Vector2f(acceleration[0], acceleration[1]);
-                        }
-                        
-                        ImGui::BeginDisabled();
-                            ImGui::Checkbox("Grounded", &e->grounded);
-                        ImGui::EndDisabled();
-                    }
-                    
                     ImGui::EndTabItem();
                 }
 
@@ -994,7 +939,6 @@ void EditorInstance::DrawUI(sf::Time deltaTime) {
                 entity->name = m_createNameBuffer;
                 entity->width = m_createDimension[0];
                 entity->height = m_createDimension[1];
-                entity->CreateHitbox();
                 entity->SetSprite(m_createImagePath);
 
                 Rendering::AddToLayer(entity);
@@ -1230,9 +1174,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
                     // If so, set as selected
                     bool selectedSomething = false;
                     for (Entity* e : GameManager::Entities) {
-                        sf::Vector2f size = e->hitbox[2] - e->hitbox[0];
-                        sf::FloatRect rect(e->hitbox[0], size);
-
+                        sf::FloatRect rect = e->sprite.getGlobalBounds();
                         if (rect.contains(worldMPos)) {
                             m_currentSelectedObject = e;
                             selectedSomething = true;
@@ -1257,9 +1199,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
             // Right Mouse
             else if (event.mouseButton.button == 1 && m_sceneMouseCapture) {
                 for (Entity* e : GameManager::Entities) {
-                    sf::Vector2f size = e->hitbox[2] - e->hitbox[0];
-                    sf::FloatRect rect(e->hitbox[0], size);
-                    
+                    sf::FloatRect rect = e->sprite.getGlobalBounds();
                     if (rect.contains(worldMPos)) {
                         m_viewObject = e;
                     }
@@ -1274,8 +1214,10 @@ void EditorInstance::Update(sf::Time deltaTime) {
         
             // Middle
             else if (event.mouseButton.button == 2 && m_sceneMouseCapture) {
-                m_mousePos = sf::Mouse::getPosition(*m_window);
-                m_cameraMove = true;
+                if (!GameManager::isPlayingGame) {
+                    m_mousePos = sf::Mouse::getPosition(*m_window);
+                    m_cameraMove = true;
+                }
             }
         }
         
@@ -1295,23 +1237,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
                 if (m_currentSelectedObject != nullptr) {
                     if (m_currentSelectedObject->type == ENTITY) {
                         Entity* e = (Entity*)m_currentSelectedObject;
-                        if (e->editHitbox) {
-                            for (int i = 0; i < 4; i++) {
-                                sf::CircleShape point(15);
-                                point.setPosition(e->hitbox[i]);
-                                point.setOrigin(15, 15);
-                                
-                                if (point.getGlobalBounds().contains(worldMPos)) {
-                                    e->hitbox[i] = worldMPos;
-                                    if (i == 0) {
-                                        e->hitbox[4] = worldMPos;
-                                    }
-                                }
-                            }
-                        }
-                        else {
-                            e->SetPosition(worldMPos);
-                        }
+                        e->SetPosition(worldMPos);
                     }
                     else {
                         m_currentSelectedObject->SetPosition(worldMPos);
@@ -1321,7 +1247,7 @@ void EditorInstance::Update(sf::Time deltaTime) {
         
             // Middle Mouse 
             if (sf::Mouse::isButtonPressed(sf::Mouse::Middle)) {
-                if (m_cameraMove) {
+                if (m_cameraMove && !GameManager::isPlayingGame) {
                     sf::Vector2i mpos = sf::Mouse::getPosition(*m_window);
                     sf::Vector2i delta = mpos - m_mousePos;
                     delta.x *= -1.2f;
@@ -1339,13 +1265,11 @@ void EditorInstance::Update(sf::Time deltaTime) {
                 // Mouse wheel moved forwards
                 if (event.mouseWheel.delta == 1) {
                     m_camera->zoom(0.8);
-                    m_cameraZoom *= 1.2;
                 }
 
                 // Mouse wheel moved back
                 else if (event.mouseWheel.delta == -1) {
                     m_camera->zoom(1.2);
-                    m_cameraZoom *= 0.8;
                 }
 
                 Rendering::frame.setView(*m_camera);
@@ -1398,44 +1322,27 @@ void EditorInstance::FixedUpdate(sf::Time deltaTime) {
             Lua::RunLuaUpdates();
         }
 
-        // Player position update
-        if (GameManager::player != nullptr && GameManager::isPlayingGame) {
-            GameManager::player->SetPosition(GameManager::player->position);
+        // Physics
+        if (GameManager::isPlayingGame) {
+            float step = 1.0f / 60.0f;
+            GameManager::world->Step(step, 6, 3);
 
-            if (GameManager::camera != nullptr) {
-                // m_window->setView(*GameManager::camera->view);
-                Rendering::frame.setView(*GameManager::camera->view);
-            }
-            else {
-                // m_window->setView(*m_camera);
-                Rendering::frame.setView(*m_camera);
+            for (Entity* e : GameManager::Entities) {
+                sf::Vector2f newPos = sf::Vector2f(
+                    e->body->GetPosition().x * bmath::PPM, 
+                    e->body->GetPosition().y * bmath::PPM
+                );
+                e->SetPosition(newPos);
             }
         }
 
-        // Physics
-        if (GameManager::isPlayingGame) {            
-            for (Entity* e : GameManager::Entities) {
-                if (!e->physicsObject) continue;
-
-                // Reset
-                e->acceleration = sf::Vector2f(0,0);
-                e->grounded = false;
-
-                // Incase of collisions
-                sf::Vector2f prevPos = e->position;
-
-                // Gravity
-                e->acceleration = sf::Vector2f(0, GameManager::gravity);
-
-                // Apply Changes
-                e->velocity += e->acceleration;
-                e->SetPosition(e->position + e->velocity);
-
-                if (GameManager::checkCollisionSide(*e, "BOTTOM")) {
-                    e->grounded = true;
-                    e->velocity.y = 0;
-                    e->SetPosition(prevPos);
-                }
+        // Player position update
+        if (GameManager::player != nullptr && GameManager::isPlayingGame) {
+            if (GameManager::camera != nullptr) {
+                Rendering::frame.setView(*GameManager::camera->view);
+            }
+            else {
+                Rendering::frame.setView(*m_camera);
             }
         }
     }

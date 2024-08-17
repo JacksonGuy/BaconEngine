@@ -140,44 +140,28 @@ namespace Lua {
     }
 
     int get_velocity(lua_State* L) {
-        sf::Vector2f vel = current_lua_object->velocity;
-
-        lua_pushnumber(L, vel.x);
-        lua_pushnumber(L, vel.y);
-
-        return 2;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int set_velocity(lua_State* L) {
-        double x = lua_tonumber(L, 1);
-        double y = lua_tonumber(L, 2);
-
-        current_lua_object->velocity = sf::Vector2f(x, y);
-
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
         return 0;
     }
 
     int get_acceleration(lua_State* L) {
-        sf::Vector2f acc = current_lua_object->acceleration;
-
-        lua_pushnumber(L, acc.x);
-        lua_pushnumber(L, acc.y);
-
-        return 2;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int set_acceleration(lua_State* L) {
-        double ax = lua_tonumber(L, 1);
-        double ay = lua_tonumber(L, 2);
-
-        current_lua_object->acceleration = sf::Vector2f(ax, ay);
-
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
         return 0;
     }
 
     int get_grounded(lua_State* L) {
-        lua_pushboolean(L, current_lua_object->grounded);
-        return 1;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int get_entity_position(lua_State* L) {
@@ -243,32 +227,13 @@ namespace Lua {
     }
 
     int get_clicked(lua_State* L) {
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            sf::Vector2f size = current_lua_object->hitbox[0] - current_lua_object->hitbox[2];
-            sf::FloatRect rect(current_lua_object->hitbox[0], size);
-
-            if (rect.contains(GameManager::mousePos)) {
-                lua_pushboolean(L, 1);
-                return 1;
-            }
-        }
-        lua_pushboolean(L, 0);
-        return 1;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int get_clicked_single(lua_State* L) {
-        if (GameManager::lastMouseInput == sf::Mouse::Button::Left) {
-            sf::Vector2f size = current_lua_object->hitbox[0] - current_lua_object->hitbox[2];
-            sf::FloatRect rect(current_lua_object->hitbox[0], size);
-
-            if (rect.contains(GameManager::mousePos)) {
-                lua_pushboolean(L, 1);
-                GameManager::lastMouseInput = sf::Mouse::Button(-1);
-                return 1;
-            }
-        }
-        lua_pushboolean(L, 0);
-        return 1;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int get_sprite(lua_State* L) {
@@ -317,26 +282,12 @@ namespace Lua {
     }
 
     int get_entity_velocity(lua_State* L) {
-        const int id = lua_tonumber(L, 1);
-
-        Entity* e = GameManager::FindEntityByID(id);
-        if (e != nullptr) {
-            lua_pushnumber(L, e->velocity.x);
-            lua_pushnumber(L, e->velocity.y);
-            return 2;
-        }
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
         return 0;
     }
 
     int set_entity_velocity(lua_State* L) {
-        const int id = lua_tonumber(L, 1);
-        const int velx = lua_tonumber(L, 2);
-        const int vely = lua_tonumber(L, 3);
-
-        Entity* e = GameManager::FindEntityByID(id);
-        if (e != nullptr) {
-            e->velocity = sf::Vector2f(velx, vely);
-        } 
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
         return 0;
     }
 

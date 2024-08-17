@@ -42,18 +42,11 @@ void save(std::string filename) {
             {"height", e->height},
             {"rotation", e->rotation},
             {"isPlayer", e->isPlayer},
-            {"isSolid", e->isSolid},
-            {"physicsObject", e->physicsObject},
-            {"mass", e->mass},
             {"isVisible", e->isVisible},
             {"layer", e->layer},
-            {"hitbox", {
-                {e->hitbox[0].x, e->hitbox[0].y},
-                {e->hitbox[1].x, e->hitbox[1].y},
-                {e->hitbox[2].x, e->hitbox[2].y},
-                {e->hitbox[3].x, e->hitbox[3].y},
-                {e->hitbox[4].x, e->hitbox[4].y}
-            }}
+            {"bodytype", e->bodytype},
+            {"density", e->density},
+            {"friction", e->friction}
         };
 
         int i = 0;
@@ -152,7 +145,7 @@ void save(std::string filename) {
         }
     }
 
-    level_data["Settings"]["Gravity"] = GameManager::gravity;
+    level_data["Settings"]["Gravity"] = {GameManager::gravity.x, GameManager::gravity.y};
 
     outfile << std::setw(4) << level_data;
 
@@ -197,24 +190,20 @@ bool load(std::string filename) {
         e->width = entity["width"];
         e->height = entity["height"];
         e->rotation = entity["rotation"];
-
-        e->CreateHitbox();
-        e->hitbox[0] = sf::Vector2f(entity["hitbox"][0][0], entity["hitbox"][0][1]);
-        e->hitbox[1] = sf::Vector2f(entity["hitbox"][1][0], entity["hitbox"][1][1]);
-        e->hitbox[2] = sf::Vector2f(entity["hitbox"][2][0], entity["hitbox"][2][1]);
-        e->hitbox[3] = sf::Vector2f(entity["hitbox"][3][0], entity["hitbox"][3][1]);
-        e->hitbox[4] = sf::Vector2f(entity["hitbox"][4][0], entity["hitbox"][4][1]);
         
         e->SetSprite(toAbsolute(entity["texturePath"]), false);
         e->isPlayer = entity["isPlayer"];
         if (e->isPlayer) {
             GameManager::player = e;
         }
-        e->isSolid = entity["isSolid"];
-        e->physicsObject = entity["physicsObject"];
-        e->mass = entity["mass"];
         e->isVisible = entity["isVisible"];
         e->layer = entity["layer"];
+
+        e->bodytype = EntityBody_t(entity["bodytype"]);
+        e->density = entity["density"];
+        e->friction = entity["friction"];
+
+        e->CreateBody();
 
         for (json::iterator it = entity["scripts"].begin(); it != entity["scripts"].end(); ++it) {
             ScriptItem script;
@@ -341,7 +330,10 @@ bool load(std::string filename) {
         Rendering::AddToLayer(obj);
     }
 
-    GameManager::gravity = level_data["Settings"]["Gravity"];
+    GameManager::gravity = b2Vec2(
+        level_data["Settings"]["Gravity"][0],
+        level_data["Settings"]["Gravity"][1]
+    );
 
     return true;
 }
@@ -362,7 +354,7 @@ bool CreateNew(std::string& path) {
         std::ofstream outfile(_path);
         json data;
 
-        data["Settings"]["Gravity"] = GameManager::gravity;
+        data["Settings"]["Gravity"] = {GameManager::gravity.x, GameManager::gravity.y};
         data["Version"] = GameManager::config.version;
         outfile << std::setw(4) << data;
 
@@ -455,17 +447,7 @@ void savePrefab(std::string filename, Entity* e) {
     data["height"] = e->height;
     data["rotation"] = e->rotation;
     data["isPlayer"] = e->isPlayer;
-    data["isSolid"] = e->isSolid;
-    data["physicsObject"] = e->physicsObject;
-    data["mass"] = e->mass;
     data["isVisible"] = e->isVisible;
-    data["hitbox"] = {
-        {e->hitbox[0].x, e->hitbox[0].y},
-        {e->hitbox[1].x, e->hitbox[1].y},
-        {e->hitbox[2].x, e->hitbox[2].y},
-        {e->hitbox[3].x, e->hitbox[3].y},
-        {e->hitbox[4].x, e->hitbox[4].y}
-    };
 
     for (size_t i = 0; i < e->lua_scripts.size(); i++) {
         data["scripts"][i] = e->lua_scripts[i].path;
@@ -521,16 +503,7 @@ Entity* loadPrefab(std::string filename) {
     if (e->isPlayer) {
         GameManager::player = e;
     }
-    e->isSolid = data["isSolid"];
-    e->physicsObject = data["physicsObject"];
-    e->mass = data["mass"];
     e->isVisible = data["isVisible"];
-    e->CreateHitbox();
-    e->hitbox[0] = sf::Vector2f(data["hitbox"][0][0], data["hitbox"][0][1]);
-    e->hitbox[1] = sf::Vector2f(data["hitbox"][1][0], data["hitbox"][1][1]);
-    e->hitbox[2] = sf::Vector2f(data["hitbox"][2][0], data["hitbox"][2][1]);
-    e->hitbox[3] = sf::Vector2f(data["hitbox"][3][0], data["hitbox"][3][1]);
-    e->hitbox[4] = sf::Vector2f(data["hitbox"][4][0], data["hitbox"][4][1]);
 
     for (json::iterator it = data["scripts"].begin(); it != data["scripts"].end(); ++it) {
         ScriptItem script;

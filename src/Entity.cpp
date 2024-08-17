@@ -1,6 +1,7 @@
 #include "Entity.hpp"
 #include "GameManager.hpp"
 #include "Rendering.hpp"
+#include "BaconMath.h"
 
 #include <iostream>
 #include <fstream>
@@ -13,55 +14,39 @@ Entity::Entity() : GameObject() {
 
     this->width = 64;
     this->height = 64;
+    // CreateBody();
 
-    this->showHitbox = false;
-    this->editHitbox = false;
     this->isPlayer = false;
-    this->isSolid = false;
-    this->physicsObject = false;
 
     this->lua_scripts = std::vector<ScriptItem>();
-
-    this->mass = 1.f;
-    this->grounded = false;
-    this->velocity = sf::Vector2f(0, 0);
-    this->acceleration = sf::Vector2f(0, 0);
-
-    this->CreateHitbox();
 
     GameManager::Entities.push_back(this);
 }
 
 Entity::Entity(sf::Vector2f position) : Entity() {
     this->position = position;
+    // CreateBody();
 }   
 
 Entity::Entity(Entity& e) : GameObject(e) {
     this->name = e.name;
     this->ID = e.ID;
-
-    this->isSolid = e.isSolid;
-    this->physicsObject = e.physicsObject;
-    this->showHitbox = e.showHitbox;
-    this->editHitbox = e.editHitbox;
     
     this->isPlayer = e.isPlayer;
     if (this->isPlayer) {
         GameManager::player = this;
     }
 
-    this->mass = e.mass;
-    this->grounded = false;
-    this->velocity = sf::Vector2f(0, 0);
-    this->acceleration = sf::Vector2f(0, 0);
-
     this->lua_scripts = e.lua_scripts;
     this->variables = e.variables;
 
     this->SetSprite(e.texturePath, false);
     this->sprite.setPosition(this->position);
-    
-    this->CreateHitbox();
+
+    this->bodytype = e.bodytype;
+    this->density = e.density;
+    this->friction = e.friction;
+    CreateBody();
 
     GameManager::Entities.push_back(this);
 }
@@ -69,6 +54,7 @@ Entity::Entity(Entity& e) : GameObject(e) {
 Entity::~Entity() {
     // Remove from Entities
     for (size_t i = 0; i < GameManager::Entities.size(); i++) {
+        free(this->body);
         if (GameManager::Entities[i]->ID == ID) {
             GameManager::Entities.erase(GameManager::Entities.begin() + i);
             break;
@@ -85,28 +71,18 @@ void Entity::Overwrite(Entity& e) {
     GameObject::Overwrite(e);
     this->name = e.name;
 
-    this->isSolid = e.isSolid;
-    this->physicsObject = e.physicsObject;
-    this->showHitbox = e.showHitbox;
     this->isPlayer = false;
-    
-    this->mass = e.mass;
-    this->grounded = false;
-    this->velocity = sf::Vector2f(0, 0);
-    this->acceleration = sf::Vector2f(0, 0);
 
     this->lua_scripts = e.lua_scripts;
     this->variables = e.variables;
 
     this->SetSprite(e.texturePath, false);
-
-    sf::Vector2f delta = this->position - e.position; 
-    for (int i = 0; i < 5; i++) {
-        this->hitbox[i] = e.hitbox[i];
-    }
-    this->UpdateHitbox(delta);
-    
     this->SetPosition(this->position);
+    
+    this->bodytype = e.bodytype;
+    this->density = e.density;
+    this->friction = e.friction;
+    CreateBody();
 }
 
 /**
@@ -139,10 +115,19 @@ void Entity::SetPosition(sf::Vector2f position) {
 
     this->position = position;
     this->sprite.setPosition(this->position);
-    this->UpdateHitbox(delta);
 
+    // body->SetTransform({position.x, position.y}, body->GetAngle());
     this->UpdateChildrenPositions(delta);
 }
+
+/**
+ * @brief Sets the size of the entity and its hitbox
+ * 
+ * @param size the new size of the entity
+ */
+void Entity::SetSize(sf::Vector2f size) {
+
+} 
 
 /**
  * @brief Scales the Entity sprite
@@ -154,29 +139,28 @@ void Entity::SetSpriteScale(sf::Vector2f scale) {
     this->sprite.setScale(this->scale);
 }
 
-/**
- * @brief Creates a new hitbox with points located at the corners
- * of the entity's sprite
- * 
- */
-void Entity::CreateHitbox() {
-    sf::Vector2f p = position;
-    sf::Vector2f s = sf::Vector2f(width/2, height/2);
-
-    hitbox[0] = sf::Vector2f(p.x - s.x, p.y - s.y); // Top Left
-    hitbox[1] = sf::Vector2f(p.x + s.x, p.y - s.y); // Top Right
-    hitbox[2] = sf::Vector2f(p.x + s.x, p.y + s.y); // Bottom Right
-    hitbox[3] = sf::Vector2f(p.x - s.x, p.y + s.y); // Bottom Left
-    hitbox[4] = sf::Vector2f(p.x - s.x, p.y - s.y); // Top Left
-}
-
-/**
- * @brief Updates the vertices of the hitbox
- * 
- */
-void Entity::UpdateHitbox(sf::Vector2f delta) {
-    for (int i = 0; i < 5; i++) {
-        hitbox[i].x += delta.x;
-        hitbox[i].y += delta.y;
+void Entity::CreateBody() {
+    // Body Definition
+    b2BodyDef boxBodyDef;
+    boxBodyDef.position.Set(this->position.x / bmath::PPM, this->position.y / bmath::PPM);
+    if (bodytype == STATIC) {
+        boxBodyDef.type = b2_staticBody;
     }
+    else if (bodytype == DYNAMIC) {
+        boxBodyDef.type = b2_dynamicBody;
+    }
+
+    // Shape definition
+    b2PolygonShape boxShape;
+    boxShape.SetAsBox((width / 2 / bmath::PPM), (height / 2 / bmath::PPM));
+
+    // Fixture Definition
+    b2FixtureDef fixtureDef;
+    fixtureDef.density = this->density;
+    fixtureDef.friction = this->friction;
+    fixtureDef.shape = &boxShape;
+
+    // Create Body
+    this->body = GameManager::world->CreateBody(&boxBodyDef);
+    this->body->CreateFixture(&fixtureDef);
 }

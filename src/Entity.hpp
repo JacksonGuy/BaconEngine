@@ -2,6 +2,7 @@
 #define ENTITY_H
 
 #include <SFML/Graphics.hpp>
+#include "box2d/box2d.h"
 
 #include "GameObject.hpp"
 #include "ScriptItem.hpp"
@@ -9,6 +10,11 @@
 enum EntityVar_t {
     NUMBER,
     STRING
+};
+
+enum EntityBody_t {
+    STATIC,
+    DYNAMIC
 };
 
 typedef struct {
@@ -24,20 +30,16 @@ class Entity : public GameObject {
         std::string texturePath;
 
         sf::Sprite sprite;
-        sf::Vector2f hitbox[5] = {};
+        b2Body* body;
+        EntityBody_t bodytype = STATIC;
+        float density = 0.0f;
+        float friction = 0.3f;
         
-        bool isSolid;           // Can collide with things
-        bool physicsObject;     // Is affected by gravity
-        float mass;
-        bool grounded;
-        sf::Vector2f velocity;
-        sf::Vector2f acceleration;
+        bool showHitbox = false;
 
         std::vector<ScriptItem> lua_scripts;
         std::vector<EntityVar> variables;
 
-        bool showHitbox;
-        bool editHitbox;
         bool isPlayer;
 
         Entity();
@@ -48,10 +50,9 @@ class Entity : public GameObject {
         void Overwrite(Entity& e);
         void SetSprite(std::string path, bool autoScale = true);
         void SetPosition(sf::Vector2f position) override;
+        void SetSize(sf::Vector2f size);
         void SetSpriteScale(sf::Vector2f scale);
-
-        void CreateHitbox();
-        void UpdateHitbox(sf::Vector2f delta);
+        void CreateBody();
 };
 
 #endif

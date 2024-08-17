@@ -23,52 +23,49 @@ class EditorInstance {
         std::string m_projectTitle;
         bool m_loadedProject = false;
 
-        sf::RenderWindow* m_window;
-        sf::View* m_camera;
-        sf::Vector2f m_cameraPos;
-        sf::Vector2f m_cameraSize;
-        float m_cameraZoom;
+        sf::RenderWindow* m_window; // Program window
+        sf::View* m_camera;         // Editor Camera
+        sf::Vector2f m_cameraPos;   // Used to modify camera position
+        sf::Vector2f m_cameraSize;  // Used to modify camera size
 
-        bool m_swindowFocused;
-        sf::Vector2f m_swindowpos;
-        sf::Vector2f m_swindowsize;
-        sf::Vector2f m_sceneMousePos;
-        bool m_sceneMouseCapture;
-        GameObject* m_viewObject;
+        // Scene window info
+        bool m_swindowFocused;        // Are we clicked on the window
+        sf::Vector2f m_swindowpos;    // Position relative to entire window
+        sf::Vector2f m_swindowsize;   // Scene window size
+        sf::Vector2f m_sceneMousePos; // Mouse position within scene window
+        bool m_sceneMouseCapture;     // Is mouse hovering over scene window
+        GameObject* m_viewObject;     // Object to display in properties window
 
         // Engine Variables
-        sf::Clock m_clock;
-        sf::Vector2i m_mousePos;
-        sf::Time m_lastFixedUpdate;
-        unsigned int m_frameLimit;
-        sf::Time m_TimePerFrame;
-        std::unordered_map<sf::Keyboard::Key, bool> m_keypresses;
+        sf::Clock m_clock;          // Time
+        sf::Vector2i m_mousePos;    // Used for camera movements
+        sf::Time m_lastFixedUpdate; // Time since last fixed update
+        unsigned int m_frameLimit;  // How often to run fixed update (frames) 
+        sf::Time m_TimePerFrame;    // How often to run fixed update (seconds)
+        std::unordered_map<sf::Keyboard::Key, bool> m_keypresses; // Keyboard Inputs
 
         // UI Variables
-        bool m_showDockSpace;
-        bool m_cameraMove;
-        bool m_showEntityCreate;
-        bool m_showMainMenu;
-        bool m_showEntityList;
-        bool m_showConsole;
-        bool m_showSettingsMenu;
-        bool m_showTextCreate;
-        bool m_showCameraCreate;
-        std::string m_failedMessage;
-        GameObject* m_currentSelectedObject;
-        GameObject* m_copyObject;
-        bool m_ConsoleEngineMessages = true;
-        int m_DebugIntInput = 0;
+        bool m_cameraMove;                      // Are we moving the camera
+        bool m_showEntityCreate;                // Show Entity create menu 
+        bool m_showMainMenu;                    // Show main side panel
+        bool m_showEntityList;                  // Show GameObject tree
+        bool m_showConsole;                     // Show Console
+        bool m_showSettingsMenu;                // Show Editor settings
+        bool m_showTextCreate;                  // Show TextObj create menu
+        bool m_showCameraCreate;                // Show Camera create menu
+        std::string m_failedMessage;            // Used to store error messages
+        GameObject* m_currentSelectedObject;    // GameObject to move with mouse
+        GameObject* m_copyObject;               // GameObject to copy/paste
+        bool m_ConsoleEngineMessages = true;    // Show engine messages in console
 
-        Entity* m_AddAttributeEntity;
-        char m_AddScriptName[BUFFSIZE];
-        char m_AddVariableName[BUFFSIZE];
-        int m_AddVariableType;
-        double m_AddVariableNumber;
-        char m_AddVariableString[BUFFSIZE];
-        float m_HitboxAdjust;
+        Entity* m_AddAttributeEntity;           // Used when adding variable to entity
+        char m_AddScriptName[BUFFSIZE];         // Script name
+        char m_AddVariableName[BUFFSIZE];       // Variable name
+        int m_AddVariableType;                  // Variable type
+        double m_AddVariableNumber;             // Variable number value
+        char m_AddVariableString[BUFFSIZE];     // Variable string value
 
-        char m_PrefabPath[BUFFSIZE];
+        char m_PrefabPath[BUFFSIZE];            // Where to save prefab file
 
         // Create Entity Variables
         char m_createNameBuffer[BUFFSIZE];

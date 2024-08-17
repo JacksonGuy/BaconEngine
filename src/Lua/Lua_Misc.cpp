@@ -214,65 +214,18 @@ namespace Lua {
     }
 
     int check_collision(lua_State* L) {
-        bool collision = GameManager::checkCollision(*current_lua_object);
-        if (collision) {
-            lua_pushboolean(L, 1);
-        }
-        else {
-            lua_pushboolean(L, 0);
-        }
-
-        return 1;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int check_collision_side(lua_State* L) {
-        std::string side = lua_tostring(L, 1);
-        bool collision = false;
-
-        if (side == "TOP") {
-            collision = GameManager::checkCollisionSide(*current_lua_object, "TOP");
-        }
-        else if (side == "BOTTOM") {
-            collision = GameManager::checkCollisionSide(*current_lua_object, "BOTTOM");
-        }
-        else if (side == "LEFT") {
-            collision = GameManager::checkCollisionSide(*current_lua_object, "LEFT");
-        }
-        else if (side == "RIGHT") {
-            collision = GameManager::checkCollisionSide(*current_lua_object, "RIGHT");
-        }
-        else {
-            GameManager::ConsoleWrite("[ERROR] Not a valid side!");
-            return 0;
-        }
-
-        if (collision) {
-            lua_pushboolean(L, 1);
-        }
-        else {
-            lua_pushboolean(L, 0);
-        }
-
-        return 1;
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int get_collision_entities(lua_State* L) {
-        std::vector<Entity*> entities = GameManager::getCollidingWith(*current_lua_object);
-
-        if (entities.size() > 0) {
-            lua_createtable(L, 0, entities.size());
-            for (size_t i = 0; i < entities.size(); i++) {
-                Entity* e = entities[i];
-                
-                lua_pushinteger(L, i+1);
-                lua_pushinteger(L, e->ID);
-                lua_settable(L, -3);
-            }
-            return 1;
-        }
-        else {
-            return 0;
-        }
+        GameManager::ConsoleWrite("[ERROR] Not yet Implemented!");
+        return 0;
     }
 
     int get_entity_by_name(lua_State* L) {
