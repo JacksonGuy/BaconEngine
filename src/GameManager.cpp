@@ -17,6 +17,13 @@ namespace GameManager {
     GameCamera* current_camera = nullptr;
     bool isPlayingGame = false;
 
+    // Input
+    bool windowHasFocus = false;
+    KeyboardKey lastKeyboardInput = KEY_NULL;
+    MouseButton lastMouseInput = MOUSE_BUTTON_LEFT;
+    Vector2 lastMousePosition = {0,0};
+    std::unordered_map<KeyboardKey, bool> keypresses;
+
     // Physics
     b2WorldId world;
     f32 gravity = -10.f;
@@ -26,7 +33,7 @@ namespace GameManager {
      */
     void CreateBox2DWorld() {
         b2WorldDef worldDef = b2DefaultWorldDef();
-        worldDef.gravity = (b2Vec2){0.0f, gravity};
+        worldDef.gravity = {0.0f, gravity};
         GameManager::world = b2CreateWorld(&worldDef);
     }
 };

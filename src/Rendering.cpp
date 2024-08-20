@@ -2,8 +2,8 @@
 #include "Entity.h"
 
 namespace Rendering {
-    std::unordered_map<std::string, Font*> m_fonts;
-    std::vector<RenderingLayer> m_layers;
+    std::unordered_map<std::string, Font*> fonts;
+    std::vector<RenderingLayer> layers;
     RenderTexture2D frame;
 
     Font* LoadFont(std::string path) {
@@ -24,20 +24,12 @@ namespace Rendering {
 
             for (RenderingLayer layer : layers) {
                 for (GameObject* obj : layer.objects) {
-                   switch (obj->type) {
-                        case ENTITY:
-                            Entity* e = (Entity*)obj;
-                            if (e->isVisible) {
-                                DrawTexture(*e->texture, e->position.x, e->position.y);
-                            }
-                            break;
-
-                        case TEXT:
-                            break;
-
-                        case CAMERA:
-                            break;
-                   } 
+                    if (obj->type == ENTITY) {
+                        Entity* e = (Entity*)obj;
+                        if (e->isVisible) {
+                            DrawTexture(*e->texture, e->position.x, e->position.y, WHITE);
+                        }
+                    }
                 }
             }  
         EndTextureMode();

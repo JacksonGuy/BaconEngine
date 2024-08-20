@@ -2,6 +2,8 @@
 #include "Rendering.h"
 #include "GameManager.h"
 
+#include <iostream>
+
 Entity::Entity() {
     texture = nullptr;
     texturePath = "";
@@ -33,7 +35,8 @@ void Entity::SetTexture(std::string path) {
         texture = nullptr;
     }
 
-    Image image = LoadImage(path.c_str());
+    Image image = B_LoadImage(path);
+
     ImageResize(&image, size.x, size.y);
     *texture = LoadTextureFromImage(image);
     UnloadImage(image);
@@ -45,7 +48,7 @@ void Entity::CreateBody() {
     b2DestroyBody(body);
 
     b2BodyDef bodydef = b2DefaultBodyDef();
-    switch(m_bodytype) {
+    switch(bodytype) {
         case STATIC:
             bodydef.type = b2_staticBody;
             break;
@@ -53,9 +56,9 @@ void Entity::CreateBody() {
             bodydef.type = b2_dynamicBody;
             break;
     }
-    bodyDef.position = (b2Vec2){position.x, position.y};
+    bodydef.position = {position.x, position.y};
  
-    body = b2CreateBody(GameManager::world, &bodyDef);    
+    body = b2CreateBody(GameManager::world, &bodydef);    
 
     b2Polygon boxshape = b2MakeBox(size.x/2, size.y/2);
     b2ShapeDef boxdef = b2DefaultShapeDef();

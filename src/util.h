@@ -1,6 +1,8 @@
 #pragma once
 
+#include "raylib.h"
 #include <cstdint>
+#include <string>
 
 typedef float    f32;
 typedef double   f64;
@@ -12,3 +14,6 @@ typedef int8_t   i8;
 typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
+
+u8* B_LoadFileData(std::string path, i32* dataSize);
+Image B_LoadImage(std::string path); 

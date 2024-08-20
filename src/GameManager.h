@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 
 #include "box2d/box2d.h"
 
@@ -28,6 +29,11 @@ namespace GameManager {
     extern bool isPlayingGame;
     
     // Input
+    extern bool windowHasFocus;
+    extern KeyboardKey lastKeyboardInput;
+    extern MouseButton lastMouseInput;
+    extern Vector2 lastMousePosition;
+    extern std::unordered_map<KeyboardKey, bool> keypresses;
 
     // Physics
     extern b2WorldId world;
