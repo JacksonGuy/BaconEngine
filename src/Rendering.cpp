@@ -27,7 +27,7 @@ namespace Rendering {
                     if (obj->type == ENTITY) {
                         Entity* e = (Entity*)obj;
                         if (e->isVisible) {
-                            DrawTexture(*e->texture, e->position.x, e->position.y, WHITE);
+                            DrawTexture(e->texture, e->position.x, e->position.y, WHITE);
                         }
                     }
                 }

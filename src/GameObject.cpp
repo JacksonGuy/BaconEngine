@@ -1,5 +1,6 @@
 #include "GameObject.h"
 #include "GameManager.h"
+#include "Rendering.h"
 
 #include "raylib.h"
 
@@ -34,6 +35,7 @@ GameObject::GameObject() {
 
     // Add to GameManager
     GameManager::GameObjects.push_back(this);
+    Rendering::AddToLayer(this);
 }
 
 GameObject::~GameObject() {

@@ -15,5 +15,5 @@ typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
 
-u8* B_LoadFileData(std::string path, i32* dataSize);
+u8* B_CreateFileBuffer(const char* path, i32* dataSize);
 Image B_LoadImage(std::string path); 

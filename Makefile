@@ -33,3 +33,10 @@ all: $(OBJS)
 clean:
 	rm -rf ./bin/src
 	rm -rf ./bin/*.o
+	rm -rf ./editor
+	rm -rf ./editor.exe
+
+cleanall:
+	rm -rf ./bin
+	rm -rf ./editor
+	rm -rf ./editor.exe

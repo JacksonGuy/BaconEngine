@@ -57,14 +57,23 @@ int main() {
     Vector2 sceneMousePos = {0,0};
     bool sceneWindowMouseCapture = false;
 
-    Entity* test = new Entity();
-    test->size = {128, 128};
-    test->SetTexture("player.jpg");
-
     // Create Window and set framerate limit
     InitWindow(GameManager::screenWidth, GameManager::screenHeight, "BaconEngine");
     SetTargetFPS(GameManager::framerateLimit);
     rlImGuiSetup(true);
+    
+    // Initialize Frame
+    Rendering::frame = LoadRenderTexture(GameManager::screenWidth, GameManager::screenHeight);
+    BeginTextureMode(Rendering::frame);
+        ClearBackground(DARKGRAY);
+    EndTextureMode();
+
+
+    // Debug
+    Entity* test = new Entity();
+    test->position = {200, 200};
+    test->size = {128, 128};
+    test->SetTexture("C:/Users/Jackson/Desktop/BaconEngine/otherTest.png");
 
     while (!WindowShouldClose()) {
         f32 deltaTime = GetFrameTime();
@@ -74,7 +83,7 @@ int main() {
             // TODO replace dimensions here with scene window size
             DrawTextureRec(
                 Rendering::frame.texture, 
-                {0, 0, (float)GameManager::screenWidth, (float)GameManager::screenHeight},
+                {0, 0, (float)Rendering::frame.texture.width, (float)-Rendering::frame.texture.height},
                 {0,0},
                 WHITE
             );

@@ -24,7 +24,7 @@ typedef struct {
 class Entity : public GameObject {
     public:
         // Sprite information
-        Texture2D* texture;
+        Texture2D texture;
         std::string texturePath; // This is just for UI purposes
        
         // Physics

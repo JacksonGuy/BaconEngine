@@ -4,13 +4,13 @@
 #include <iostream>
 
 /**
- * @brief Loads file data
+ * @brief Creates memory buffer for image
  * 
  * @param path path to file
  * @param dataSize size of the data buffer loaded 
  * @return u8* pointer to data buffer
  */
-u8* B_LoadFileData(const char* path, i32* dataSize) {
+u8* B_CreateFileBuffer(const char* path, i32* dataSize) {
     u8* data = NULL;
     *dataSize = 0;
 
@@ -47,16 +47,15 @@ Image B_LoadImage(std::string path) {
     Image image = {0};
     
     i32 dataSize = 0;
-    u8* fileData = B_LoadFileData(path.c_str(), &dataSize);
+    u8* fileData = B_CreateFileBuffer(path.c_str(), &dataSize);
 
     std::cout << "Image Size: " << dataSize << "\n";
 
     if (fileData != NULL) {
         i32 comp = 0;
-        i32 width, height;
-        image.data = stbi_load_from_memory(fileData, dataSize, &width, &height, &comp, 0);
+        image.data = (u8*)stbi_load_from_memory(fileData, dataSize, &image.width, &image.height, &comp, 0);
 
-        std::cout << "Image Size: " << width << "," << height << std::endl;
+        std::cout << "Image Size: " << image.width << "," << image.height << std::endl;
         std::cout << stbi_failure_reason() << std::endl;
 
         if (image.data != NULL) {

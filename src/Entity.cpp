@@ -4,10 +4,14 @@
 
 #include <iostream>
 
-Entity::Entity() {
-    texture = nullptr;
+Entity::Entity() : GameObject() {
+    type = ENTITY;
+    
+    texture = {0};
     texturePath = "";
     bodytype = STATIC;
+
+    GameManager::Entities.push_back(this);
 }
 
 Entity::~Entity() {
@@ -19,26 +23,18 @@ Entity::~Entity() {
         }
     }
 
-    // Unload Texture
-    if (texture != nullptr) {
-        UnloadTexture(*texture);
-        free(texture);
-    }
+    UnloadTexture(texture);
 }
 
 void Entity::SetTexture(std::string path) {
-    if (texture != nullptr) {
-        UnloadTexture(*texture);
-        
-        // Not sure this actually does anything useful once UnloadTexture is called
-        free(texture);
-        texture = nullptr;
-    }
+    UnloadTexture(texture);
 
+    std::cout << "Path: " << path << "\n";
+    // Image image = LoadImage(path.c_str());
     Image image = B_LoadImage(path);
 
     ImageResize(&image, size.x, size.y);
-    *texture = LoadTextureFromImage(image);
+    texture = LoadTextureFromImage(image);
     UnloadImage(image);
     texturePath = path;
 }
