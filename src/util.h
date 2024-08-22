@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 
+#define PPM 32
+
 typedef float    f32;
 typedef double   f64;
 typedef uint8_t  u8;

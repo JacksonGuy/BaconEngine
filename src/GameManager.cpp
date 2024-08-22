@@ -26,7 +26,7 @@ namespace GameManager {
 
     // Physics
     b2WorldId world;
-    f32 gravity = -10.f;
+    f32 gravity = 10.f;
     
     /**
      * @brief Create Box2D world object

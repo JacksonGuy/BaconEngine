@@ -28,8 +28,12 @@ class Entity : public GameObject {
         std::string texturePath; // This is just for UI purposes
        
         // Physics
+        Rectangle rect;
         PhysicsBody_t bodytype;
         b2BodyId body;
+
+        bool grounded;
+        Vector2 velocity;
 
         // Lua Scripting
         std::vector<std::string> lua_scripts;
@@ -42,5 +46,7 @@ class Entity : public GameObject {
         Entity();
         ~Entity();
         void SetTexture(std::string path);
+        void UpdateRect(); 
         void CreateBody();
+        void UpdateEntityFromPhysics();
 };
