@@ -1,15 +1,34 @@
 #include <iostream>
+#include <ctime>
 
 #include "raylib.h"
 #include "box2d/box2d.h"
 #include "imgui.h"
 #include "rlImGui.h"
+#include <nfd.h>
 
+#include "Editor.h"
 #include "GameManager.h"
 #include "Rendering.h"
+#include "File.h"
 
-// #define BOX2DPHYS
 #define BUFFSIZE 512
+
+namespace Editor {
+    // Project Details
+    std::string projectTitle = "Bacon - Untitled Project";
+    bool loadedProject = false;
+
+    // Physics
+    f32 lastFixedUpdate = 0;
+    f32 fixedUpdateRate = 1.0f / 60.0f;
+
+    // Scene Window
+    bool sceneWindowFocused = false;
+    Vector2 sceneWindowPosition = {0,0};
+    Vector2 sceneWindowSize = {0,0};
+    bool sceneWindowMouseCapture = false;
+};
 
 /**
  * @brief Draw ImGui windows
@@ -18,9 +37,114 @@
 void DrawUI(f32 deltaTime) {
     rlImGuiBegin();
 
-    ImGui::Begin("Test");
-        ImGui::Text("Something");
-    ImGui::End();
+    ImGui::DockSpaceOverViewport();
+
+    // Scene Window
+    {
+        ImGui::Begin("Scene");
+            // Get scene window details
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            ImVec2 windowSize = ImGui::GetWindowSize();
+
+            // Set Editor variables 
+            Editor::sceneWindowFocused = ImGui::IsWindowFocused();                                    
+            Editor::sceneWindowPosition = {windowPos.x, windowPos.y};
+            Editor::sceneWindowSize = {windowSize.x, windowSize.y};
+            Editor::sceneWindowMouseCapture = ImGui::IsWindowHovered();
+
+            // Check if scene window was resized
+            Vector2 frameSize = {Rendering::frame.texture.width, Rendering::frame.texture.height};
+            // std::cout << "FrameSize: " << frameSize.x << "," << frameSize.y << std::endl;
+            if (frameSize.x != Editor::sceneWindowSize.x || frameSize.y != Editor::sceneWindowSize.y) {
+                std::cout << "Scene window resize\n";
+
+                // Maintain aspect ratio upon resize
+                Vector2 ratio = {Editor::sceneWindowSize.x / frameSize.x, Editor::sceneWindowSize.y / frameSize.y};
+
+                // Recreate Frame
+                UnloadRenderTexture(Rendering::frame);
+                Rendering::frame = LoadRenderTexture(frameSize.x * ratio.x, frameSize.y * ratio.y);
+            }  
+
+            // Display RenderTexture
+            rlImGuiImageRenderTexture(&Rendering::frame);
+
+        ImGui::End();
+    }
+
+    // Top Menu Bar
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            // We don't want the user to save and load project while testing it  
+            if (GameManager::isPlayingGame) {
+                ImGui::BeginDisabled();
+            }
+
+            if (ImGui::MenuItem("New Project")) {
+                std::string path;
+                
+                if (!Editor::loadedProject) {
+                    if (File::CreateNewProject(path, true)) {
+                        Editor::projectTitle = path;
+                        Editor::loadedProject = true;
+                        std::string windowTitle = "Bacon - " + path;
+                        SetWindowTitle(windowTitle.c_str());
+                    }
+                }
+                else {
+                    File::SaveProject(Editor::projectTitle); // Save current project before creating new one
+                    if (File::CreateNewProject(path, true)) {
+                        Editor::projectTitle = path;
+                        Editor::loadedProject = true;
+                        std::string windowTitle = "Bacon - " + path;
+                        SetWindowTitle(windowTitle.c_str());
+                    }
+                }
+            }
+
+            if (ImGui::MenuItem("Save")) {
+                if (!Editor::loadedProject) {
+                    std::string path;
+                    bool result = File::CreateNewProject(path, false);
+                    if (!result) {
+                        GameManager::ConsoleError("Failed to create new project");
+                    }
+                    else {
+                        Editor::loadedProject = true;
+                        Editor::projectTitle = path;
+                        File::SaveProject(Editor::projectTitle);
+                    }
+                }
+                else {
+                    File::SaveProject(Editor::projectTitle);
+                }
+            }
+
+            if (ImGui::MenuItem("Save as")) {
+                std::string path;
+                bool result = File::CreateNewProject(path, false);
+                if (!result) {
+                    GameManager::ConsoleError("Failed to create new project");
+                }
+                else {
+                    Editor::loadedProject = true;
+                    Editor::projectTitle = path;
+                    File::SaveProject(Editor::projectTitle);
+                }
+            }
+
+            if (ImGui::MenuItem("Load")) {
+                File::LoadProject();
+            }
+
+            if (GameManager::isPlayingGame) {
+                ImGui::EndDisabled();
+            }
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
 
     rlImGuiEnd();
 }
@@ -31,37 +155,20 @@ void DrawUI(f32 deltaTime) {
  */
 void Update(f32 deltaTime) {
     Vector2 pos = GameManager::player->position;
-    
-    #ifdef BOX2DPHYS
-        b2Vec2 bpos = b2Body_GetPosition(GameManager::player->body);
-        f32 speed = 900;
+    f32 speed = 10;
+    f32 jump = 7;
 
-        if (IsKeyDown(KEY_A)) {
-            b2Body_ApplyLinearImpulse(GameManager::player->body, {-speed, 0}, bpos, true);
-        }
-        if (IsKeyDown(KEY_D)) {
-            b2Body_ApplyLinearImpulse(GameManager::player->body, {speed, 0}, bpos, true);
-        }
-        if (IsKeyDown(KEY_SPACE)) {
-            // b2Body_ApplyLinearImpulse(GameManager::player->body, {0, speed * 100}, bpos, true);
-            b2Body_ApplyForce(GameManager::player->body, {0, -speed * 500}, bpos, true);
-        }
-    #else
-        f32 speed = 10;
-        f32 jump = 7;
+    if (IsKeyDown(KEY_A)) {
+        GameManager::player->position.x -= speed;
+    }
+    if (IsKeyDown(KEY_D)) {
+        GameManager::player->position.x += speed;
+    }
+    if (IsKeyPressed(KEY_SPACE)) {
+        GameManager::player->velocity.y -= jump;
+    }
 
-        if (IsKeyDown(KEY_A)) {
-            GameManager::player->position.x -= speed;
-        }
-        if (IsKeyDown(KEY_D)) {
-            GameManager::player->position.x += speed;
-        }
-        if (IsKeyPressed(KEY_SPACE)) {
-            GameManager::player->velocity.y -= jump;
-        }
-
-        GameManager::player->UpdateRect();
-    #endif
+    GameManager::player->UpdateRect();
 
     Rendering::DrawGameObjects();
 }
@@ -71,20 +178,16 @@ void Update(f32 deltaTime) {
  * 
  */
 void FixedUpdate(f32 deltaTime) {
-    #ifdef BOX2DPHYS
-        f32 timestep = 1.0f / 60.f;
-        b2World_Step(GameManager::world, timestep, 4);
+    Editor::lastFixedUpdate += deltaTime;
 
-        for (Entity* e : GameManager::Entities) {
-            e->UpdateEntityFromPhysics();
-        }
-    #else
+    if (Editor::lastFixedUpdate >= Editor::fixedUpdateRate) {
+        Editor::lastFixedUpdate -= Editor::fixedUpdateRate;
         for (Entity* e : GameManager::Entities) {
             if (e->bodytype == STATIC) continue;
             
             // Set Gravity
             if (!e->grounded) {
-                e->velocity.y += 9.8f * deltaTime;
+                e->velocity.y += 9.8f * Editor::fixedUpdateRate;
             }
 
             // Check for Collisions
@@ -97,10 +200,10 @@ void FixedUpdate(f32 deltaTime) {
 
                 // Bottom collision
                 if (CheckCollisionPointRec(bottomPoint, other->rect)) {
-                    f32 YDiff = (e->rect.y + e->rect.height) - other->rect.y;
-                    e->position.y -= YDiff;
-                    e->UpdateRect();
                     if (!e->grounded) {
+                        f32 YDiff = (e->rect.y + e->rect.height) - other->rect.y;
+                        e->position.y -= YDiff;
+                        e->UpdateRect();
                         e->velocity.y = 0.f;
                         e->grounded = true;
                         bottomCollision = true;
@@ -117,18 +220,19 @@ void FixedUpdate(f32 deltaTime) {
             e->position.y += e->velocity.y;
             e->UpdateRect();
         }
-    #endif
+    }
 }
 
 int main() {
-    GameManager::screenWidth = 800;
-    GameManager::screenHeight = 600;
-    GameManager::framerateLimit = 60;
-
     // Initialize variables
-    // Project Details
-    std::string projectTitle;
-    bool loadedProject = false;
+        // Window
+        GameManager::screenWidth = 1280;
+        GameManager::screenHeight = 720;
+        GameManager::framerateLimit = 244;
+
+        // Project Details
+        std::string projectTitle;
+        bool loadedProject = false;
 
     // Scene Window
     bool sceneWindowFocused = false;
@@ -141,6 +245,8 @@ int main() {
     InitWindow(GameManager::screenWidth, GameManager::screenHeight, "BaconEngine");
     SetTargetFPS(GameManager::framerateLimit);
     rlImGuiSetup(true);
+    auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     
     // Initialize Frame
     Rendering::frame = LoadRenderTexture(GameManager::screenWidth, GameManager::screenHeight);
@@ -148,8 +254,11 @@ int main() {
         ClearBackground(DARKGRAY);
     EndTextureMode();
 
-    // Physics Setup
-    GameManager::CreateBox2DWorld();
+    // Disable Raylib Logging
+    SetTraceLogLevel(LOG_WARNING);
+
+    // NativeFileDialog
+    NFD_Init();
 
     // Debug
     Entity* player = new Entity();
@@ -158,7 +267,6 @@ int main() {
     player->SetTexture("test.png");
     player->bodytype = DYNAMIC;
     player->UpdateRect();
-    // player->CreateBody();
     GameManager::player = player;
 
     Entity* platform = new Entity();
@@ -166,20 +274,12 @@ int main() {
     platform->size = {600, 32};
     platform->SetTexture("platform.png");
     platform->UpdateRect();
-    // platform->CreateBody();
 
     while (!WindowShouldClose()) {
         f32 deltaTime = GetFrameTime();
         
-        Rendering::DrawGameObjects(); // Update frame
         BeginDrawing();
-            // TODO replace dimensions here with scene window size
-            DrawTextureRec(
-                Rendering::frame.texture, 
-                {0, 0, (float)Rendering::frame.texture.width, (float)-Rendering::frame.texture.height},
-                {0,0},
-                WHITE
-            );
+            ClearBackground(DARKGRAY);
             DrawFPS(0,0);
             DrawUI(deltaTime); // This comes last 
         EndDrawing();

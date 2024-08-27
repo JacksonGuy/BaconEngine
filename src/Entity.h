@@ -1,8 +1,9 @@
 #pragma once
 
 #include "GameObject.h"
+
 #include "raylib.h"
-#include "box2d/box2d.h"
+#include "json.hpp"
 
 enum EntityVar_t {
     NUMBER,
@@ -30,7 +31,6 @@ class Entity : public GameObject {
         // Physics
         Rectangle rect;
         PhysicsBody_t bodytype;
-        b2BodyId body;
 
         bool grounded;
         Vector2 velocity;
@@ -46,7 +46,6 @@ class Entity : public GameObject {
         Entity();
         ~Entity();
         void SetTexture(std::string path);
-        void UpdateRect(); 
-        void CreateBody();
-        void UpdateEntityFromPhysics();
+        void UpdateRect();
+        void SaveEntityJson(nlohmann::json& data);
 };

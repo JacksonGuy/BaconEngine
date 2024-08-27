@@ -48,35 +48,9 @@ void Entity::UpdateRect() {
     this->rect = {this->position.x, this->position.y, this->size.x, this->size.y};
 }
 
-void Entity::CreateBody() {
-    // Remove current body from world
-    // b2DestroyBody(body);
-
-    b2BodyDef bodydef = b2DefaultBodyDef();
-    switch(bodytype) {
-        case STATIC:
-            bodydef.type = b2_staticBody;
-            break;
-        case DYNAMIC:
-            bodydef.type = b2_dynamicBody;
-            break;
-    }
-    bodydef.position = {position.x, position.y};
- 
-    body = b2CreateBody(GameManager::world, &bodydef);    
-
-    b2Polygon boxshape = b2MakeBox(size.x/2, size.y/2);
-    b2ShapeDef boxdef = b2DefaultShapeDef();
-    boxdef.density = 1.0f;
-    boxdef.friction = 0.3f;
-    b2CreatePolygonShape(body, &boxdef, &boxshape);
-}
-
-void Entity::UpdateEntityFromPhysics() {
-    b2Vec2 pos = b2Body_GetPosition(body);
-    b2Rot rot = b2Body_GetRotation(body);
-    f32 angle = b2Rot_GetAngle(rot);
-
-    this->position = {pos.x - size.x/2, pos.y - size.y/2};
-    this->rotation = angle * RAD2DEG;
+void Entity::SaveEntityJson(nlohmann::json& data) {
+    data = {
+        {"id", ID},
+        {"name", name}
+    };
 }
