@@ -1,6 +1,3 @@
-#include "File.h"
-#include "GameManager.h"
-
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -8,6 +5,10 @@
 
 #include <nfd.h>
 #include "json.hpp"
+
+#include "File.h"
+#include "GameManager.h"
+#include "Entity.h"
 
 namespace File {
     bool SaveProject(std::string filename) {
@@ -25,6 +26,8 @@ namespace File {
             e->SaveEntityJson(data["Entities"][i]);
         }
 
+        // TODO other GameObjects
+
         outfile << std::setw(4) << data;
 
         GameManager::ConsoleMessage("Successfully saved project.");
@@ -37,7 +40,27 @@ namespace File {
      * @return true if the project was successfully loaded
      * @return false if the project couldn't be loaded
      */
-    bool LoadProject() {
+    bool LoadProject(std::string filename) {
+        namespace fs = std::filesystem;
+        using json = nlohmann::json;
+
+        GameManager::ConsoleMessage("Loading Project...");
+
+        std::ifstream infile(filename);
+        if (!infile.is_open()) {
+            GameManager::ConsoleError("Failed to load project");
+            return false;
+        }
+
+        fs::path entryPath = fs::path(filename);
+        GameManager::projectEntryPath = entryPath.parent_path().generic_string();
+        json data = json::parse(infile);
+
+        GameManager::ConsoleMessage("Creating Entities...");
+        for (auto& entity : data["Entities"]) {
+            Entity* e = new Entity();
+            e->LoadFromJson(entity);
+        }
 
         return false;
     }

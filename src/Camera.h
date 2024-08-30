@@ -8,4 +8,5 @@ class GameCamera : public GameObject {
         bool isActive;
 
         GameCamera();
+        void MoveCamera(Vector2 change);
 };

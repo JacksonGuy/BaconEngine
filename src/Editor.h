@@ -3,6 +3,7 @@
 #include <string> 
 
 #include "util.h"
+#include "Camera.h"
 
 namespace Editor {
     // Project Details
@@ -18,4 +19,7 @@ namespace Editor {
     extern Vector2 sceneWindowPosition;
     extern Vector2 sceneWindowSize;
     extern bool sceneWindowMouseCapture; 
+
+    // Editor Camera
+    extern GameCamera* camera;
 }

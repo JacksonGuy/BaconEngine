@@ -1,4 +1,5 @@
 #include "Rendering.h"
+#include "GameManager.h"
 #include "Entity.h"
 #include "TextObject.h"
 
@@ -23,37 +24,39 @@ namespace Rendering {
         BeginTextureMode(frame);
             ClearBackground(DARKGRAY);
 
-            for (RenderingLayer layer : layers) {
-                for (GameObject* obj : layer.objects) {
-                    // Entities
-                    if (obj->type == ENTITY) {
-                        Entity* e = (Entity*)obj;
-                        if (e->isVisible) {
-                            DrawTextureEx(e->texture, e->position, e->rotation, 1, WHITE);
+            BeginMode2D(GameManager::current_camera->camera);
+                for (RenderingLayer layer : layers) {
+                    for (GameObject* obj : layer.objects) {
+                        // Entities
+                        if (obj->type == ENTITY) {
+                            Entity* e = (Entity*)obj;
+                            if (e->isVisible) {
+                                DrawTextureEx(e->texture, e->position, e->rotation, 1, WHITE);
+                            }
                         }
-                    }
 
-                    // TextObjects
-                    if (obj->type == TEXT) {
-                        TextObject* text = (TextObject*)obj;
-                        if (text->isVisible) {
-                            DrawTextEx(
-                                text->font,
-                                text->text.c_str(),
-                                text->position,
-                                text->fontSize,
-                                text->charSpacing,
-                                text->color
-                            );
+                        // TextObjects
+                        if (obj->type == TEXT) {
+                            TextObject* text = (TextObject*)obj;
+                            if (text->isVisible) {
+                                DrawTextEx(
+                                    text->font,
+                                    text->text.c_str(),
+                                    text->position,
+                                    text->fontSize,
+                                    text->charSpacing,
+                                    text->color
+                                );
+                            }
                         }
-                    }
 
-                    // Camera
-                    if (obj->type == CAMERA) {
-                        Camera* cam = (Camera*)obj;
+                        // Camera
+                        if (obj->type == CAMERA) {
+                            Camera* cam = (Camera*)obj;
+                        }
                     }
                 }
-            }  
+            EndMode2D(); 
         EndTextureMode();
     }
 

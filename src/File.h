@@ -4,6 +4,6 @@
 
 namespace File {
     bool SaveProject(std::string filename);
-    bool LoadProject();
+    bool LoadProject(std::string filename);
     bool CreateNewProject(std::string& path, bool reset);
 };

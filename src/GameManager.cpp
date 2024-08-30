@@ -60,10 +60,17 @@ namespace GameManager {
      */
     void Reset() {
         // Clean out vectors
-        for (GameObject* obj : GameObjects) {
-            delete obj;
+        for (Entity* e : GameManager::Entities) {
+            delete e;
+        }
+        for (TextObject* text : GameManager::TextObjects) {
+            delete text;
+        }
+        for (GameCamera* camera : GameManager::GameCameras) {
+            delete camera;
         }
         GameObjects.clear();
+        GameObject::IDCount = 0;
         Entities.clear();
         TextObjects.clear();
         GameCameras.clear();

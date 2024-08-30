@@ -28,6 +28,9 @@ namespace Editor {
     Vector2 sceneWindowPosition = {0,0};
     Vector2 sceneWindowSize = {0,0};
     bool sceneWindowMouseCapture = false;
+
+    // Editor Camera
+    GameCamera* camera = new GameCamera();
 };
 
 /**
@@ -36,8 +39,9 @@ namespace Editor {
  */
 void DrawUI(f32 deltaTime) {
     rlImGuiBegin();
-
     ImGui::DockSpaceOverViewport();
+
+    i16 fps = GetFPS();
 
     // Scene Window
     {
@@ -134,7 +138,7 @@ void DrawUI(f32 deltaTime) {
             }
 
             if (ImGui::MenuItem("Load")) {
-                File::LoadProject();
+                File::LoadProject(Editor::projectTitle);
             }
 
             if (GameManager::isPlayingGame) {
@@ -146,31 +150,94 @@ void DrawUI(f32 deltaTime) {
         ImGui::EndMainMenuBar();
     }
 
+    // General Menu
+    {
+        ImGui::Begin("Game Details");
+            ImGui::Text(GameManager::engineVersion.c_str());
+            ImGui::Text(("FPS: " + std::to_string(fps)).c_str());
+
+            // Playtest game button
+            if (!GameManager::isPlayingGame) {
+                if (ImGui::Button("Play Game")) {
+                    File::SaveProject(Editor::projectTitle);
+
+                    // Change Camera
+                    for (GameCamera* camera : GameManager::GameCameras) {
+                        if (camera->isActive) {
+                            GameManager::current_camera = camera;
+                        }
+                    }
+
+                    GameManager::ConsoleMessage("Editor data saved. Starting game...");
+                    GameManager::isPlayingGame = true;
+                }
+            }
+            // End playtest button
+            else {
+                if (ImGui::Button("End Game")) {
+                    GameManager::Reset();
+
+                    File::LoadProject(Editor::projectTitle);
+
+                    // Set camera back
+                    GameManager::current_camera = Editor::camera;
+
+                    GameManager::ConsoleMessage("Game ended. Editor data restored.");
+                    GameManager::isPlayingGame = false;
+                }
+            }
+
+            // General Menus
+            ImGui::Separator();
+            ImGui::BeginTabBar("EngineItems");
+                if (ImGui::BeginTabItem("Camera")) {
+                    float cameraPos[2] = {Editor::camera->camera.target.x, Editor::camera->camera.target.y};
+                    if (ImGui::InputFloat2("Position", cameraPos)) {
+                        Editor::camera->camera.target = {cameraPos[0], cameraPos[1]};
+                    }
+
+                    ImGui::EndTabItem();
+                }
+            ImGui::EndTabBar();
+
+        ImGui::End();
+    }
+
     rlImGuiEnd();
 }
 
 /**
- * @brief Input
+ * @brief Input and general updates
  * 
  */
 void Update(f32 deltaTime) {
-    Vector2 pos = GameManager::player->position;
-    f32 speed = 10;
-    f32 jump = 7;
+    bool windowFocused = IsWindowFocused();
 
-    if (IsKeyDown(KEY_A)) {
-        GameManager::player->position.x -= speed;
-    }
-    if (IsKeyDown(KEY_D)) {
-        GameManager::player->position.x += speed;
-    }
-    if (IsKeyPressed(KEY_SPACE)) {
-        GameManager::player->velocity.y -= jump;
-    }
+    // Input for Editing
+    if (!GameManager::isPlayingGame) {
+        // Editor Camera Movement
+        if (Editor::sceneWindowFocused && windowFocused) {
+            f32 camSpeed = 10.f;
+            
+            if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                camSpeed = 50.f;
+            }
 
-    GameManager::player->UpdateRect();
+            if (IsKeyDown(KEY_W)) {
+                Editor::camera->MoveCamera({0, camSpeed});
+            }
+            if (IsKeyDown(KEY_S)) {
+                Editor::camera->MoveCamera({0, -camSpeed});
+            }
+            if (IsKeyDown(KEY_A)) {
+                Editor::camera->MoveCamera({camSpeed, 0});
+            }
+            if (IsKeyDown(KEY_D)) {
+                Editor::camera->MoveCamera({-camSpeed, 0});
+            }
 
-    Rendering::DrawGameObjects();
+        }
+    }
 }
 
 /**
@@ -178,6 +245,8 @@ void Update(f32 deltaTime) {
  * 
  */
 void FixedUpdate(f32 deltaTime) {
+    if (!GameManager::isPlayingGame) return;
+    
     Editor::lastFixedUpdate += deltaTime;
 
     if (Editor::lastFixedUpdate >= Editor::fixedUpdateRate) {
@@ -254,6 +323,9 @@ int main() {
         ClearBackground(DARKGRAY);
     EndTextureMode();
 
+    // Set Editor Camera
+    GameManager::current_camera = Editor::camera;
+
     // Disable Raylib Logging
     SetTraceLogLevel(LOG_WARNING);
 
@@ -278,10 +350,14 @@ int main() {
     while (!WindowShouldClose()) {
         f32 deltaTime = GetFrameTime();
         
+        Rendering::DrawGameObjects();
         BeginDrawing();
-            ClearBackground(DARKGRAY);
-            DrawFPS(0,0);
-            DrawUI(deltaTime); // This comes last 
+            // BeginMode2D(GameManager::current_camera->camera);
+            //     ClearBackground(DARKGRAY);
+            //     Rendering::DrawGameObjects();
+            //     DrawFPS(400, 400);
+            // EndMode2D();
+            DrawUI(deltaTime);
         EndDrawing();
         
         Update(deltaTime);        

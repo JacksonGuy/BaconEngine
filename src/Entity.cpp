@@ -54,3 +54,8 @@ void Entity::SaveEntityJson(nlohmann::json& data) {
         {"name", name}
     };
 }
+
+void Entity::LoadFromJson(nlohmann::json& data) {
+    ID = data["id"];
+    name = data["name"];
+}
