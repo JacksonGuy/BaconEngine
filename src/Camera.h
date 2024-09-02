@@ -9,4 +9,5 @@ class GameCamera : public GameObject {
 
         GameCamera();
         void MoveCamera(Vector2 change);
+        void DrawPropertiesUI();
 };

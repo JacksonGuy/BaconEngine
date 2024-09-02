@@ -8,8 +8,9 @@ namespace GameManager {
     u16 screenHeight = 600;
     u16 framerateLimit = 60;
 
-    // Engine Info
+    // Engine
     std::string engineVersion = "0.0";
+    Font defaultFont = LoadFont("arial.tff");
 
     // Object Lists
     std::vector<GameObject*> GameObjects;
@@ -37,15 +38,26 @@ namespace GameManager {
     // Physics
     f32 gravity = 10.f;
 
-    // Functions
+    /**
+     * @brief Writes a standard message to the console window
+     * 
+     * @param message the message to write
+     */
     void ConsoleMessage(std::string message) {
         time_t now = time(0);
-        char* time = ctime(&now);
-        std::string text = "[ENGINE] (" + std::string(time) + "): " + message + "\n";
+        char* current_time = ctime(&now);
+        std::string time_str = std::string(current_time);
+        time_str.pop_back();
+        std::string text = "[ENGINE] (" + time_str + "): " + message + "\n";
         ConsoleMessages.push_back(text); 
-        free(time);
+        free(current_time);
     }
 
+    /**
+     * @brief Writes an error message to the console window
+     * 
+     * @param message the error message to write
+     */
     void ConsoleError(std::string message) {
         time_t now = time(0);
         char* time = ctime(&now);

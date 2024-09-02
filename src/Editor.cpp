@@ -31,6 +31,18 @@ namespace Editor {
 
     // Editor Camera
     GameCamera* camera = new GameCamera();
+
+    // ImGui Toggles
+    bool showEditorMessages = true;
+
+    // ImGui Variables
+    GameObject* viewPropertiesObject = nullptr;
+
+    // External UI Variables
+    char addVariableName[BUFFSIZE] = {0};
+    i32 addVariableType = 0;
+    f64 addVariableNumberVal = 0;
+    char addVariableStringVal[BUFFSIZE] = {0};
 };
 
 /**
@@ -53,14 +65,12 @@ void DrawUI(f32 deltaTime) {
             // Set Editor variables 
             Editor::sceneWindowFocused = ImGui::IsWindowFocused();                                    
             Editor::sceneWindowPosition = {windowPos.x, windowPos.y};
-            Editor::sceneWindowSize = {windowSize.x, windowSize.y};
+            Editor::sceneWindowSize = {windowSize.x - 20, windowSize.y - 40};
             Editor::sceneWindowMouseCapture = ImGui::IsWindowHovered();
 
             // Check if scene window was resized
             Vector2 frameSize = {Rendering::frame.texture.width, Rendering::frame.texture.height};
-            // std::cout << "FrameSize: " << frameSize.x << "," << frameSize.y << std::endl;
             if (frameSize.x != Editor::sceneWindowSize.x || frameSize.y != Editor::sceneWindowSize.y) {
-                std::cout << "Scene window resize\n";
 
                 // Maintain aspect ratio upon resize
                 Vector2 ratio = {Editor::sceneWindowSize.x / frameSize.x, Editor::sceneWindowSize.y / frameSize.y};
@@ -77,37 +87,55 @@ void DrawUI(f32 deltaTime) {
     }
 
     // Top Menu Bar
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            // We don't want the user to save and load project while testing it  
-            if (GameManager::isPlayingGame) {
-                ImGui::BeginDisabled();
-            }
+    {
+        ImGui::BeginMainMenuBar(); 
+            if (ImGui::BeginMenu("File")) {
+                // We don't want the user to save and load project while testing it  
+                if (GameManager::isPlayingGame) {
+                    ImGui::BeginDisabled();
+                }
 
-            if (ImGui::MenuItem("New Project")) {
-                std::string path;
-                
-                if (!Editor::loadedProject) {
-                    if (File::CreateNewProject(path, true)) {
-                        Editor::projectTitle = path;
-                        Editor::loadedProject = true;
-                        std::string windowTitle = "Bacon - " + path;
-                        SetWindowTitle(windowTitle.c_str());
+                if (ImGui::MenuItem("New Project")) {
+                    std::string path;
+                    
+                    if (!Editor::loadedProject) {
+                        if (File::CreateNewProject(path, true)) {
+                            Editor::projectTitle = path;
+                            Editor::loadedProject = true;
+                            std::string windowTitle = "Bacon - " + path;
+                            SetWindowTitle(windowTitle.c_str());
+                        }
+                    }
+                    else {
+                        File::SaveProject(Editor::projectTitle); // Save current project before creating new one
+                        if (File::CreateNewProject(path, true)) {
+                            Editor::projectTitle = path;
+                            Editor::loadedProject = true;
+                            std::string windowTitle = "Bacon - " + path;
+                            SetWindowTitle(windowTitle.c_str());
+                        }
                     }
                 }
-                else {
-                    File::SaveProject(Editor::projectTitle); // Save current project before creating new one
-                    if (File::CreateNewProject(path, true)) {
-                        Editor::projectTitle = path;
-                        Editor::loadedProject = true;
-                        std::string windowTitle = "Bacon - " + path;
-                        SetWindowTitle(windowTitle.c_str());
+
+                if (ImGui::MenuItem("Save")) {
+                    if (!Editor::loadedProject) {
+                        std::string path;
+                        bool result = File::CreateNewProject(path, false);
+                        if (!result) {
+                            GameManager::ConsoleError("Failed to create new project");
+                        }
+                        else {
+                            Editor::loadedProject = true;
+                            Editor::projectTitle = path;
+                            File::SaveProject(Editor::projectTitle);
+                        }
+                    }
+                    else {
+                        File::SaveProject(Editor::projectTitle);
                     }
                 }
-            }
 
-            if (ImGui::MenuItem("Save")) {
-                if (!Editor::loadedProject) {
+                if (ImGui::MenuItem("Save as")) {
                     std::string path;
                     bool result = File::CreateNewProject(path, false);
                     if (!result) {
@@ -119,34 +147,17 @@ void DrawUI(f32 deltaTime) {
                         File::SaveProject(Editor::projectTitle);
                     }
                 }
-                else {
-                    File::SaveProject(Editor::projectTitle);
+
+                if (ImGui::MenuItem("Load")) {
+                    File::LoadProject(Editor::projectTitle);
                 }
-            }
 
-            if (ImGui::MenuItem("Save as")) {
-                std::string path;
-                bool result = File::CreateNewProject(path, false);
-                if (!result) {
-                    GameManager::ConsoleError("Failed to create new project");
+                if (GameManager::isPlayingGame) {
+                    ImGui::EndDisabled();
                 }
-                else {
-                    Editor::loadedProject = true;
-                    Editor::projectTitle = path;
-                    File::SaveProject(Editor::projectTitle);
-                }
-            }
 
-            if (ImGui::MenuItem("Load")) {
-                File::LoadProject(Editor::projectTitle);
+                ImGui::EndMenu();
             }
-
-            if (GameManager::isPlayingGame) {
-                ImGui::EndDisabled();
-            }
-
-            ImGui::EndMenu();
-        }
         ImGui::EndMainMenuBar();
     }
 
@@ -191,15 +202,68 @@ void DrawUI(f32 deltaTime) {
             ImGui::Separator();
             ImGui::BeginTabBar("EngineItems");
                 if (ImGui::BeginTabItem("Camera")) {
+                    
+                    // Camera Position
                     float cameraPos[2] = {Editor::camera->camera.target.x, Editor::camera->camera.target.y};
                     if (ImGui::InputFloat2("Position", cameraPos)) {
                         Editor::camera->camera.target = {cameraPos[0], cameraPos[1]};
                     }
 
+                    // Camera zoom
+                    ImGui::InputFloat("Zoom", &Editor::camera->camera.zoom);
+
                     ImGui::EndTabItem();
                 }
             ImGui::EndTabBar();
 
+        ImGui::End();
+    }
+
+    // GameObject view
+    {
+        ImGui::Begin("Properties");
+            if (Editor::viewPropertiesObject != nullptr) {
+                if (Editor::viewPropertiesObject->type == ENTITY) {
+                    Entity* e = (Entity*)Editor::viewPropertiesObject;
+                    e->DrawPropertiesUI();
+                }
+                else if (Editor::viewPropertiesObject->type == TEXT) {
+                    TextObject* text = (TextObject*)Editor::viewPropertiesObject;
+                    text->DrawPropertiesUI();
+                }
+                else if (Editor::viewPropertiesObject->type == CAMERA) {
+                    GameCamera* camera = (GameCamera*)Editor::viewPropertiesObject;
+                    camera->DrawPropertiesUI();
+                }
+            }
+        ImGui::End();
+    }
+
+    // Debug Console
+    {
+        ImGui::Begin("Console");
+            if (ImGui::Button("Clear")) {
+                GameManager::ConsoleMessages.clear();
+                // GameManager::ConsoleBuffer.clear();
+            }
+            ImGui::SameLine();
+            ImGui::Checkbox("Engine Messages", &Editor::showEditorMessages);
+            
+            ImGui::Separator();
+        
+            // Filter console messages
+            GameManager::ConsoleBuffer.clear();
+            for (std::string str : GameManager::ConsoleMessages) {
+                GameManager::ConsoleBuffer.append(str.c_str());
+            }
+
+            // Display messages
+            ImGui::TextUnformatted(GameManager::ConsoleBuffer.begin(), GameManager::ConsoleBuffer.end());
+            
+            // Auto scroll
+            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                ImGui::SetScrollHereY(1.f);
+            }
         ImGui::End();
     }
 
@@ -217,25 +281,32 @@ void Update(f32 deltaTime) {
     if (!GameManager::isPlayingGame) {
         // Editor Camera Movement
         if (Editor::sceneWindowFocused && windowFocused) {
-            f32 camSpeed = 10.f;
+            f32 camSpeed = 8.f;
             
             if (IsKeyDown(KEY_LEFT_SHIFT)) {
-                camSpeed = 50.f;
+                camSpeed *= 2.0f;
             }
 
             if (IsKeyDown(KEY_W)) {
-                Editor::camera->MoveCamera({0, camSpeed});
-            }
-            if (IsKeyDown(KEY_S)) {
                 Editor::camera->MoveCamera({0, -camSpeed});
             }
-            if (IsKeyDown(KEY_A)) {
-                Editor::camera->MoveCamera({camSpeed, 0});
+            if (IsKeyDown(KEY_S)) {
+                Editor::camera->MoveCamera({0, camSpeed});
             }
-            if (IsKeyDown(KEY_D)) {
+            if (IsKeyDown(KEY_A)) {
                 Editor::camera->MoveCamera({-camSpeed, 0});
             }
+            if (IsKeyDown(KEY_D)) {
+                Editor::camera->MoveCamera({camSpeed, 0});
+            }
 
+            // Zoom
+            if (GetMouseWheelMove() > 0) {
+                Editor::camera->camera.zoom += 0.1;
+            }
+            else if (GetMouseWheelMove() < 0) {
+                Editor::camera->camera.zoom -= 0.1;
+            }
         }
     }
 }
@@ -292,16 +363,58 @@ void FixedUpdate(f32 deltaTime) {
     }
 }
 
+void SetImGuiStyle() {
+    auto& colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.105f, 0.11f, 1.0f };
+
+    // Headers
+    colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+    colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+    colors[ImGuiCol_HeaderActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    
+    // Buttons
+    colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+    colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+    colors[ImGuiCol_ButtonActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+    // Frame BG
+    colors[ImGuiCol_FrameBg] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+    colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+    colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+    // Tabs
+    colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
+    colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
+    colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+
+    // Title
+    colors[ImGuiCol_TitleBg] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+    // Font
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    
+    float fontSize = 18.f;
+    io.Fonts->AddFontFromFileTTF("Roboto-Regular.ttf", fontSize);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("Roboto-Regular.ttf", fontSize);
+
+    rlImGuiReloadFonts();
+}
+
 int main() {
     // Initialize variables
-        // Window
-        GameManager::screenWidth = 1280;
-        GameManager::screenHeight = 720;
-        GameManager::framerateLimit = 244;
+    // Window
+    GameManager::screenWidth = 1280;
+    GameManager::screenHeight = 720;
+    GameManager::framerateLimit = 244;
 
-        // Project Details
-        std::string projectTitle;
-        bool loadedProject = false;
+    // Project Details
+    std::string projectTitle;
+    bool loadedProject = false;
 
     // Scene Window
     bool sceneWindowFocused = false;
@@ -311,11 +424,13 @@ int main() {
     bool sceneWindowMouseCapture = false;
 
     // Create Window and set framerate limit
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(GameManager::screenWidth, GameManager::screenHeight, "BaconEngine");
     SetTargetFPS(GameManager::framerateLimit);
     rlImGuiSetup(true);
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    SetImGuiStyle();
     
     // Initialize Frame
     Rendering::frame = LoadRenderTexture(GameManager::screenWidth, GameManager::screenHeight);
@@ -340,6 +455,7 @@ int main() {
     player->bodytype = DYNAMIC;
     player->UpdateRect();
     GameManager::player = player;
+    Editor::viewPropertiesObject = player;
 
     Entity* platform = new Entity();
     platform->position = {100, 500};
@@ -352,11 +468,6 @@ int main() {
         
         Rendering::DrawGameObjects();
         BeginDrawing();
-            // BeginMode2D(GameManager::current_camera->camera);
-            //     ClearBackground(DARKGRAY);
-            //     Rendering::DrawGameObjects();
-            //     DrawFPS(400, 400);
-            // EndMode2D();
             DrawUI(deltaTime);
         EndDrawing();
         

@@ -9,4 +9,8 @@ class TextObject : public GameObject {
         i8 fontSize;
         i8 charSpacing;
         Color color;
+
+        TextObject();
+        ~TextObject();
+        void DrawPropertiesUI();
 };

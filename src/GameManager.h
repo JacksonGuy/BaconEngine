@@ -17,8 +17,9 @@ namespace GameManager {
     extern u16 screenHeight;
     extern u16 framerateLimit;
 
-    // Engine Info
+    // Engine
     extern std::string engineVersion;
+    extern Font defaultFont;
 
     // Object Lists
     extern std::vector<GameObject*> GameObjects;

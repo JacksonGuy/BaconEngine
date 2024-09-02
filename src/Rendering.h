@@ -14,11 +14,11 @@ namespace Rendering {
         u8 layerNum;
     };
 
-    extern std::unordered_map<std::string, Font*> fonts;
+    extern std::unordered_map<std::string, Font> fonts;
     extern std::vector<RenderingLayer> layers;
     extern RenderTexture2D frame;
 
-    Font* LoadFont(std::string font);
+    Font LoadFont(std::string font);
     void DrawGameObjects();
     void CreateLayers(int count);
     void AddToLayer(GameObject* obj);

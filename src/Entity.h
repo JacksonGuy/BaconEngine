@@ -26,21 +26,22 @@ class Entity : public GameObject {
     public:
         // Sprite information
         Texture2D texture;
-        std::string texturePath; // This is just for UI purposes
+        std::string texturePath;
        
         // Physics
         Rectangle rect;
         PhysicsBody_t bodytype;
-
+        bool solid;
+        bool physicsObject;
         bool grounded;
         Vector2 velocity;
+
+        // UI
+        bool showHitbox;
 
         // Lua Scripting
         std::vector<std::string> lua_scripts;
         std::vector<EntityVar> variables;
-
-        // Game meta information
-        bool isPlayer;
 
         // Functions
         Entity();
@@ -49,4 +50,5 @@ class Entity : public GameObject {
         void UpdateRect();
         void SaveEntityJson(nlohmann::json& data);
         void LoadFromJson(nlohmann::json& data);
+        void DrawPropertiesUI();
 };

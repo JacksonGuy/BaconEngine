@@ -20,5 +20,5 @@ GameCamera::GameCamera() {
 void GameCamera::MoveCamera(Vector2 change) {
     this->position.x += change.x;
     this->position.y += change.y;
-    this->camera.offset = this->position;
+    this->camera.target = this->position;
 }

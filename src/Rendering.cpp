@@ -4,22 +4,30 @@
 #include "TextObject.h"
 
 namespace Rendering {
-    std::unordered_map<std::string, Font*> fonts;
+    std::unordered_map<std::string, Font> fonts;
     std::vector<RenderingLayer> layers;
     RenderTexture2D frame;
 
-    Font* LoadFont(std::string path) {
+    /**
+     * @brief Loads a new font
+     * 
+     * @param path path to the .ttf file
+     * @return Font* 
+     */
+    Font LoadFont(std::string path) {
         // Font hasn't been loaded in already
         if (fonts.find(path) == fonts.end()) {
-            Font* font = new Font();
-            font = LoadFont(path);
-            return font;
+            return LoadFont(path);
         }
         else {
             return fonts[path];
         }
     }
 
+    /**
+     * @brief Draws GameObject, in order of their layer
+     * 
+     */
     void DrawGameObjects() {
         BeginTextureMode(frame);
             ClearBackground(DARKGRAY);
@@ -60,6 +68,11 @@ namespace Rendering {
         EndTextureMode();
     }
 
+    /**
+     * @brief Creates new RenderingLayers
+     * 
+     * @param count the number of layers to create
+     */
     void CreateLayers(int count) {
         size_t size = layers.size();
         for (int i = 0; i < count; i++) {
@@ -69,6 +82,11 @@ namespace Rendering {
         }
     }
 
+    /**
+     * @brief Adds a GameObject to their layer
+     * 
+     * @param obj the GameObject to add
+     */
     void AddToLayer(GameObject* obj) {
         // Create new layers if necessary
         if (obj->layer >= layers.size()) {
@@ -78,6 +96,11 @@ namespace Rendering {
         layers[obj->layer].objects.push_back(obj);
     }
 
+    /**
+     * @brief Removes a GameObject from their layer
+     * 
+     * @param obj the GameObject to remove
+     */
     void RemoveFromLayer(GameObject* obj) {
         for (size_t i = 0; i < layers[obj->layer].objects.size(); i++) {
             if (layers[obj->layer].objects[i]->ID == obj->ID) {
