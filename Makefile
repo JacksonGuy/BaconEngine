@@ -8,6 +8,7 @@ CFLAGS += -Iextern/imgui -Iextern/imgui/backends
 CFLAGS += -Iextern/nativefiledialog-extended/src/include
 #CFLAGS += -Lextern/nativefiledialog-extended/build/src/Debug
 CFLAGS += -Iextern/json
+CFLAGS += -Iextern/stb_image
 
 BUILD_DIR = bin
 

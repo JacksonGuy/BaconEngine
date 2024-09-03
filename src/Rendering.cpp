@@ -4,9 +4,28 @@
 #include "TextObject.h"
 
 namespace Rendering {
+    std::unordered_map<std::string, Image> images;
     std::unordered_map<std::string, Font> fonts;
     std::vector<RenderingLayer> layers;
     RenderTexture2D frame;
+
+    /**
+     * @brief Loads a new Image from an image file
+     * 
+     * @param image the path to the image file
+     * @return Image 
+     */
+    Image b_LoadImage(std::string image) {
+        // Image hasn't already been loaded yet
+        if (images.find(image) == images.end()) {
+            Image img = LoadImage(image.c_str());
+            images[image] = img;
+            return img;
+        }
+        else {
+            return images[image];
+        }
+    }
 
     /**
      * @brief Loads a new font
@@ -14,10 +33,12 @@ namespace Rendering {
      * @param path path to the .ttf file
      * @return Font* 
      */
-    Font LoadFont(std::string path) {
+    Font b_LoadFont(std::string path) {
         // Font hasn't been loaded in already
         if (fonts.find(path) == fonts.end()) {
-            return LoadFont(path);
+            Font newFont = LoadFont(path.c_str());
+            fonts[path] = newFont;
+            return newFont;
         }
         else {
             return fonts[path];
@@ -48,7 +69,7 @@ namespace Rendering {
                             TextObject* text = (TextObject*)obj;
                             if (text->isVisible) {
                                 DrawTextEx(
-                                    text->font,
+                                    text->font.font,
                                     text->text.c_str(),
                                     text->position,
                                     text->fontSize,

@@ -19,7 +19,7 @@ namespace GameManager {
 
     // Engine
     extern std::string engineVersion;
-    extern Font defaultFont;
+    extern b_Font defaultFont;
 
     // Object Lists
     extern std::vector<GameObject*> GameObjects;
@@ -50,6 +50,8 @@ namespace GameManager {
     // Functions
     void ConsoleMessage(std::string message);
     void ConsoleError(std::string message);
+
+    GameObject* FindObjectByID(u32 id);
 
     void Reset();
 };

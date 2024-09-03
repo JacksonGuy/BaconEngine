@@ -30,7 +30,7 @@ namespace Editor {
     bool sceneWindowMouseCapture = false;
 
     // Editor Camera
-    GameCamera* camera = new GameCamera();
+    GameCamera* camera = nullptr;
 
     // ImGui Toggles
     bool showEditorMessages = true;
@@ -44,6 +44,76 @@ namespace Editor {
     f64 addVariableNumberVal = 0;
     char addVariableStringVal[BUFFSIZE] = {0};
 };
+
+/**
+ * @brief Create and display an ImGui tree from a GameObject and its children
+ * 
+ * @param obj The base node GameObject
+ */
+void DisplayEntityTree(GameObject* obj) {
+    auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
+    bool is_open = false;
+
+    if (obj->children.size() == 0) {    
+        ImGui::TreeNodeEx(obj->name.c_str(), normalFlags);
+    }
+    else {
+        is_open = ImGui::TreeNodeEx(obj->name.c_str(), parentFlags);
+    }
+
+    // Change properties view if right clicked
+    if (ImGui::IsItemClicked(1)) {
+        Editor::viewPropertiesObject = obj;
+    }
+
+    // Handle mouse dragging
+    if (ImGui::BeginDragDropSource()) {
+        ImGui::SetDragDropPayload("OBJECT_ID", &obj->ID, sizeof(u32));
+        ImGui::EndDragDropSource();
+    }
+
+    // Handle mouse drop
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_ID")) {
+            // Get Object
+            u32 sourceID = *(u32*)payload->Data;
+            GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
+
+            if (sourceObject != nullptr) {
+                // Remove from parent
+                if (sourceObject->parent != nullptr) {
+                    // Linear search for itself in the parent's children vector
+                    for (size_t i = 0; i < sourceObject->parent->children.size(); i++) {
+                        if (sourceObject->parent->children[i]->ID == sourceObject->ID) {
+                            sourceObject->parent->children.erase(sourceObject->parent->children.begin() + i);
+                            break;
+                        }
+                    }
+                }
+
+                // Add to new parent
+                obj->children.push_back(sourceObject);
+                sourceObject->parent = obj;
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+    }
+
+    // If children has children and is open, display children
+    if (obj->children.size() != 0 && is_open) {
+        ImGui::Indent(4);
+
+        for (GameObject* child : obj->children) {
+            DisplayEntityTree(child);
+        }
+
+        ImGui::TreePop();
+        ImGui::Unindent(4);
+    }
+}
 
 /**
  * @brief Draw ImGui windows
@@ -239,6 +309,55 @@ void DrawUI(f32 deltaTime) {
         ImGui::End();
     }
 
+    // GameObject tree
+    {
+        auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+        
+        ImGui::Begin("Objects");
+            ImGui::SetNextItemOpen(true);
+
+            // Parent Scene Node
+            // TODO change name when multiple scenes are introduced 
+            if (ImGui::TreeNodeEx("Scene", parentFlags)) {
+                // Handle drag and drop
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_ID")) {
+                        // Get Entity
+                        u32 sourceID = *(u32*)payload->Data;
+                        GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
+
+                        if (sourceObject != nullptr) {
+                            // Remove from parent
+                            if (sourceObject->parent != nullptr) {
+                                // Linear search for itself in the parent's children vector
+                                for (size_t i = 0; i < sourceObject->parent->children.size(); i++) {
+                                    if (sourceObject->parent->children[i]->ID == sourceObject->ID) {
+                                        sourceObject->parent->children.erase(sourceObject->parent->children.begin() + i);
+                                        sourceObject->parent = nullptr;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // Display Children
+                for (GameObject* obj : GameManager::GameObjects) {
+                    // Objects without a parent act as base nodes
+                    if (obj->parent == nullptr) {
+                        DisplayEntityTree(obj);
+                    }
+                }
+
+                // I don't remember what this line does honestly
+                ImGui::TreePop();
+            }
+        ImGui::End();
+    }
+
     // Debug Console
     {
         ImGui::Begin("Console");
@@ -363,6 +482,10 @@ void FixedUpdate(f32 deltaTime) {
     }
 }
 
+/**
+ * @brief Sets ImGui Colors and font
+ * 
+ */
 void SetImGuiStyle() {
     auto& colors = ImGui::GetStyle().Colors;
     colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.105f, 0.11f, 1.0f };
@@ -438,7 +561,16 @@ int main() {
         ClearBackground(DARKGRAY);
     EndTextureMode();
 
+    // GameManager
+    GameManager::defaultFont = {
+        Rendering::b_LoadFont("arial.ttf"),
+        "arial.ttf"
+    };
+
     // Set Editor Camera
+    Editor::camera = new GameCamera();
+    GameManager::GameObjects.pop_back();
+    GameManager::GameCameras.pop_back();
     GameManager::current_camera = Editor::camera;
 
     // Disable Raylib Logging
@@ -447,8 +579,10 @@ int main() {
     // NativeFileDialog
     NFD_Init();
 
-    // Debug
+    // --------------------------------------------
+    // DEBUG test objects
     Entity* player = new Entity();
+    player->name = "Player";
     player->position = {200, 200};
     player->size = {64, 64};
     player->SetTexture("test.png");
@@ -458,10 +592,16 @@ int main() {
     Editor::viewPropertiesObject = player;
 
     Entity* platform = new Entity();
+    platform->name = "Platform";
     platform->position = {100, 500};
     platform->size = {600, 32};
     platform->SetTexture("platform.png");
     platform->UpdateRect();
+
+    TextObject* text = new TextObject();
+    text->name = "Text";
+    text->text = "Something";
+    text->position = {200, 100};
 
     while (!WindowShouldClose()) {
         f32 deltaTime = GetFrameTime();

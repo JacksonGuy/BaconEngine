@@ -43,13 +43,7 @@ Entity::~Entity() {
  * @param path 
  */
 void Entity::SetTexture(std::string path) {
-    UnloadTexture(texture);
-
-    Image image = LoadImage(path.c_str());
-
-    // For debug purposes
-    // Don't use for production, it's very unsafe
-    // Image image = B_LoadImage(path); 
+    Image image = Rendering::b_LoadImage(path);
 
     // Check if image was successfully loaded
     if (image.data == NULL) {
@@ -59,7 +53,6 @@ void Entity::SetTexture(std::string path) {
 
     ImageResize(&image, size.x, size.y);
     texture = LoadTextureFromImage(image);
-    UnloadImage(image);
     texturePath = path;
 }
 

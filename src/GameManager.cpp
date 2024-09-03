@@ -1,6 +1,7 @@
-#include "GameManager.h"
-
 #include <ctime>
+
+#include "GameManager.h"
+#include "Rendering.h"
 
 namespace GameManager {
     // Default window settings
@@ -10,7 +11,7 @@ namespace GameManager {
 
     // Engine
     std::string engineVersion = "0.0";
-    Font defaultFont = LoadFont("arial.tff");
+    b_Font defaultFont = {0};
 
     // Object Lists
     std::vector<GameObject*> GameObjects;
@@ -64,6 +65,36 @@ namespace GameManager {
         std::string text = "[ERROR] (" + std::string(time) + "): " + message + "\n";
         ConsoleMessages.push_back(text); 
         free(time);
+    }
+
+    /**
+     * @brief Searches for a GameObject with the given ID. Binary search.
+     * 
+     * @param ID The ID of the GameObject to search for
+     * @return GameObject* The GameObject, if found. Otherwise nullptr.
+     */
+    GameObject* FindObjectByID(u32 ID) {
+        u32 low = 0;
+        u32 high = GameManager::GameObjects.size();
+
+        while (low <= high) {
+            u32 mid = low + (high - low) / 2;
+
+            // We found the game object
+            if (GameManager::GameObjects[mid]->ID == ID) {
+                return GameManager::GameObjects[mid];
+            }
+
+            // Shift search window
+            if (GameManager::GameObjects[mid]->ID < ID) {
+                low = mid + 1;
+            }
+            else {
+                high = mid - 1; 
+            }
+        }
+
+        return nullptr;
     }
 
     /**
