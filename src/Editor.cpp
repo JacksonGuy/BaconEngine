@@ -97,9 +97,8 @@ void DisplayEntityTree(GameObject* obj) {
                 obj->children.push_back(sourceObject);
                 sourceObject->parent = obj;
             }
-
-            ImGui::EndDragDropTarget();
         }
+        ImGui::EndDragDropTarget();
     }
 
     // If children has children and is open, display children
@@ -243,11 +242,7 @@ void DrawUI(f32 deltaTime) {
                     File::SaveProject(Editor::projectTitle);
 
                     // Change Camera
-                    for (GameCamera* camera : GameManager::GameCameras) {
-                        if (camera->isActive) {
-                            GameManager::current_camera = camera;
-                        }
-                    }
+                    GameManager::current_camera = GameManager::activeCameraTracker;
 
                     GameManager::ConsoleMessage("Editor data saved. Starting game...");
                     GameManager::isPlayingGame = true;
@@ -580,6 +575,8 @@ int main() {
     NFD_Init();
 
     // --------------------------------------------
+    File::LoadProject("C:/Users/Jackson/Desktop/BaconEngine Projects/New folder/Game.json");
+
     // DEBUG test objects
     Entity* player = new Entity();
     player->name = "Player";
@@ -602,6 +599,11 @@ int main() {
     text->name = "Text";
     text->text = "Something";
     text->position = {200, 100};
+
+    GameCamera* cam = new GameCamera();
+    cam->name = "Camera 1";
+
+    // --------------------------------------------
 
     while (!WindowShouldClose()) {
         f32 deltaTime = GetFrameTime();

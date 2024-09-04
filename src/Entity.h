@@ -49,6 +49,6 @@ class Entity : public GameObject {
         void SetTexture(std::string path);
         void UpdateRect();
         void SaveEntityJson(nlohmann::json& data);
-        void LoadFromJson(nlohmann::json& data);
+        void LoadEntityJson(nlohmann::json& data);
         void DrawPropertiesUI();
 };

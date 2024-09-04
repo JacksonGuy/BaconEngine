@@ -70,10 +70,7 @@ void Entity::UpdateRect() {
  * @param data JSON object to write to
  */
 void Entity::SaveEntityJson(nlohmann::json& data) {
-    data = {
-        {"id", ID},
-        {"name", name}
-    };
+    SaveGameObjectJson(data);
 }
 
 /**
@@ -81,9 +78,8 @@ void Entity::SaveEntityJson(nlohmann::json& data) {
  * 
  * @param data JSON object to read from
  */
-void Entity::LoadFromJson(nlohmann::json& data) {
-    ID = data["id"];
-    name = data["name"];
+void Entity::LoadEntityJson(nlohmann::json& data) {
+    LoadGameObjectJson(data);
 }
 
 /**

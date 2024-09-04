@@ -12,6 +12,7 @@ namespace GameManager {
     // Engine
     std::string engineVersion = "0.0";
     b_Font defaultFont = {0};
+    GameCamera* current_camera = nullptr;
 
     // Object Lists
     std::vector<GameObject*> GameObjects;
@@ -21,9 +22,9 @@ namespace GameManager {
 
     // Game info 
     Entity* player = nullptr;
-    GameCamera* current_camera = nullptr;
     bool isPlayingGame = false;
     std::string projectEntryPath = "";
+    GameCamera* activeCameraTracker = nullptr;
 
     // Input
     bool windowHasFocus = false;
@@ -51,7 +52,6 @@ namespace GameManager {
         time_str.pop_back();
         std::string text = "[ENGINE] (" + time_str + "): " + message + "\n";
         ConsoleMessages.push_back(text); 
-        free(current_time);
     }
 
     /**

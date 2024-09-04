@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "raylib.h"
+#include "json.hpp"
 
 #include "util.h"
 
@@ -35,10 +36,9 @@ class GameObject {
         GameObject* parent;
         std::vector<GameObject*> children;
 
-        // UI Info
-        bool showDetails;
-
         // Functions
         GameObject();
         ~GameObject();
+        void SaveGameObjectJson(nlohmann::json& data);
+        void LoadGameObjectJson(nlohmann::json& data);
 };

@@ -1,8 +1,10 @@
+#include <iostream>
+
+#include "raylib.h"
+
 #include "GameObject.h"
 #include "GameManager.h"
 #include "Rendering.h"
-
-#include "raylib.h"
 
 u32 GameObject::IDCount = 0;
 std::vector<u32> GameObject::unusedIDs;
@@ -30,9 +32,6 @@ GameObject::GameObject() {
     // Tree data
     parent = nullptr;
 
-    // UI Info
-    showDetails = false;
-
     // Add to GameManager
     GameManager::GameObjects.push_back(this);
     Rendering::AddToLayer(this);
@@ -49,4 +48,41 @@ GameObject::~GameObject() {
 
     // Free up ID
     GameObject::unusedIDs.push_back(this->ID);
+}
+
+/**
+ * @brief Saves the GameObject's data to a JSON object
+ * 
+ * @param data the JSON object to save to
+ */
+void GameObject::SaveGameObjectJson(nlohmann::json& data) {
+    data["ID"] = ID;
+    data["name"] = name;
+    data["tag"] = tag;
+    data["type"] = type;
+
+    data["position"] = {position.x, position.y};
+    data["size"] = {size.x, size.y};
+    data["rotation"] = rotation;
+    data["isVisible"] = isVisible;
+    data["layer"] = layer;
+
+    if (parent != nullptr) {
+        data["parent"] = parent->ID;
+    }
+
+    for (size_t i = 0; i < children.size(); i++) {
+        data["children"][i] = children[i]->ID;
+    }
+}
+
+/**
+ * @brief Loads GameObject data from JSON object
+ * 
+ * @param data the JSON object to load from 
+ */
+void GameObject::LoadGameObjectJson(nlohmann::json& data) {
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::cout << it.key() << std::endl;
+    }
 }

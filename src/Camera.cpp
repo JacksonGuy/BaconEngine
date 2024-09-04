@@ -4,11 +4,13 @@
 #include "Editor.h"
 
 GameCamera::GameCamera() : GameObject() {
-    this->camera = {0};
-    this->camera.target = {0,0}; 
-    this->camera.offset = {0,0};
-    this->camera.zoom = 1.f;
-    this->camera.rotation = 0.0f;
+    type = CAMERA;
+    
+    camera = {0};
+    camera.target = {0,0}; 
+    camera.offset = {0,0};
+    camera.zoom = 1.f;
+    camera.rotation = 0.0f;
     isActive = false;
 
     GameManager::GameCameras.push_back(this);
@@ -79,5 +81,28 @@ void GameCamera::DrawPropertiesUI() {
         if (rotation <= -360) {
             rotation += 360;
         }
+    }
+
+    // Visible
+    ImGui::Checkbox("Visible", &isVisible);
+
+    ImGui::Separator();
+
+    // Is Active
+    if (GameManager::activeCameraTracker != nullptr && GameManager::activeCameraTracker != this) {
+        ImGui::BeginDisabled();
+    }
+
+    if (ImGui::Checkbox("Active Camera", &isActive)) {
+        if (isActive == false) {
+            GameManager::current_camera = nullptr;
+        }
+        else {
+            GameManager::current_camera = this;
+        }
+    }
+
+    if (GameManager::activeCameraTracker != nullptr && GameManager::activeCameraTracker != this) {
+        ImGui::EndDisabled();
     }
 }

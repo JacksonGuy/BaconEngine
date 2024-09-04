@@ -11,6 +11,13 @@
 #include "Entity.h"
 
 namespace File {
+    /**
+     * @brief Saves the current project
+     * 
+     * @param filename file to save project to
+     * @return true if successfully saved
+     * @return false if saving failed
+     */
     bool SaveProject(std::string filename) {
         namespace fs = std::filesystem;
         using json = nlohmann::json;
@@ -59,7 +66,7 @@ namespace File {
         GameManager::ConsoleMessage("Creating Entities...");
         for (auto& entity : data["Entities"]) {
             Entity* e = new Entity();
-            e->LoadFromJson(entity);
+            e->LoadEntityJson(entity);
         }
 
         return false;

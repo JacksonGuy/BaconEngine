@@ -20,6 +20,7 @@ namespace GameManager {
     // Engine
     extern std::string engineVersion;
     extern b_Font defaultFont;
+    extern GameCamera* current_camera;
 
     // Object Lists
     extern std::vector<GameObject*> GameObjects;
@@ -29,7 +30,7 @@ namespace GameManager {
 
     // Game info
     extern Entity* player;
-    extern GameCamera* current_camera;
+    extern GameCamera* activeCameraTracker;
     extern bool isPlayingGame;
     extern std::string projectEntryPath;
     

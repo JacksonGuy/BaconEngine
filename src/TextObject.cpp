@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "nfd.h"
 
 #include "TextObject.h"
@@ -6,15 +8,25 @@
 #include "Rendering.h"
 
 TextObject::TextObject() : GameObject() {
+    type = TEXT;
+
     text = "";
     font = GameManager::defaultFont;
     fontSize = 32;
-    charSpacing = 8;
+    charSpacing = 0;
     color = BLACK;
+
+    GameManager::TextObjects.push_back(this);
 }
 
 TextObject::~TextObject() {
-    // Nothing right now    
+    // Remove from TextObjects
+    for (size_t i = 0; i < GameManager::TextObjects.size(); i++) {
+        if (GameManager::TextObjects[i]->ID == ID) {
+            GameManager::TextObjects.erase(GameManager::TextObjects.begin() + i);
+            break;
+        }
+    }
 }
 
 /**
@@ -85,6 +97,9 @@ void TextObject::DrawPropertiesUI() {
         }
     }
 
+    // Visible
+    ImGui::Checkbox("Visible", &isVisible);
+
     ImGui::Separator();
 
     // Font
@@ -120,11 +135,24 @@ void TextObject::DrawPropertiesUI() {
     ImGui::InputInt("Spacing", &charSpacing);
 
     // Color
-    float colorBuff[] = {color.r, color.g, color.b, color.a};
+    // We have to divide/multiply by 255 because of weird ImGui quirk
+    float colorBuff[] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
     if (ImGui::ColorEdit4("Color", colorBuff)) {
-        color.r = colorBuff[0];
-        color.g = colorBuff[1];
-        color.b = colorBuff[2];
-        color.a = colorBuff[3];
+        color.r = colorBuff[0] * 255;
+        color.g = colorBuff[1] * 255;
+        color.b = colorBuff[2] * 255;
+        color.a = colorBuff[3] * 255;
+    }
+
+    // Text Edit
+    char textBuff[1024 * 16];
+    strcpy(textBuff, text.c_str());
+    if (ImGui::InputTextMultiline("Text", textBuff, 1024 * 16)) {
+        text = textBuff;
+    }
+
+    // Delete button
+    if (ImGui::Button("Delete")) {
+        delete(this);
     }
 }
