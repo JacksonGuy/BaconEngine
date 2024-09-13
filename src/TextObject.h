@@ -1,5 +1,7 @@
 #pragma once
 
+#include "json.hpp"
+
 #include "GameObject.h"
 
 typedef struct {
@@ -18,5 +20,7 @@ class TextObject : public GameObject {
         TextObject();
         ~TextObject();
         void SetFont(std::string path);
+        void SaveTextObjectJson(nlohmann::json& data);
+        void LoadTextObjectJson(nlohmann::json& data);
         void DrawPropertiesUI();
 };

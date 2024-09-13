@@ -28,6 +28,35 @@ void GameCamera::MoveCamera(Vector2 change) {
 }
 
 /**
+ * @brief Writes Camera details to JSON object
+ * 
+ * @param data the JSON object to save to
+ */
+void GameCamera::SaveCameraJson(nlohmann::json& data) {
+    SaveGameObjectJson(data);
+
+    data["isActive"] = isActive;
+}
+
+/**
+ * @brief Loads Camera details from JSON object
+ * 
+ * @param data the JSON object to load from
+ */
+void GameCamera::LoadCameraJson(nlohmann::json& data) {
+    LoadGameObjectJson(data);
+
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::string key = it.key();
+        auto value = *it;
+
+        if (key == "isActive") {
+            isActive = value;
+        }
+    }
+}
+
+/**
  * @brief ImGui UI which shows details about the GameCamera
  * 
  */

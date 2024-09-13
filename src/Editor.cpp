@@ -12,8 +12,6 @@
 #include "Rendering.h"
 #include "File.h"
 
-#define BUFFSIZE 512
-
 namespace Editor {
     // Project Details
     std::string projectTitle = "Bacon - Untitled Project";
@@ -34,9 +32,19 @@ namespace Editor {
 
     // ImGui Toggles
     bool showEditorMessages = true;
+    bool showCreateEntityMenu = false;
+    bool showCreateTextMenu = false;
+    bool showCreateCameraMenu = false;
 
     // ImGui Variables
     GameObject* viewPropertiesObject = nullptr;
+
+    // Create GameObject buffers
+    char createNameBuff[BUFFSIZE];
+    float createPositionBuff[2] = {0,0};
+    char createTexturePathBuff[BUFFSIZE];
+    int createSizeBuff[2] = {64, 64};
+    char createTextBuff[TEXTBUFFSIZE];
 
     // External UI Variables
     char addVariableName[BUFFSIZE] = {0};
@@ -112,6 +120,18 @@ void DisplayEntityTree(GameObject* obj) {
         ImGui::TreePop();
         ImGui::Unindent(4);
     }
+}
+
+/**
+ * @brief Clears Editor's create GameObject buffers
+ * 
+ */
+void ClearEditorBuffers() {
+    strcpy(Editor::createNameBuff, "");
+    Editor::createPositionBuff[0] = 0, Editor::createPositionBuff[1] = 0;
+    strcpy(Editor::createTexturePathBuff, "");
+    Editor::createSizeBuff[0] = 64, Editor::createSizeBuff[1] = 64;
+    strcpy(Editor::createTextBuff, "");
 }
 
 /**
@@ -227,6 +247,14 @@ void DrawUI(f32 deltaTime) {
 
                 ImGui::EndMenu();
             }
+        
+            if (ImGui::BeginMenu("Create")) {
+                ImGui::MenuItem("Entity", NULL, &Editor::showCreateEntityMenu);
+                ImGui::MenuItem("Text", NULL, &Editor::showCreateTextMenu);
+                ImGui::MenuItem("Camera", NULL, &Editor::showCreateCameraMenu);
+                
+                ImGui::EndMenu();
+            }
         ImGui::EndMainMenuBar();
     }
 
@@ -302,6 +330,103 @@ void DrawUI(f32 deltaTime) {
                 }
             }
         ImGui::End();
+    }
+
+    // Create Entity
+    {
+        if (Editor::showCreateEntityMenu) {
+            ImGui::Begin("Create Entity", &Editor::showCreateEntityMenu);
+                // Name
+                ImGui::InputText("Name", Editor::createNameBuff, Editor::BUFFSIZE);
+                
+                // Position
+                ImGui::InputFloat2("Position", Editor::createPositionBuff);
+
+                // Texture
+                ImGui::InputText("Texture", Editor::createTexturePathBuff, Editor::BUFFSIZE);
+                if (ImGui::Button("Select Texture")) {
+                    nfdu8char_t* outpath = NULL;
+                    nfdopendialogu8args_t args = {0};
+                    nfdresult_t result = NFD_OpenDialogU8_With(&outpath, &args);
+
+                    if (result == NFD_OKAY) {
+                        strcpy(Editor::createTexturePathBuff, outpath);
+                    }
+
+                    free(outpath);
+                }
+
+                // Size
+                ImGui::InputInt2("Size", Editor::createSizeBuff);
+
+                // Create Entity
+                if (ImGui::Button("Create")) {
+                    Entity* entity = new Entity();
+                    entity->name = Editor::createNameBuff;
+                    entity->position = {Editor::createPositionBuff[0], Editor::createPositionBuff[1]};
+                    entity->size = {(float)Editor::createSizeBuff[0], (float)Editor::createSizeBuff[1]};
+                    entity->SetTexture(Editor::createTexturePathBuff);
+                    Rendering::AddToLayer(entity);
+
+                    ClearEditorBuffers();
+                    Editor::showCreateEntityMenu = false;
+                }
+
+            ImGui::End();
+        }
+    }
+
+    // Create TextObject
+    {
+        if (Editor::showCreateTextMenu) {
+            ImGui::Begin("Create Text", &Editor::showCreateTextMenu);
+                // Name
+                ImGui::InputText("Name", Editor::createNameBuff, Editor::BUFFSIZE);
+
+                // Position
+                ImGui::InputFloat2("Position", Editor::createPositionBuff);
+
+                // Text
+                ImGui::InputTextMultiline("Text", Editor::createTextBuff, Editor::TEXTBUFFSIZE);
+
+                // Create Text Object
+                if (ImGui::Button("Create")) {
+                    TextObject* text = new TextObject();
+                    text->name = Editor::createNameBuff;
+                    text->position = {Editor::createPositionBuff[0], Editor::createPositionBuff[1]};
+                    text->text = Editor::createTextBuff;
+                    Rendering::AddToLayer(text);
+
+                    ClearEditorBuffers();
+                    Editor::showCreateTextMenu = false;
+                }
+
+            ImGui::End();
+        }
+    }
+
+    // Create GameCamera
+    {
+        if (Editor::showCreateCameraMenu) {
+            ImGui::Begin("Create Camera", &Editor::showCreateCameraMenu);
+                // Name
+                ImGui::InputText("Name", Editor::createNameBuff, Editor::BUFFSIZE);
+
+                // Position
+                ImGui::InputFloat2("Position", Editor::createPositionBuff);
+
+                // Create Camera
+                if (ImGui::Button("Create")) {
+                    GameCamera* camera = new GameCamera();
+                    camera->name = Editor::createNameBuff;
+                    camera->position = {Editor::createPositionBuff[0], Editor::createPositionBuff[1]};
+                    Rendering::AddToLayer(camera);
+
+                    ClearEditorBuffers();
+                    Editor::showCreateCameraMenu = false;
+                }
+            ImGui::End();
+        }
     }
 
     // GameObject tree
@@ -575,33 +700,10 @@ int main() {
     NFD_Init();
 
     // --------------------------------------------
-    File::LoadProject("C:/Users/Jackson/Desktop/BaconEngine Projects/New folder/Game.json");
 
-    // DEBUG test objects
-    Entity* player = new Entity();
-    player->name = "Player";
-    player->position = {200, 200};
-    player->size = {64, 64};
-    player->SetTexture("test.png");
-    player->bodytype = DYNAMIC;
-    player->UpdateRect();
-    GameManager::player = player;
-    Editor::viewPropertiesObject = player;
-
-    Entity* platform = new Entity();
-    platform->name = "Platform";
-    platform->position = {100, 500};
-    platform->size = {600, 32};
-    platform->SetTexture("platform.png");
-    platform->UpdateRect();
-
-    TextObject* text = new TextObject();
-    text->name = "Text";
-    text->text = "Something";
-    text->position = {200, 100};
-
-    GameCamera* cam = new GameCamera();
-    cam->name = "Camera 1";
+    File::LoadProject("C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json");
+    Editor::projectTitle = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
+    Editor::loadedProject = true;
 
     // --------------------------------------------
 

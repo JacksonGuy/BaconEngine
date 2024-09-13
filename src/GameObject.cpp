@@ -83,6 +83,41 @@ void GameObject::SaveGameObjectJson(nlohmann::json& data) {
  */
 void GameObject::LoadGameObjectJson(nlohmann::json& data) {
     for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
-        std::cout << it.key() << std::endl;
+        std::string key = it.key();
+        auto value = *it;
+
+        // This whole segment looks ridiculous, but I promise it
+        // is for a good reason (backwards compatability).  
+
+        // Meta information
+        if (key == "ID") {
+            ID = value;
+        }
+        else if (key == "name") {
+            name = value;
+        }
+        else if (key == "tag") {
+            tag = value;
+        }
+        else if (key == "type") {
+            type = ClassType(value);
+        }
+
+        // Physical information
+        else if (key == "position") {
+            position = {value[0], value[1]};
+        }
+        else if (key == "size") {
+            size = {value[0], value[1]};
+        }
+        else if (key == "rotation") {
+            rotation = value;
+        }
+        else if (key == "isVisible") {
+            isVisible = value;
+        }
+        else if (key == "layer") {
+            layer = value;
+        }
     }
 }

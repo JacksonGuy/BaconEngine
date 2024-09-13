@@ -61,10 +61,11 @@ namespace GameManager {
      */
     void ConsoleError(std::string message) {
         time_t now = time(0);
-        char* time = ctime(&now);
-        std::string text = "[ERROR] (" + std::string(time) + "): " + message + "\n";
-        ConsoleMessages.push_back(text); 
-        free(time);
+        char* current_time = ctime(&now);
+        std::string time_str = std::string(current_time);
+        time_str.pop_back();
+        std::string text = "[ERROR] (" + time_str + "): " + message + "\n";
+        ConsoleMessages.push_back(text);
     }
 
     /**

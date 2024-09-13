@@ -42,6 +42,64 @@ void TextObject::SetFont(std::string path) {
 }
 
 /**
+ * @brief Write TextObject data to the JSON object
+ * 
+ * @param data JSON object to write to 
+ */
+void TextObject::SaveTextObjectJson(nlohmann::json& data) {
+    SaveGameObjectJson(data);
+
+    data["text"] = text;
+    data["font"] = std::filesystem::relative(font.path, GameManager::projectEntryPath).generic_string();
+    data["fontSize"] = fontSize;
+    data["charSpacing"] = charSpacing;
+    data["color"] = {
+        color.r,
+        color.g,
+        color.b,
+        color.a
+    };
+}
+
+/**
+ * @brief Loads TextObject data from JSON object
+ * 
+ * @param data the JSON object to load from
+ */
+void TextObject::LoadTextObjectJson(nlohmann::json& data) {
+    LoadGameObjectJson(data);
+
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::string key = it.key();
+        auto value = *it;
+
+        if (key == "text") {
+            text = value;
+        }
+        else if (key == "font") {
+            b_Font font = {
+                Rendering::b_LoadFont(value),
+                value
+            };
+        }
+        else if (key == "fontSize") {
+            fontSize = value;
+        }
+        else if (key == "charSpacing") {
+            charSpacing = value;
+        }
+        else if (key == "color") {
+            color = {
+                value[0],
+                value[1],
+                value[2],
+                value[3]
+            };
+        }
+    }
+}
+
+/**
  * @brief ImGui UI which shows details about the TextObject
  * 
  */

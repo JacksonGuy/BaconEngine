@@ -28,12 +28,26 @@ namespace File {
         data["Version"] = GameManager::engineVersion;
         data["Settings"]["Gravity"] = {0, GameManager::gravity};
 
-        for (size_t i = 0; i < GameManager::Entities.size(); i++) {
-            Entity* e = GameManager::Entities[i];
-            e->SaveEntityJson(data["Entities"][i]);
-        }
+        // Save GameObjects
+        for (size_t i = 0; i < GameManager::GameObjects.size(); i++) {
+            // Save general GameObject information
+            GameObject* obj = GameManager::GameObjects[i];
+            obj->SaveGameObjectJson(data["GameObjects"][i]);
 
-        // TODO other GameObjects
+            // Save information specific to object type
+            if (obj->type == ENTITY) {
+                Entity* e = (Entity*)obj;
+                e->SaveEntityJson(data["GameObjects"][i]);
+            }
+            else if (obj->type == TEXT) {
+                TextObject* text = (TextObject*)obj;
+                text->SaveTextObjectJson(data["GameObjects"][i]);
+            }
+            else if (obj->type == CAMERA) {
+                GameCamera* camera = (GameCamera*)obj;
+                camera->SaveCameraJson(data["GameObjects"][i]);
+            }
+        }
 
         outfile << std::setw(4) << data;
 
@@ -63,11 +77,24 @@ namespace File {
         GameManager::projectEntryPath = entryPath.parent_path().generic_string();
         json data = json::parse(infile);
 
-        GameManager::ConsoleMessage("Creating Entities...");
-        for (auto& entity : data["Entities"]) {
-            Entity* e = new Entity();
-            e->LoadEntityJson(entity);
+        GameManager::ConsoleMessage("Creating Objects...");
+        for (auto& obj : data["GameObjects"]) {
+            if (obj["type"] == 1) {
+               Entity* e = new Entity();
+               e->LoadEntityJson(obj); 
+            }
+            else if (obj["type"] == 2) {
+                TextObject* text = new TextObject();
+                text->LoadTextObjectJson(obj);
+            }
+            else if (obj["type"] == 3) {
+                GameCamera* camera = new GameCamera();
+                camera->LoadCameraJson(obj);
+            }
         }
+
+        GameManager::gravity = data["Settings"]["Gravity"];
+        GameManager::engineVersion = data["Version"];
 
         return false;
     }

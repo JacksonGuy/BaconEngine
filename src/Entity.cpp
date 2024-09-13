@@ -71,6 +71,29 @@ void Entity::UpdateRect() {
  */
 void Entity::SaveEntityJson(nlohmann::json& data) {
     SaveGameObjectJson(data);
+
+    data["texture"] = std::filesystem::relative(texturePath, GameManager::projectEntryPath).generic_string();
+    
+    data["bodytype"] = bodytype;
+    data["solid"] = solid;
+    data["physicsObject"] = physicsObject;
+    
+    // Save Lua Scripts
+    for (size_t i = 0; i < lua_scripts.size(); i++) {
+        std::string script = lua_scripts[i];
+        data["scripts"][i] = script;
+    }
+
+    // Save custom variables
+    for (size_t i = 0; i < variables.size(); i++) {
+        EntityVar var = variables[i];
+        data["variables"][i] = {
+            {"name", var.name},
+            {"type", var.type},
+            {"stringVal", var.stringval},
+            {"numvVal", var.numval}
+        };
+    }
 }
 
 /**
@@ -80,6 +103,45 @@ void Entity::SaveEntityJson(nlohmann::json& data) {
  */
 void Entity::LoadEntityJson(nlohmann::json& data) {
     LoadGameObjectJson(data);
+
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::string key = it.key();
+        auto value = *it;
+
+        if (key == "texture") {
+            namespace fs = std::filesystem;
+
+            std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
+            this->SetTexture(absPath);
+        }
+        else if (key == "bodytype") {
+            bodytype = PhysicsBody_t(value);
+        }
+        else if (key == "solid") {
+            solid = value;
+        }
+        else if (key == "physicsObject") {
+            physicsObject = value;
+        }
+
+        // Load scripts
+        else if (key == "scripts") {
+            for (size_t i = 0; i < data["scripts"].size(); i++) {
+                lua_scripts.push_back(data["scripts"][i]);
+            }
+        }
+
+        // Load variables
+        else if (key == "variables") {
+            for (size_t i = 0; i < data["variables"].size(); i++) {
+                EntityVar var;
+                var.name = data["variables"][i][0];
+                var.type = EntityVar_t(data["variables"][i][1]);
+                var.stringval = data["variables"][i][2];
+                var.numval = data["variables"][i][3];
+            }
+        }
+    }
 }
 
 /**

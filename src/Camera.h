@@ -9,5 +9,7 @@ class GameCamera : public GameObject {
 
         GameCamera();
         void MoveCamera(Vector2 change);
+        void SaveCameraJson(nlohmann::json& data);
+        void LoadCameraJson(nlohmann::json& data);
         void DrawPropertiesUI();
 };
