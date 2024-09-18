@@ -52,6 +52,10 @@ void GameCamera::LoadCameraJson(nlohmann::json& data) {
 
         if (key == "isActive") {
             isActive = value;
+
+            if (isActive) {
+                GameManager::activeCameraTracker = this;
+            }
         }
     }
 }

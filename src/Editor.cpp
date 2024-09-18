@@ -270,7 +270,9 @@ void DrawUI(f32 deltaTime) {
                     File::SaveProject(Editor::projectTitle);
 
                     // Change Camera
-                    GameManager::current_camera = GameManager::activeCameraTracker;
+                    if (GameManager::activeCameraTracker != nullptr) {
+                        GameManager::current_camera = GameManager::activeCameraTracker;
+                    }
 
                     GameManager::ConsoleMessage("Editor data saved. Starting game...");
                     GameManager::isPlayingGame = true;

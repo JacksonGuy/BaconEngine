@@ -26,7 +26,7 @@ namespace File {
         json data;
 
         data["Version"] = GameManager::engineVersion;
-        data["Settings"]["Gravity"] = {0, GameManager::gravity};
+        data["Settings"]["Gravity"] = GameManager::gravity;
 
         // Save GameObjects
         for (size_t i = 0; i < GameManager::GameObjects.size(); i++) {
@@ -125,7 +125,7 @@ namespace File {
             std::ofstream outfile(path);
             json data;
 
-            data["Settings"]["Gravity"] = {0, 0.2}; // Default gravity value here
+            data["Settings"]["Gravity"] = 0.2; // Default gravity value here
             data["Version"] = GameManager::engineVersion;
             outfile << std::setw(4) << data;
 
