@@ -53,6 +53,7 @@ namespace GameManager {
     void ConsoleError(std::string message);
 
     GameObject* FindObjectByID(u32 id);
+    bool PointIntersects(const GameObject& p1, Vector2 p2);
 
     void Reset();
 };

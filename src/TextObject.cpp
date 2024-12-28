@@ -42,6 +42,15 @@ void TextObject::SetFont(std::string path) {
 }
 
 /**
+ * @brief Finds the size of the GameObject from text
+ * and fontSize 
+ * 
+ */
+void TextObject::CalculateSize() {
+    size = {(float)fontSize * text.size() + charSpacing, (float)fontSize};
+}
+
+/**
  * @brief Write TextObject data to the JSON object
  * 
  * @param data JSON object to write to 
@@ -97,6 +106,7 @@ void TextObject::LoadTextObjectJson(nlohmann::json& data) {
             };
         }
     }
+    CalculateSize();
 }
 
 /**
@@ -187,10 +197,14 @@ void TextObject::DrawPropertiesUI() {
     }
 
     // Font Size
-    ImGui::InputInt("Size", &fontSize);
+    if (ImGui::InputInt("Size", &fontSize)) {
+        CalculateSize();
+    }
 
     // Character Spacing
-    ImGui::InputInt("Spacing", &charSpacing);
+    if (ImGui::InputInt("Spacing", &charSpacing)) {
+        CalculateSize();
+    }
 
     // Color
     // We have to divide/multiply by 255 because of weird ImGui quirk
@@ -207,6 +221,7 @@ void TextObject::DrawPropertiesUI() {
     strcpy(textBuff, text.c_str());
     if (ImGui::InputTextMultiline("Text", textBuff, 1024 * 16)) {
         text = textBuff;
+        CalculateSize();
     }
 
     // Delete button

@@ -29,6 +29,10 @@ namespace Editor {
 
     // Editor Camera
     GameCamera* camera = nullptr;
+    bool ToggleCameraMove = false;
+
+    // Input
+    Vector2 LastFrameMousePos = {0,0};
 
     // ImGui Toggles
     bool showEditorMessages = true;
@@ -397,6 +401,7 @@ void DrawUI(f32 deltaTime) {
                     text->name = Editor::createNameBuff;
                     text->position = {Editor::createPositionBuff[0], Editor::createPositionBuff[1]};
                     text->text = Editor::createTextBuff;
+                    text->CalculateSize();
                     Rendering::AddToLayer(text);
 
                     ClearEditorBuffers();
@@ -516,7 +521,11 @@ void DrawUI(f32 deltaTime) {
  * 
  */
 void Update(f32 deltaTime) {
-    bool windowFocused = IsWindowFocused();
+    bool windowFocused = IsWindowFocused(); // Entire program window
+    Vector2 mouse_pos = GetMousePosition();
+    Vector2 world_mouse_pos = {mouse_pos.x - Editor::sceneWindowPosition.x - 8, 
+                                mouse_pos.y - Editor::sceneWindowPosition.y - 30};
+    world_mouse_pos = GetScreenToWorld2D(world_mouse_pos, Editor::camera->camera);
 
     // Input for Editing
     if (!GameManager::isPlayingGame) {
@@ -524,10 +533,12 @@ void Update(f32 deltaTime) {
         if (Editor::sceneWindowFocused && windowFocused) {
             f32 camSpeed = 8.f;
             
+            // Camera speed modifier
             if (IsKeyDown(KEY_LEFT_SHIFT)) {
                 camSpeed *= 2.0f;
             }
 
+            // Camera Movement
             if (IsKeyDown(KEY_W)) {
                 Editor::camera->MoveCamera({0, -camSpeed});
             }
@@ -541,19 +552,48 @@ void Update(f32 deltaTime) {
                 Editor::camera->MoveCamera({camSpeed, 0});
             }
 
-            // Zoom
+            // Camera Zoom
             if (GetMouseWheelMove() > 0) {
                 Editor::camera->camera.zoom += 0.1;
             }
             else if (GetMouseWheelMove() < 0) {
                 Editor::camera->camera.zoom -= 0.1;
             }
+
+            // Mouse Select
+            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                for (GameObject* obj : GameManager::GameObjects) {
+                    if (GameManager::PointIntersects(*obj, world_mouse_pos)) {
+                        Editor::viewPropertiesObject = obj;
+                        break;
+                    }
+                }
+            }
+
+            // Middle Mouse Button
+            // AKA Camera Move
+            if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+                Editor::ToggleCameraMove = true;
+            }
+            if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
+                Editor::ToggleCameraMove = false;
+            }
+            if (Editor::ToggleCameraMove) {
+                Vector2 delta = {Editor::LastFrameMousePos.x - mouse_pos.x, 
+                                 Editor::LastFrameMousePos.y - mouse_pos.y};
+                // Multiply for speed
+                delta.x *= 1.2;
+                delta.y *= 1.2;
+                Editor::camera->MoveCamera(delta);
+            }
         }
     }
+
+    Editor::LastFrameMousePos = mouse_pos;
 }
 
 /**
- * @brief Physics and Lua
+ * @brief Physics and Scripting
  * 
  */
 void FixedUpdate(f32 deltaTime) {
@@ -691,8 +731,8 @@ int main() {
 
     // Set Editor Camera
     Editor::camera = new GameCamera();
-    GameManager::GameObjects.pop_back();
-    GameManager::GameCameras.pop_back();
+    GameManager::GameObjects.pop_back(); // Remove from Object lists since we don't count
+    GameManager::GameCameras.pop_back(); // the editor camera as apart of the game
     GameManager::current_camera = Editor::camera;
 
     // Disable Raylib Logging
@@ -702,6 +742,9 @@ int main() {
     NFD_Init();
 
     // --------------------------------------------
+
+    // For Faster Testing/Debugging
+    // Remove at some point 
 
     File::LoadProject("C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json");
     Editor::projectTitle = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";

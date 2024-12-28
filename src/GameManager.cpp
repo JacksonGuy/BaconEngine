@@ -99,6 +99,22 @@ namespace GameManager {
     }
 
     /**
+     * @brief Checks if  
+     * 
+     * @param p1 
+     * @param p2 
+     * @return true 
+     * @return false 
+     */
+    bool PointIntersects(const GameObject& obj, Vector2 point) {
+        if (point.x > obj.position.x && point.x < obj.position.x + obj.size.x &&
+            point.y > obj.position.y && point.y < obj.position.y + obj.size.y) {
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * @brief Resets the variables of the GameManager to their default values
      * 
      */
