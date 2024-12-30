@@ -69,7 +69,7 @@ namespace Rendering {
                             TextObject* text = (TextObject*)obj;
                             if (text->isVisible) {
                                 DrawTextEx(
-                                    text->font.font,
+                                    text->font,
                                     text->text.c_str(),
                                     text->position,
                                     text->fontSize,

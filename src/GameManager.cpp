@@ -11,7 +11,7 @@ namespace GameManager {
 
     // Engine
     std::string engineVersion = "0.0";
-    b_Font defaultFont = {0};
+    Font defaultFont = {0};
     GameCamera* current_camera = nullptr;
 
     // Object Lists
@@ -115,60 +115,6 @@ namespace GameManager {
                 return true;
         }
         return false;
-    }
-
-    /**
-     * @brief Loads entity data into Lua state
-     * 
-     * @param e the entity to load
-     */
-    void LuaLoadEntity(Entity* e) {
-        // Object Metadata
-        GameManager::lua["id"] = e->ID;
-        GameManager::lua["name"] = e->name;
-        GameManager::lua["tag"] = e->tag;
-        
-        // Object Physical Data
-        GameManager::lua["posx"] = e->position.x;
-        GameManager::lua["posy"] = e->position.y;
-        GameManager::lua["width"] = e->size.x;
-        GameManager::lua["height"] = e->size.y;
-        GameManager::lua["rotation"] = e->rotation;
-        GameManager::lua["layer"] = e->layer;
-        GameManager::lua["isVisible"] = e->isVisible;
-
-        // Entity Data
-        GameManager::lua["texture"] = e->texturePath;
-        GameManager::lua["solid"] = e->solid;
-        GameManager::lua["velx"] = e->velocity.x;
-        GameManager::lua["vely"] = e->velocity.y;
-    }
-
-    /**
-     * @brief Overrides entity data with Lua state data
-     * 
-     * @param e the entity to override
-     */
-    void LuaSetEntity(Entity* e) {
-        // Object Metadata
-        e->ID = GameManager::lua["id"];
-        e->name = GameManager::lua["name"];
-        e->tag = GameManager::lua["tag"];
-        
-        // Object Physical Data
-        e->position.x = GameManager::lua["posx"];
-        e->position.y = GameManager::lua["posy"];
-        e->size.x = GameManager::lua["width"];
-        e->size.y = GameManager::lua["height"];
-        e->rotation = GameManager::lua["rotation"];
-        e->layer = GameManager::lua["layer"];
-        e->isVisible = GameManager::lua["isVisible"];
-
-        // Entity Data
-        e->texturePath = GameManager::lua["texture"]; 
-        e->solid = GameManager::lua["solid"]; 
-        e->velocity.x = GameManager::lua["velx"]; 
-        e->velocity.y = GameManager::lua["vely"]; 
     }
 
     /**

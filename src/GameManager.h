@@ -20,7 +20,7 @@ namespace GameManager {
 
     // Engine
     extern std::string engineVersion;
-    extern b_Font defaultFont;
+    extern Font defaultFont;
     extern GameCamera* current_camera;
 
     // Object Lists
@@ -58,9 +58,6 @@ namespace GameManager {
 
     GameObject* FindObjectByID(u32 id);
     bool PointIntersects(const GameObject& p1, Vector2 p2);
-
-    void LuaLoadEntity(Entity* e);
-    void LuaSetEntity(Entity* e);
 
     void Reset();
 };

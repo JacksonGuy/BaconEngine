@@ -598,16 +598,37 @@ void Update(f32 deltaTime) {
     else {
         // Lua Scripts
         for (GameObject* obj : GameManager::GameObjects) {
-            if (!(obj->type == ENTITY)) continue;
-            
+            if (obj->type != ENTITY) continue;
             Entity* e = (Entity*)obj;
-            GameManager::LuaLoadEntity(e);
+            if (e->lua_scripts.empty()) continue;
+
+            GameManager::lua["this"] = e;
             for (std::string script : e->lua_scripts) {
-                GameManager::lua.script_file(script);
+                auto result = GameManager::lua.script_file(script);
+                if (!result.valid()) {
+                    GameManager::ConsoleMessage("ERROR: Running script \"" + script + "\"");
+                    // TODO End game
+                }
             }
+            // Update Entity just in case
+            e->SetTexture(e->texturePath);
             e->UpdateRect();
-            GameManager::LuaSetEntity(e);
         }
+        while (!Lua::object_references.empty()) {
+            GameObject* obj = Lua::object_references.back();
+            if (obj->type == ENTITY) {
+                Entity* e = (Entity*)obj;
+                e->SetTexture(e->texturePath);
+                e->UpdateRect();
+            }
+            else if (obj->type == TEXT) {
+                TextObject* text = (TextObject*)obj;
+                text->SetFont(text->fontPath);
+                text->CalculateSize();
+            }
+            Lua::object_references.pop_back();
+        }
+
     }
 
     Editor::LastFrameMousePos = mouse_pos;
@@ -746,16 +767,10 @@ int main() {
 
     // GameManager
     Input::InitInputMaps();
-    GameManager::defaultFont = {
-        Rendering::b_LoadFont("./arial.ttf"),
-        "arial.ttf"
-    };
+    GameManager::defaultFont = Rendering::b_LoadFont("./arial.ttf");
     GameManager::lua.open_libraries(sol::lib::base, sol::lib::package);
-    GameManager::lua["GetKeyDown"] = Lua::GetKeyDown;
-    GameManager::lua["GetKeyUp"] = Lua::GetKeyUp;
-    GameManager::lua["GetMouseDown"] = Lua::GetMouseDown;
-    GameManager::lua["GetMouseUp"] = Lua::GetMouseUp;
-    GameManager::lua["ConsoleWrite"] = Lua::ConsoleWrite;
+    Lua::RegisterFunctions();
+    Lua::RegisterClasses();
 
     // Set Editor Camera
     Editor::camera = new GameCamera();
