@@ -44,3 +44,4 @@ Test.cpp
 *.code-workspace
 *.vim
 todo.txt
+*.swp

@@ -43,7 +43,8 @@ Entity::~Entity() {
  * @param path 
  */
 void Entity::SetTexture(std::string path) {
-    Image image = Rendering::b_LoadImage(path);
+    // Image image = Rendering::b_LoadImage(path);
+    Image image = LoadImage(path.c_str());
 
     // Check if image was successfully loaded
     if (image.data == NULL) {

@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "imgui.h"
+#include <sol/sol.hpp>
 
 #include "util.h"
 #include "GameObject.h"
@@ -41,6 +42,9 @@ namespace GameManager {
     extern Vector2 lastMousePosition;
     extern std::unordered_map<KeyboardKey, bool> keypresses;
 
+    // Lua
+    extern sol::state lua;
+
     // Console
     extern ImGuiTextBuffer ConsoleBuffer;
     extern std::vector<std::string> ConsoleMessages;
@@ -54,6 +58,9 @@ namespace GameManager {
 
     GameObject* FindObjectByID(u32 id);
     bool PointIntersects(const GameObject& p1, Vector2 p2);
+
+    void LuaLoadEntity(Entity* e);
+    void LuaSetEntity(Entity* e);
 
     void Reset();
 };

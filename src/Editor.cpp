@@ -11,6 +11,8 @@
 #include "GameManager.h"
 #include "Rendering.h"
 #include "File.h"
+#include "LuaAPI.h"
+#include "Input.h"
 
 namespace Editor {
     // Project Details
@@ -151,6 +153,11 @@ void DrawUI(f32 deltaTime) {
     // Scene Window
     {
         ImGui::Begin("Scene");
+            // TODO this is lazy but it works
+            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+                ImGui::SetWindowFocus();
+            }
+
             // Get scene window details
             ImVec2 windowPos = ImGui::GetWindowPos();
             ImVec2 windowSize = ImGui::GetWindowSize();
@@ -588,6 +595,20 @@ void Update(f32 deltaTime) {
             }
         }
     }
+    else {
+        // Lua Scripts
+        for (GameObject* obj : GameManager::GameObjects) {
+            if (!(obj->type == ENTITY)) continue;
+            
+            Entity* e = (Entity*)obj;
+            GameManager::LuaLoadEntity(e);
+            for (std::string script : e->lua_scripts) {
+                GameManager::lua.script_file(script);
+            }
+            e->UpdateRect();
+            GameManager::LuaSetEntity(e);
+        }
+    }
 
     Editor::LastFrameMousePos = mouse_pos;
 }
@@ -724,10 +745,17 @@ int main() {
     EndTextureMode();
 
     // GameManager
+    Input::InitInputMaps();
     GameManager::defaultFont = {
-        Rendering::b_LoadFont("arial.ttf"),
+        Rendering::b_LoadFont("./arial.ttf"),
         "arial.ttf"
     };
+    GameManager::lua.open_libraries(sol::lib::base, sol::lib::package);
+    GameManager::lua["GetKeyDown"] = Lua::GetKeyDown;
+    GameManager::lua["GetKeyUp"] = Lua::GetKeyUp;
+    GameManager::lua["GetMouseDown"] = Lua::GetMouseDown;
+    GameManager::lua["GetMouseUp"] = Lua::GetMouseUp;
+    GameManager::lua["ConsoleWrite"] = Lua::ConsoleWrite;
 
     // Set Editor Camera
     Editor::camera = new GameCamera();

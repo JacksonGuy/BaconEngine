@@ -9,11 +9,12 @@ CFLAGS += -Iextern/nativefiledialog-extended/src/include
 #CFLAGS += -Lextern/nativefiledialog-extended/build/src/Debug
 CFLAGS += -Iextern/json
 CFLAGS += -Iextern/stb_image
+CFLAGS += -Iextern/lua/src -Lextern/lua/src
+CFLAGS += -Iextern/sol2/include
 
 BUILD_DIR = bin
 
 SOURCES = $(wildcard src/*.cpp src/**/*.cpp)
-# SOURCES += $(wildcard extern/box2d/src/*.c)
 SOURCES += extern/nativefiledialog-extended/src/nfd_win.cpp
 SOURCES += extern/rlImGui/rlImGui.cpp
 SOURCES += extern/imgui/imgui.cpp 
@@ -25,7 +26,7 @@ OBJS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 
 LINK = -lraylib -lgdi32 -lwinmm
 LINK += -lole32 -luuid -lshell32
-LINK += -lbox2d -pthread
+LINK += -lbox2d -pthread -llua
 
 EXE = editor
 
