@@ -93,6 +93,21 @@ namespace File {
             }
         }
 
+        GameManager::ConsoleMessage("Constructing Object Tree...");
+        for (auto& obj : data["GameObjects"]) {
+            i64 parentID = obj["parent"];
+            i64 childID = obj["ID"];
+
+            if (parentID != -1) {
+                GameObject* parent = GameManager::FindObjectByID(parentID);
+                GameObject* child = GameManager::FindObjectByID(childID);
+                if (parent != nullptr && child != nullptr) {
+                    parent->children.push_back(child);
+                    child->parent = parent;
+                }
+            }
+        }
+
         GameManager::gravity = data["Settings"]["Gravity"];
         GameManager::engineVersion = data["Version"];
 

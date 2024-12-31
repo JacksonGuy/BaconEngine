@@ -46,6 +46,19 @@ GameObject::~GameObject() {
         }
     }
 
+    // Remove from RenderingLayer
+    for (RenderingLayer& layer : Rendering::layers) {
+        if (layer.layerNum == this->layer) {
+            for (size_t i = 0; i < layer.objects.size(); i++) {
+                if (layer.objects[i]->ID == ID) {
+                    layer.objects.erase(layer.objects.begin() + i);
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
     // Free up ID
     GameObject::unusedIDs.push_back(this->ID);
 }
@@ -70,10 +83,13 @@ void GameObject::SaveGameObjectJson(nlohmann::json& data) {
     if (parent != nullptr) {
         data["parent"] = parent->ID;
     }
-
-    for (size_t i = 0; i < children.size(); i++) {
-        data["children"][i] = children[i]->ID;
+    else{
+        data["parent"] = -1;
     }
+
+    // for (size_t i = 0; i < children.size(); i++) {
+    //     data["children"][i] = children[i]->ID;
+    // }
 }
 
 /**

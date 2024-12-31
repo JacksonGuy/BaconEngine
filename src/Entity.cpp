@@ -43,7 +43,6 @@ Entity::~Entity() {
  * @param path 
  */
 void Entity::SetTexture(std::string path) {
-    // Image image = Rendering::b_LoadImage(path);
     Image image = LoadImage(path.c_str());
 
     // Check if image was successfully loaded
@@ -55,6 +54,8 @@ void Entity::SetTexture(std::string path) {
     ImageResize(&image, size.x, size.y);
     texture = LoadTextureFromImage(image);
     texturePath = path;
+
+    UnloadImage(image);
 }
 
 /**
@@ -110,8 +111,6 @@ void Entity::LoadEntityJson(nlohmann::json& data) {
         auto value = *it;
 
         if (key == "texture") {
-            namespace fs = std::filesystem;
-
             std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
             this->SetTexture(absPath);
         }
@@ -258,6 +257,9 @@ void Entity::DrawPropertiesUI() {
 
             // Delete
             if (ImGui::Button("Delete")) {
+                if (Editor::viewPropertiesObject == this) {
+                    Editor::viewPropertiesObject = nullptr;
+                }
                 delete(this);
             }
 

@@ -78,8 +78,10 @@ namespace GameManager {
      * @return GameObject* The GameObject, if found. Otherwise nullptr.
      */
     GameObject* FindObjectByID(u32 ID) {
+        if (GameManager::GameObjects.empty()) return nullptr;
+
         u32 low = 0;
-        u32 high = GameManager::GameObjects.size();
+        u32 high = GameManager::GameObjects.size(); 
 
         while (low <= high) {
             u32 mid = low + (high - low) / 2;

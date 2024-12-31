@@ -35,10 +35,8 @@ TextObject::~TextObject() {
  * @param path path to the .ttf file
  */
 void TextObject::SetFont(std::string path) {
-    font = {
-        Rendering::b_LoadFont(path),
-        path
-    };
+    font = Rendering::b_LoadFont(path);
+    fontPath = path;
 }
 
 /**
@@ -59,7 +57,7 @@ void TextObject::SaveTextObjectJson(nlohmann::json& data) {
     SaveGameObjectJson(data);
 
     data["text"] = text;
-    data["font"] = std::filesystem::relative(font.path, GameManager::projectEntryPath).generic_string();
+    data["font"] = std::filesystem::relative(fontPath, GameManager::projectEntryPath).generic_string();
     data["fontSize"] = fontSize;
     data["charSpacing"] = charSpacing;
     data["color"] = {
@@ -86,10 +84,9 @@ void TextObject::LoadTextObjectJson(nlohmann::json& data) {
             text = value;
         }
         else if (key == "font") {
-            b_Font font = {
-                Rendering::b_LoadFont(value),
-                value
-            };
+            std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
+            font = Rendering::b_LoadFont(absPath);
+            fontPath = absPath;
         }
         else if (key == "fontSize") {
             fontSize = value;
@@ -176,7 +173,7 @@ void TextObject::DrawPropertiesUI() {
 
         // Change font with text input
         char fontPathBuff[Editor::BUFFSIZE];
-        std::string relativePath = fs::relative(font.path).generic_string();
+        std::string relativePath = fs::relative(fontPath).generic_string();
         strcpy(fontPathBuff, relativePath.c_str());
         if (ImGui::InputText("Font", fontPathBuff, Editor::BUFFSIZE, ImGuiInputTextFlags_EnterReturnsTrue)) {
             SetFont(fontPathBuff);
@@ -226,6 +223,9 @@ void TextObject::DrawPropertiesUI() {
 
     // Delete button
     if (ImGui::Button("Delete")) {
+        if (Editor::viewPropertiesObject == this) {
+            Editor::viewPropertiesObject = nullptr;
+        }
         delete(this);
     }
 }
