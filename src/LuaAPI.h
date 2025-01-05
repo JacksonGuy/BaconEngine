@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <sol/sol.hpp>
+
 #include "GameObject.h"
 #include "Entity.h"
 #include "TextObject.h"
@@ -21,8 +23,12 @@ namespace Lua {
     bool GetMouseUp(std::string button);
     bool GetMouseRelease(std::string button);
 
+    // GameObject management
+    sol::object CreateObjectFromPrefab(std::string path);
+    sol::object CreateCopyObject(u32 id);
+    void DeleteObject(u32 id); 
+
     // Engine
     u32 GetObjectIDByName(std::string name);
-    Entity* GetEntityByID(u32 id);
-    TextObject* GetTextByID(u32 id);
+    sol::object GetObjectByID(u32 id);
 }

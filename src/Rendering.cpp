@@ -53,10 +53,12 @@ namespace Rendering {
                         if (obj->type == TEXT) {
                             TextObject* text = (TextObject*)obj;
                             if (text->isVisible) {
-                                DrawTextEx(
+                                DrawTextPro(
                                     text->font,
                                     text->text.c_str(),
                                     text->position,
+                                    {0,0},
+                                    text->rotation,
                                     text->fontSize,
                                     text->charSpacing,
                                     text->color
@@ -67,6 +69,16 @@ namespace Rendering {
                         // Camera
                         if (obj->type == CAMERA) {
                             Camera* cam = (Camera*)obj;
+                        }
+
+                        // Draw bounding box on top of texture
+                        if (obj->showBoundingBox) {
+                            DrawRectangleLinesEx(
+                                {obj->position.x, obj->position.y,
+                                obj->size.x, obj->size.y},
+                                2.f,
+                                RED
+                            );
                         }
                     }
                 }

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "imgui.h"
 #include <nfd.h>
@@ -20,8 +21,21 @@ Entity::Entity() : GameObject() {
     grounded = false;
     velocity = {0,0};
 
-    showHitbox = false;
+    GameManager::Entities.push_back(this);
+}
 
+Entity::Entity(const Entity* entity) : GameObject(entity) {
+    type = ENTITY;
+
+    SetTexture(entity->texturePath);
+
+    bodytype = entity->bodytype;
+    solid = entity->solid;
+    physicsObject = entity->physicsObject;
+    
+    grounded = false;
+    velocity = {0,0};
+    
     GameManager::Entities.push_back(this);
 }
 
@@ -145,6 +159,84 @@ void Entity::LoadEntityJson(nlohmann::json& data) {
 }
 
 /**
+ * @brief Saves the Entity data to a JSON prefab file
+ * 
+ * @param data the file to save to
+ */
+void Entity::SaveEntityPrefab(nlohmann::json& data) {
+    SaveGameObjectPrefab(data);
+
+    data["texture"] = std::filesystem::relative(texturePath, GameManager::projectEntryPath).generic_string();
+    
+    data["bodytype"] = bodytype;
+    data["solid"] = solid;
+    data["physicsObject"] = physicsObject;
+    
+    // Save Lua Scripts
+    for (size_t i = 0; i < lua_scripts.size(); i++) {
+        std::string script = lua_scripts[i];
+        data["scripts"][i] = script;
+    }
+
+    // Save custom variables
+    for (size_t i = 0; i < variables.size(); i++) {
+        EntityVar var = variables[i];
+        data["variables"][i] = {
+            {"name", var.name},
+            {"type", var.type},
+            {"stringVal", var.stringval},
+            {"numvVal", var.numval}
+        };
+    }
+}
+
+/**
+ * @brief Loads Entity data from a JSON prefab file
+ * 
+ * @param data the file to load from
+ */
+void Entity::LoadEntityPrefab(nlohmann::json& data) {
+    LoadGameObjectPrefab(data);
+
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::string key = it.key();
+        auto value = *it;
+
+        if (key == "texture") {
+            std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
+            this->SetTexture(absPath);
+        }
+        else if (key == "bodytype") {
+            bodytype = PhysicsBody_t(value);
+        }
+        else if (key == "solid") {
+            solid = value;
+        }
+        else if (key == "physicsObject") {
+            physicsObject = value;
+        }
+
+        // Load scripts
+        else if (key == "scripts") {
+            for (size_t i = 0; i < data["scripts"].size(); i++) {
+                lua_scripts.push_back(data["scripts"][i]);
+            }
+        }
+
+        // Load variables
+        else if (key == "variables") {
+            for (size_t i = 0; i < data["variables"].size(); i++) {
+                EntityVar var;
+                var.name = data["variables"][i][0];
+                var.type = EntityVar_t(data["variables"][i][1]);
+                var.stringval = data["variables"][i][2];
+                var.numval = data["variables"][i][3];
+            }
+        }
+    }
+}
+
+/**
  * @brief ImGui UI which shows details about the entity 
  * 
  */
@@ -227,7 +319,7 @@ void Entity::DrawPropertiesUI() {
             if (ImGui::InputFloat2("Size", sizeBuff)) {
                 size = {sizeBuff[0], sizeBuff[1]};
                 UpdateRect();
-                LoadTexture(texturePath.c_str());
+                this->SetTexture(texturePath);
             }
 
             // Rotation
@@ -241,25 +333,46 @@ void Entity::DrawPropertiesUI() {
                 }
             }
 
+            // Bounding Box
+            ImGui::Checkbox("Show Bounding Box", &showBoundingBox);
+
             ImGui::Separator();
 
             // Load from prefab
             if (ImGui::Button("Load from prefab")) {
-                // TODO
+                nfdu8char_t* path = NULL;
+                nfdopendialogu8args_t args = {0};
+                nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+
+                if (result == NFD_OKAY) {
+                    std::ifstream infile(path);
+                    nlohmann::json data = nlohmann::json::parse(infile);
+                    LoadEntityPrefab(data);
+                    GameManager::ConsoleMessage("Successfully Loaded Prefab");
+                }
             }
 
             ImGui::SameLine();
 
             // Save to prefab
             if (ImGui::Button("Save as prefab")) {
-                // TODO
+                nfdu8char_t* path = NULL;
+                nfdopendialogu8args_t args = {0};
+                nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+
+                if (result == NFD_OKAY) {
+                    std::ofstream outfile(path);
+                    nlohmann::json json;
+
+                    SaveEntityPrefab(json);
+                    outfile << std::setw(4) << json;
+
+                    GameManager::ConsoleMessage("Successfully Saved Prefab");
+                }
             }
 
             // Delete
             if (ImGui::Button("Delete")) {
-                if (Editor::viewPropertiesObject == this) {
-                    Editor::viewPropertiesObject = nullptr;
-                }
                 delete(this);
             }
 
@@ -276,9 +389,6 @@ void Entity::DrawPropertiesUI() {
                 // Physics Object
                 ImGui::SameLine();
                 ImGui::Checkbox("Physics Object", &physicsObject);
-
-                // Show hitbox (rect)
-                ImGui::Checkbox("Show hitbox", &showHitbox);
             }
 
             if (physicsObject) {

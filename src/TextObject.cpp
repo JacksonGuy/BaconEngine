@@ -19,6 +19,18 @@ TextObject::TextObject() : GameObject() {
     GameManager::TextObjects.push_back(this);
 }
 
+TextObject::TextObject(const TextObject* textobj) {
+    type = TEXT;
+
+    text = textobj->text;
+    font = textobj->font;
+    fontSize = textobj->fontSize;
+    charSpacing = textobj->charSpacing;
+    color = textobj->color;
+
+    GameManager::TextObjects.push_back(this);
+}
+
 TextObject::~TextObject() {
     // Remove from TextObjects
     for (size_t i = 0; i < GameManager::TextObjects.size(); i++) {
@@ -35,6 +47,8 @@ TextObject::~TextObject() {
  * @param path path to the .ttf file
  */
 void TextObject::SetFont(std::string path) {
+    if (path == "") return;
+
     font = Rendering::b_LoadFont(path);
     fontPath = path;
 }
@@ -45,7 +59,7 @@ void TextObject::SetFont(std::string path) {
  * 
  */
 void TextObject::CalculateSize() {
-    size = {(float)fontSize * text.size() + charSpacing, (float)fontSize};
+    size = MeasureTextEx(font, text.c_str(), fontSize, charSpacing);
 }
 
 /**
@@ -84,6 +98,75 @@ void TextObject::LoadTextObjectJson(nlohmann::json& data) {
             text = value;
         }
         else if (key == "font") {
+            if (value == "") {
+                font = GameManager::defaultFont;
+                continue;
+            }
+
+            std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
+            font = Rendering::b_LoadFont(absPath);
+            fontPath = absPath;
+        }
+        else if (key == "fontSize") {
+            fontSize = value;
+        }
+        else if (key == "charSpacing") {
+            charSpacing = value;
+        }
+        else if (key == "color") {
+            color = {
+                value[0],
+                value[1],
+                value[2],
+                value[3]
+            };
+        }
+    }
+    CalculateSize();
+}
+
+
+/**
+ * @brief Saves the TextObject data to a JSON prefab file
+ * 
+ * @param data the file to save to
+ */
+void TextObject::SaveTextObjectPrefab(nlohmann::json& data) {
+    SaveGameObjectPrefab(data);
+
+    data["text"] = text;
+    data["font"] = std::filesystem::relative(fontPath, GameManager::projectEntryPath).generic_string();
+    data["fontSize"] = fontSize;
+    data["charSpacing"] = charSpacing;
+    data["color"] = {
+        color.r,
+        color.g,
+        color.b,
+        color.a
+    };
+}
+
+/**
+ * @brief Loads TextObject data from JSON prefab file
+ * 
+ * @param data the file to load from
+ */
+void TextObject::LoadTextObjectPrefab(nlohmann::json& data) {
+    LoadGameObjectPrefab(data);
+
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::string key = it.key();
+        auto value = *it;
+
+        if (key == "text") {
+            text = value;
+        }
+        else if (key == "font") {
+            if (value == "") {
+                font = GameManager::defaultFont;
+                continue;
+            }
+
             std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
             font = Rendering::b_LoadFont(absPath);
             fontPath = absPath;
@@ -165,6 +248,9 @@ void TextObject::DrawPropertiesUI() {
     // Visible
     ImGui::Checkbox("Visible", &isVisible);
 
+    // Bounding Box
+    ImGui::Checkbox("Show Bounding Box", &showBoundingBox);
+
     ImGui::Separator();
 
     // Font
@@ -223,9 +309,6 @@ void TextObject::DrawPropertiesUI() {
 
     // Delete button
     if (ImGui::Button("Delete")) {
-        if (Editor::viewPropertiesObject == this) {
-            Editor::viewPropertiesObject = nullptr;
-        }
         delete(this);
     }
 }

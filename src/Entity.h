@@ -36,19 +36,19 @@ class Entity : public GameObject {
         bool grounded;
         Vector2 velocity;
 
-        // UI
-        bool showHitbox;
-
         // Lua Scripting
         std::vector<std::string> lua_scripts;
         std::vector<EntityVar> variables;
 
         // Functions
         Entity();
+        Entity(const Entity* entity);
         ~Entity();
         void SetTexture(std::string path);
         void UpdateRect();
         void SaveEntityJson(nlohmann::json& data);
         void LoadEntityJson(nlohmann::json& data);
+        void SaveEntityPrefab(nlohmann::json& data);
+        void LoadEntityPrefab(nlohmann::json& data);
         void DrawPropertiesUI();
 };

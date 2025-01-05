@@ -35,10 +35,17 @@ class GameObject {
         // Tree data
         GameObject* parent;
         std::vector<GameObject*> children;
+        Vector2 previousPosition;
+
+        // UI info
+        bool showBoundingBox; 
 
         // Functions
         GameObject();
+        GameObject(const GameObject* obj);
         ~GameObject();
         void SaveGameObjectJson(nlohmann::json& data);
         void LoadGameObjectJson(nlohmann::json& data);
+        void SaveGameObjectPrefab(nlohmann::json& data);
+        void LoadGameObjectPrefab(nlohmann::json& data);
 };

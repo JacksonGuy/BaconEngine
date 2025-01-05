@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "raylib.h"
 
@@ -19,8 +20,10 @@ namespace Lua {
 
         GameManager::lua["ConsoleWrite"] = GameManager::ConsoleMessage;
         GameManager::lua["GetObjectIDByName"] = Lua::GetObjectIDByName;
-        GameManager::lua["GetEntityByID"] = Lua::GetEntityByID;
-        GameManager::lua["GetTextByID"] = Lua::GetTextByID;
+        GameManager::lua["GetObjectByID"] = Lua::GetObjectByID;
+        GameManager::lua["CreateObjectFromPrefab"] = Lua::CreateObjectFromPrefab;
+        GameManager::lua["CreateCopyObject"] = Lua::CreateCopyObject;
+        GameManager::lua["DeleteObject"] = Lua::DeleteObject;
     }
 
     void RegisterClasses() {
@@ -91,30 +94,122 @@ namespace Lua {
         return IsMouseButtonReleased(Input::mouse_map[button]);
     }
 
+    sol::object CreateObjectFromPrefab(std::string path) {
+        std::ifstream infile(path);
+        nlohmann::json data = nlohmann::json::parse(infile);
+        
+        if (data["type"] == 1) {
+            Entity* entity = new Entity();
+            entity->LoadEntityPrefab(data);
+            object_references.push_back(entity);
+            return sol::make_object(GameManager::lua, entity);
+        }
+        else if (data["type"] == 2) {
+            TextObject* text = new TextObject();
+            text->LoadTextObjectPrefab(data);
+            object_references.push_back(text);
+            return sol::make_object(GameManager::lua, text);
+        }
+        else {
+            GameManager::ConsoleError("Invalid object type");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+    }
+
+    sol::object CreateCopyObject(u32 id) {
+        GameObject* object = GameManager::FindObjectByID(id);
+        if (object == nullptr) {
+            GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
+            return sol::make_object(GameManager::lua, sol::nil);
+        } 
+
+        if (object->type == ENTITY) {
+            Entity* e = (Entity*)object;
+            Entity* newEntity = new Entity(e);
+            object_references.push_back(e);
+            return sol::make_object(GameManager::lua, newEntity);
+        }
+        else if (object->type == TEXT) {
+            TextObject* text = (TextObject*)object;
+            TextObject* newText = new TextObject(text);
+            object_references.push_back(newText);
+            return sol::make_object(GameManager::lua, newText);
+        }
+        else if (object->type == CAMERA) {
+            GameCamera* camera = (GameCamera*)object;
+            GameCamera* newCam = new GameCamera(camera);
+            object_references.push_back(newCam);
+            return sol::make_object(GameManager::lua, newCam);
+        }
+        else {
+            GameManager::ConsoleError("Invalid object type");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+    }
+
+    void DeleteObject(u32 id) {
+        GameObject* object = GameManager::FindObjectByID(id);
+        if (object == nullptr) {
+            GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
+            return;
+        }
+
+        // This is some ugly code.
+        // The workaround to this is to make GameObject's
+        // destructor virtual, but then there's a lot of code
+        // copying going on there. For the time being, this is
+        // preferable in my opinion. 
+
+        if (object->type == ENTITY) {
+            Entity* e = (Entity*)object;
+            delete e;
+        }
+        else if (object->type == TEXT) {
+            TextObject* text = (TextObject*)object;
+            delete text;
+        }
+        else if (object->type == CAMERA) {
+            GameCamera* camera = (GameCamera*)object;
+            delete camera;
+        }
+        else {
+            delete object;
+        }
+    }
+
     u32 GetObjectIDByName(std::string name) {
         for (GameObject* obj : GameManager::GameObjects) {
             if (obj->name == name) return obj->ID;
         }
+        GameManager::ConsoleError("Object with name " + name + " does not exist");
         return -1;
     }
 
-    Entity* GetEntityByID(u32 id) {
+    sol::object GetObjectByID(u32 id) {
         GameObject* object = GameManager::FindObjectByID(id);
-        if (object == nullptr) return nullptr;
-        else if (object->type != ENTITY) return nullptr;
-        else {
-            object_references.push_back(object);
-            return (Entity*)object;
+        if (object == nullptr) {
+            GameManager::ConsoleError("Could not find Entity with ID=" + std::to_string(id));
+            return nullptr;
         }
-    }
 
-    TextObject* GetTextByID(u32 id) {
-        GameObject* object = GameManager::FindObjectByID(id);
-        if (object == nullptr) return nullptr;
-        else if (object->type != TEXT) return nullptr;
+        if (object->type == ENTITY) {
+            Entity* e = (Entity*)object;
+            object_references.push_back(e);
+            return sol::make_object(GameManager::lua, e);
+        }
+        else if (object->type == TEXT) {
+            TextObject* text = (TextObject*)object;
+            object_references.push_back(text);
+            return sol::make_object(GameManager::lua, text);
+        }
+        else if (object->type == CAMERA) {
+            GameCamera* camera = (GameCamera*)object;
+            object_references.push_back(camera);
+            return sol::make_object(GameManager::lua, camera);
+        }
         else {
-            object_references.push_back(object);
-            return (TextObject*)object;
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id) + " has unknown type");
+            return sol::make_object(GameManager::lua, sol::nil);
         }
     }
 }

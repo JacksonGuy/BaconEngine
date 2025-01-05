@@ -16,6 +16,26 @@ GameCamera::GameCamera() : GameObject() {
     GameManager::GameCameras.push_back(this);
 }
 
+GameCamera::GameCamera(const GameCamera* cam) {
+    type = CAMERA;
+
+    camera = cam->camera;
+    isActive = false;
+
+    GameManager::GameCameras.push_back(this);
+}
+
+GameCamera::~GameCamera() {
+    // Remove from GameCameras
+    for (size_t i = 0; i < GameManager::GameCameras.size(); i++) {
+        GameCamera* camera = GameManager::GameCameras[i];
+        if (camera->ID == this->ID) {
+            GameManager::GameCameras.erase(GameManager::GameCameras.begin() + i);
+            break;
+        }
+    }
+}
+
 /**
  * @brief Moves the camera by some delta vector
  * 
@@ -25,6 +45,14 @@ void GameCamera::MoveCamera(Vector2 change) {
     this->position.x += change.x;
     this->position.y += change.y;
     this->camera.target = this->position;
+}
+
+
+void GameCamera::CalculateSize(Vector2 windowSize) {
+    size = {
+        windowSize.x * camera.zoom,
+        windowSize.y * camera.zoom
+    };
 }
 
 /**
@@ -58,6 +86,24 @@ void GameCamera::LoadCameraJson(nlohmann::json& data) {
             }
         }
     }
+}
+
+/**
+ * @brief Saves Camera data from JSON prefab file
+ * 
+ * @param data the file to save to
+ */
+void GameCamera::SaveCameraPrefab(nlohmann::json& data) {
+    SaveGameObjectPrefab(data);
+}
+
+/**
+ * @brief Loads Camera data from JSON prefab file
+ * 
+ * @param data the file to load from
+ */
+void GameCamera::LoadCameraPrefab(nlohmann::json& data) {
+    LoadGameObjectPrefab(data);
 }
 
 /**
@@ -114,10 +160,18 @@ void GameCamera::DrawPropertiesUI() {
         if (rotation <= -360) {
             rotation += 360;
         }
+
+        this->camera.rotation = rotation;
     }
+
+    // Zoom
+    ImGui::InputFloat("Zoom", &this->camera.zoom);
 
     // Visible
     ImGui::Checkbox("Visible", &isVisible);
+
+    // Bounding Box
+    ImGui::Checkbox("Show Bounding Box", &showBoundingBox);
 
     ImGui::Separator();
 
@@ -127,11 +181,11 @@ void GameCamera::DrawPropertiesUI() {
     }
 
     if (ImGui::Checkbox("Active Camera", &isActive)) {
-        if (isActive == false) {
-            GameManager::current_camera = nullptr;
+        if (isActive) {
+            GameManager::activeCameraTracker = this;
         }
         else {
-            GameManager::current_camera = this;
+            GameManager::activeCameraTracker = nullptr;
         }
     }
 

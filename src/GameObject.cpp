@@ -2,6 +2,7 @@
 
 #include "raylib.h"
 
+#include "Editor.h"
 #include "GameObject.h"
 #include "GameManager.h"
 #include "Rendering.h"
@@ -31,8 +32,44 @@ GameObject::GameObject() {
 
     // Tree data
     parent = nullptr;
+    previousPosition = {0,0};
+
+    // UI info
+    showBoundingBox = false;
 
     // Add to GameManager
+    GameManager::GameObjects.push_back(this);
+    Rendering::AddToLayer(this);
+}
+
+GameObject::GameObject(const GameObject* obj) {
+    type = OBJECT;
+
+    if (!GameObject::unusedIDs.empty()) {
+        ID = GameObject::unusedIDs.back();
+        GameObject::unusedIDs.pop_back();
+    }
+    else {
+        ID = GameObject::IDCount++;
+    }
+    
+    name = obj->name;
+    tag = obj->tag;
+
+    position = obj->position;
+    size = obj->size;
+    rotation = obj->rotation;
+    isVisible = obj->isVisible;
+    layer = obj->layer;
+
+    // We don't necessarily want new object to have the same
+    // parent. This should be explicitly defined by the
+    // user when creating a new object.
+    parent = nullptr;
+    previousPosition = {0,0};
+
+    showBoundingBox = false;
+
     GameManager::GameObjects.push_back(this);
     Rendering::AddToLayer(this);
 }
@@ -57,6 +94,11 @@ GameObject::~GameObject() {
             }
             break;
         }
+    }
+
+    // Remove from ViewProperties
+    if (Editor::viewPropertiesObject == this) {
+        Editor::viewPropertiesObject = nullptr;
     }
 
     // Free up ID
@@ -86,10 +128,6 @@ void GameObject::SaveGameObjectJson(nlohmann::json& data) {
     else{
         data["parent"] = -1;
     }
-
-    // for (size_t i = 0; i < children.size(); i++) {
-    //     data["children"][i] = children[i]->ID;
-    // }
 }
 
 /**
@@ -101,9 +139,6 @@ void GameObject::LoadGameObjectJson(nlohmann::json& data) {
     for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
         std::string key = it.key();
         auto value = *it;
-
-        // This whole segment looks ridiculous, but I promise it
-        // is for a good reason (backwards compatability).  
 
         // Meta information
         if (key == "ID") {
@@ -122,6 +157,71 @@ void GameObject::LoadGameObjectJson(nlohmann::json& data) {
         // Physical information
         else if (key == "position") {
             position = {value[0], value[1]};
+            previousPosition = position;
+        }
+        else if (key == "size") {
+            size = {value[0], value[1]};
+        }
+        else if (key == "rotation") {
+            rotation = value;
+        }
+        else if (key == "isVisible") {
+            isVisible = value;
+        }
+        else if (key == "layer") {
+            layer = value;
+        }
+    }
+}
+
+/**
+ * @brief Saves GameObject data to JSON prefab file
+ * 
+ * @param data the file to save to
+ */
+void GameObject::SaveGameObjectPrefab(nlohmann::json& data) {
+    data["name"] = name;
+    data["tag"] = tag;
+    data["type"] = type;
+
+    data["position"] = {position.x, position.y};
+    data["size"] = {size.x, size.y};
+    data["rotation"] = rotation;
+    data["isVisible"] = isVisible;
+    data["layer"] = layer;
+
+    if (parent != nullptr) {
+        data["parent"] = parent->ID;
+    }
+    else{
+        data["parent"] = -1;
+    }
+}
+
+/**
+ * @brief Loads data from JSON prefab file 
+ * 
+ * @param data the file to load from
+ */
+void GameObject::LoadGameObjectPrefab(nlohmann::json& data) {
+    for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++) {
+        std::string key = it.key();
+        auto value = *it;
+
+        if (key == "name") {
+            name = value;
+        }
+        else if (key == "tag") {
+            tag = value;
+        }
+        else if (key == "type") {
+            type = ClassType(value);
+        }
+
+        // Physical information
+        else if (key == "position") {
+            position = {value[0], value[1]};
+            previousPosition = position;
         }
         else if (key == "size") {
             size = {value[0], value[1]};

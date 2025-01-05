@@ -14,10 +14,13 @@ class TextObject : public GameObject {
         Color color;
 
         TextObject();
+        TextObject(const TextObject* text);
         ~TextObject();
         void SetFont(std::string path);
         void CalculateSize();
         void SaveTextObjectJson(nlohmann::json& data);
         void LoadTextObjectJson(nlohmann::json& data);
+        void SaveTextObjectPrefab(nlohmann::json& data);
+        void LoadTextObjectPrefab(nlohmann::json& data);
         void DrawPropertiesUI();
 };

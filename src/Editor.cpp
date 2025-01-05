@@ -66,9 +66,10 @@ namespace Editor {
  */
 void DisplayEntityTree(GameObject* obj) {
     auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+    auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+                        | ImGuiTreeNodeFlags_DefaultOpen;
 
-    bool is_open = false;
+    bool is_open = true;
 
     if (obj->children.size() == 0) {    
         ImGui::TreeNodeEx(obj->name.c_str(), normalFlags);
@@ -249,7 +250,18 @@ void DrawUI(f32 deltaTime) {
                 }
 
                 if (ImGui::MenuItem("Load")) {
-                    File::LoadProject(Editor::projectTitle);
+                    nfdu8char_t* path = NULL;
+                    nfdopendialogu8args_t args = {0};
+                    nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+
+                    if (result == NFD_OKAY) {
+                        if (File::LoadProject(path)) {
+                            GameManager::ConsoleMessage("Successfully Loaded Project");
+                            Editor::loadedProject = true;
+                            Editor::projectTitle = path;
+                            SetWindowTitle(std::string("Bacon - " + std::string(path)).c_str());
+                        }
+                    }
                 }
 
                 if (GameManager::isPlayingGame) {
@@ -295,6 +307,7 @@ void DrawUI(f32 deltaTime) {
                     GameManager::Reset();
 
                     File::LoadProject(Editor::projectTitle);
+                    Editor::viewPropertiesObject = nullptr;
 
                     // Set camera back
                     GameManager::current_camera = Editor::camera;
@@ -534,7 +547,7 @@ void Update(f32 deltaTime) {
                                 mouse_pos.y - Editor::sceneWindowPosition.y - 30};
     world_mouse_pos = GetScreenToWorld2D(world_mouse_pos, Editor::camera->camera);
 
-    // Input for Editing
+    // We are editing the game
     if (!GameManager::isPlayingGame) {
         // Editor Camera Movement
         if (Editor::sceneWindowFocused && windowFocused) {
@@ -595,6 +608,7 @@ void Update(f32 deltaTime) {
             }
         }
     }
+    // We are playing the game 
     else {
         // Lua Scripts
         for (GameObject* obj : GameManager::GameObjects) {
@@ -614,6 +628,9 @@ void Update(f32 deltaTime) {
             e->SetTexture(e->texturePath);
             e->UpdateRect();
         }
+        // If the current object modifies some other object
+        // in any of its scripts, we need to update that
+        // object as well.
         while (!Lua::object_references.empty()) {
             GameObject* obj = Lua::object_references.back();
             if (obj->type == ENTITY) {
@@ -629,6 +646,25 @@ void Update(f32 deltaTime) {
             Lua::object_references.pop_back();
         }
 
+    }
+
+    for (GameObject* obj : GameManager::GameObjects) {
+        Vector2 deltaPos = {obj->position.x - obj->previousPosition.x,
+                            obj->position.y - obj->previousPosition.y};
+
+        if (deltaPos.x != 0 || deltaPos.y != 0) {
+            for (GameObject* child : obj->children) {
+                child->position = {child->position.x + deltaPos.x,
+                                    child->position.y + deltaPos.y};
+            }
+        }
+        obj->previousPosition = obj->position;
+
+        if (obj->type == CAMERA) {
+            GameCamera* camera = (GameCamera*)obj;
+            camera->camera.target = camera->position;
+            camera->CalculateSize(Editor::sceneWindowSize);
+        }
     }
 
     Editor::LastFrameMousePos = mouse_pos;
@@ -792,6 +828,7 @@ int main() {
     File::LoadProject("C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json");
     Editor::projectTitle = "C:/Users/Jackson/Desktop/BaconEngine Projects/Testing/Game.json";
     Editor::loadedProject = true;
+    SetWindowTitle(std::string("Bacon - " + Editor::projectTitle).c_str());
 
     // --------------------------------------------
 
