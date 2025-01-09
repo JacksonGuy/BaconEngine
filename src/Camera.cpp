@@ -16,7 +16,7 @@ GameCamera::GameCamera() : GameObject() {
     GameManager::GameCameras.push_back(this);
 }
 
-GameCamera::GameCamera(const GameCamera* cam) {
+GameCamera::GameCamera(const GameCamera* cam) : GameObject(cam) {
     type = CAMERA;
 
     camera = cam->camera;

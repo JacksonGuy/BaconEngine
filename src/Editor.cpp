@@ -1,6 +1,10 @@
 #include <iostream>
 #include <ctime>
 
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #include "raylib.h"
 #include "box2d/box2d.h"
 #include "imgui.h"
@@ -645,7 +649,6 @@ void Update(f32 deltaTime) {
             }
             Lua::object_references.pop_back();
         }
-
     }
 
     for (GameObject* obj : GameManager::GameObjects) {
@@ -769,6 +772,8 @@ void SetImGuiStyle() {
 }
 
 int main() {
+    // _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    
     // Initialize variables
     // Window
     GameManager::screenWidth = 1280;
@@ -846,6 +851,9 @@ int main() {
 
     rlImGuiShutdown();
     CloseWindow();
+
+    // _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+    // _CrtDumpMemoryLeaks();
 
     return 0;
 }

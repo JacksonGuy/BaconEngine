@@ -21,6 +21,9 @@ Entity::Entity() : GameObject() {
     grounded = false;
     velocity = {0,0};
 
+    lua_scripts = {};
+    variables = {};
+
     GameManager::Entities.push_back(this);
 }
 
@@ -35,6 +38,9 @@ Entity::Entity(const Entity* entity) : GameObject(entity) {
     
     grounded = false;
     velocity = {0,0};
+
+    lua_scripts = entity->lua_scripts;
+    variables = entity->variables;
     
     GameManager::Entities.push_back(this);
 }
@@ -48,6 +54,9 @@ Entity::~Entity() {
         }
     }
 
+    lua_scripts.clear();
+    variables.clear();
+
     UnloadTexture(texture);
 }
 
@@ -57,6 +66,8 @@ Entity::~Entity() {
  * @param path 
  */
 void Entity::SetTexture(std::string path) {
+    UnloadTexture(this->texture);
+    
     Image image = LoadImage(path.c_str());
 
     // Check if image was successfully loaded
@@ -153,6 +164,7 @@ void Entity::LoadEntityJson(nlohmann::json& data) {
                 var.type = EntityVar_t(data["variables"][i][1]);
                 var.stringval = data["variables"][i][2];
                 var.numval = data["variables"][i][3];
+                variables.push_back(var);
             }
         }
     }

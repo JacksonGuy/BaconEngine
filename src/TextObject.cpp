@@ -19,7 +19,7 @@ TextObject::TextObject() : GameObject() {
     GameManager::TextObjects.push_back(this);
 }
 
-TextObject::TextObject(const TextObject* textobj) {
+TextObject::TextObject(const TextObject* textobj) : GameObject(textobj) {
     type = TEXT;
 
     text = textobj->text;

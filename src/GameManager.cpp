@@ -80,11 +80,11 @@ namespace GameManager {
     GameObject* FindObjectByID(u32 ID) {
         if (GameManager::GameObjects.empty()) return nullptr;
 
-        u32 low = 0;
-        u32 high = GameManager::GameObjects.size(); 
+        int low = 0;
+        int high = GameManager::GameObjects.size() - 1; 
 
         while (low <= high) {
-            u32 mid = low + (high - low) / 2;
+            int mid = low + (high - low) / 2;
 
             // We found the game object
             if (GameManager::GameObjects[mid]->ID == ID) {
@@ -124,22 +124,22 @@ namespace GameManager {
      * 
      */
     void Reset() {
-        // Clean out vectors
-        for (Entity* e : GameManager::Entities) {
-            delete e;
+        // Delete all objects
+        for (GameObject* obj : GameManager::GameObjects) {
+            free(obj);
         }
-        for (TextObject* text : GameManager::TextObjects) {
-            delete text;
-        }
-        for (GameCamera* camera : GameManager::GameCameras) {
-            delete camera;
-        }
+
+        // Reset object vectors and ID count
         GameObjects.clear();
         GameObject::IDCount = 0;
         Entities.clear();
         TextObjects.clear();
         GameCameras.clear();
-        ConsoleMessages.clear();
+
+        // Clean Rendering layers
+        for (RenderingLayer& layer : Rendering::layers) {
+            layer.objects.clear();
+        }
 
         // Reset game info
         player = nullptr;

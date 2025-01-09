@@ -31,4 +31,7 @@ namespace Lua {
     // Engine
     u32 GetObjectIDByName(std::string name);
     sol::object GetObjectByID(u32 id);
+
+    // Testing
+    void TestFunction(); 
 }

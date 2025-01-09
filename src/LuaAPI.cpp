@@ -24,6 +24,8 @@ namespace Lua {
         GameManager::lua["CreateObjectFromPrefab"] = Lua::CreateObjectFromPrefab;
         GameManager::lua["CreateCopyObject"] = Lua::CreateCopyObject;
         GameManager::lua["DeleteObject"] = Lua::DeleteObject;
+
+        GameManager::lua["TestFunction"] = Lua::TestFunction;
     }
 
     void RegisterClasses() {
@@ -126,7 +128,7 @@ namespace Lua {
         if (object->type == ENTITY) {
             Entity* e = (Entity*)object;
             Entity* newEntity = new Entity(e);
-            object_references.push_back(e);
+            object_references.push_back(newEntity);
             return sol::make_object(GameManager::lua, newEntity);
         }
         else if (object->type == TEXT) {
@@ -182,14 +184,14 @@ namespace Lua {
             if (obj->name == name) return obj->ID;
         }
         GameManager::ConsoleError("Object with name " + name + " does not exist");
-        return -1;
+        return UINT32_MAX;
     }
 
     sol::object GetObjectByID(u32 id) {
         GameObject* object = GameManager::FindObjectByID(id);
         if (object == nullptr) {
             GameManager::ConsoleError("Could not find Entity with ID=" + std::to_string(id));
-            return nullptr;
+            return sol::make_object(GameManager::lua, sol::nil);
         }
 
         if (object->type == ENTITY) {
@@ -210,6 +212,13 @@ namespace Lua {
         else {
             GameManager::ConsoleError("Object with ID=" + std::to_string(id) + " has unknown type");
             return sol::make_object(GameManager::lua, sol::nil);
+        }
+    }
+
+    void TestFunction() {
+        std::cout << "\n" << GameManager::GameObjects.size() << "\n";
+        for (GameObject* obj : GameManager::GameObjects) {
+            std::cout << obj->name << std::endl;
         }
     }
 }
