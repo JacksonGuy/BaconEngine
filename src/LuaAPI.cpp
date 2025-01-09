@@ -7,6 +7,8 @@
 #include "Input.h"
 #include "GameManager.h"
 
+#define SOL_ALL_SAFETIES_ON 1 
+
 namespace Lua {
     std::vector<GameObject*> object_references;
 
@@ -17,13 +19,19 @@ namespace Lua {
         GameManager::lua["GetMouseDown"] = Lua::GetMouseDown;
         GameManager::lua["GetMouseUp"] = Lua::GetMouseUp;
         GameManager::lua["GetMouseRelease"] = Lua::GetMouseRelease;
+        GameManager::lua["GetMousePosition"] = Lua::GetMousePosition;
 
         GameManager::lua["ConsoleWrite"] = GameManager::ConsoleMessage;
         GameManager::lua["GetObjectIDByName"] = Lua::GetObjectIDByName;
         GameManager::lua["GetObjectByID"] = Lua::GetObjectByID;
+        GameManager::lua["GetObjectByName"] = Lua::GetObjectByName;
         GameManager::lua["CreateObjectFromPrefab"] = Lua::CreateObjectFromPrefab;
         GameManager::lua["CreateCopyObject"] = Lua::CreateCopyObject;
         GameManager::lua["DeleteObject"] = Lua::DeleteObject;
+
+        GameManager::lua["CheckCollision"] = sol::overload(
+            Lua::CheckCollisionAll, Lua::CheckCollision);
+        GameManager::lua["GetCollisionObject"] = Lua::GetCollisionObject;
 
         GameManager::lua["TestFunction"] = Lua::TestFunction;
     }
@@ -72,6 +80,7 @@ namespace Lua {
         textobject_type["charSpacing"] = &TextObject::charSpacing;
     }
 
+    // Input
     bool GetKeyDown(std::string key) {
         return IsKeyDown(Input::key_map[key]);
     }
@@ -95,6 +104,14 @@ namespace Lua {
     bool GetMouseRelease(std::string button) {
         return IsMouseButtonReleased(Input::mouse_map[button]);
     }
+
+    sol::object GetMousePosition() {
+        return sol::make_object(GameManager::lua, GameManager::WorldMousePosition);
+    }
+
+
+    // ----------------------------------------------------------------
+
 
     sol::object CreateObjectFromPrefab(std::string path) {
         std::ifstream infile(path);
@@ -179,6 +196,10 @@ namespace Lua {
         }
     }
 
+    
+    // ----------------------------------------------------------------
+
+
     u32 GetObjectIDByName(std::string name) {
         for (GameObject* obj : GameManager::GameObjects) {
             if (obj->name == name) return obj->ID;
@@ -190,7 +211,7 @@ namespace Lua {
     sol::object GetObjectByID(u32 id) {
         GameObject* object = GameManager::FindObjectByID(id);
         if (object == nullptr) {
-            GameManager::ConsoleError("Could not find Entity with ID=" + std::to_string(id));
+            GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
             return sol::make_object(GameManager::lua, sol::nil);
         }
 
@@ -214,6 +235,119 @@ namespace Lua {
             return sol::make_object(GameManager::lua, sol::nil);
         }
     }
+
+    sol::object GetObjectByName(std::string name) {
+        for (GameObject* object : GameManager::GameObjects) {
+            if (object->name != name) continue;
+            
+            if (object->type == ENTITY) {
+                Entity* e = (Entity*)object;
+                object_references.push_back(e);
+                return sol::make_object(GameManager::lua, e);
+            }
+            else if (object->type == TEXT) {
+                TextObject* text = (TextObject*)object;
+                object_references.push_back(text);
+                return sol::make_object(GameManager::lua, text);
+            }
+            else if (object->type == CAMERA) {
+                GameCamera* camera = (GameCamera*)object;
+                object_references.push_back(camera);
+                return sol::make_object(GameManager::lua, camera);
+            }
+            else {
+                GameManager::ConsoleError("Object with name " + name + " has unknown type");
+                return sol::make_object(GameManager::lua, sol::nil);
+            }
+        }
+        GameManager::ConsoleError("Could not find object with name " + name);
+        return sol::make_object(GameManager::lua, sol::nil);
+    }
+
+    
+    // ----------------------------------------------------------------
+
+
+    bool CheckCollisionAll(u32 id) {
+        GameObject* obj = GameManager::FindObjectByID(id);
+        if (obj == nullptr) {
+            GameManager::ConsoleError("No object with ID=" + std::to_string(id) + " exists");
+            return false;
+        }
+
+        Rectangle objRect = {obj->position.x, obj->position.y, obj->size.x, obj->size.y};
+
+        for (GameObject* other : GameManager::GameObjects) {
+            if (other->ID == id) continue;
+            if (other->type == TEXT || other->type == CAMERA) continue;
+
+            Rectangle otherRect = {other->position.x, other->position.y, other->size.x, other->size.y};
+            if (CheckCollisionRecs(objRect, otherRect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool CheckCollision(u32 id1, u32 id2) {
+        GameObject* obj1 = GameManager::FindObjectByID(id1);
+        if (obj1 == nullptr) {
+            GameManager::ConsoleError("No object with ID=" + std::to_string(id1) + " exists");
+            return false;
+        }
+
+        GameObject* obj2 = GameManager::FindObjectByID(id2);
+        if (obj2 == nullptr) {
+            GameManager::ConsoleError("No object with ID=" + std::to_string(id2) + " exists");
+            return false;
+        }
+
+        Rectangle r1 = {obj1->position.x, obj1->position.y, obj1->size.x, obj1->size.y};
+        Rectangle r2 = {obj2->position.x, obj2->position.y, obj2->size.x, obj2->size.y};
+
+        return CheckCollisionRecs(r1, r2);
+    }
+
+    sol::object GetCollisionObject(u32 id) {
+        GameObject* obj = GameManager::FindObjectByID(id);
+        if (obj == nullptr) {
+            GameManager::ConsoleError("No object with ID=" + std::to_string(id) + " exists");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+
+        Rectangle r1 = {obj->position.x, obj->position.y, obj->size.x, obj->size.y}; 
+
+        for (GameObject* other : GameManager::GameObjects) {
+            if (other->ID == id) continue;
+            if (other->type == TEXT || other->type == CAMERA) continue; 
+
+            Rectangle r2 = {other->position.x, other->position.y, other->size.x, other->size.y};
+            if (CheckCollisionRecs(r1, r2)) {
+                if (other->type == ENTITY) {
+                    Entity* e = (Entity*)other;
+                    return sol::make_object(GameManager::lua, e);
+                }
+                else if (other->type == TEXT) {
+                    TextObject* text = (TextObject*)other;
+                    return sol::make_object(GameManager::lua, text);
+                }
+                else if (other->type == CAMERA) {
+                    GameCamera* cam = (GameCamera*)other;
+                    return sol::make_object(GameManager::lua, cam);
+                }
+                else {
+                    GameManager::ConsoleError("Object with ID=" + 
+                        std::to_string(other->ID) + "has unknown type");
+                    return sol::make_object(GameManager::lua, sol::nil);
+                }
+            }
+        }
+        return sol::make_object(GameManager::lua, sol::nil);
+    }
+
+    
+    // ----------------------------------------------------------------
+
 
     void TestFunction() {
         std::cout << "\n" << GameManager::GameObjects.size() << "\n";

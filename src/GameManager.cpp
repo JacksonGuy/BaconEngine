@@ -20,8 +20,7 @@ namespace GameManager {
     std::vector<TextObject*> TextObjects;
     std::vector<GameCamera*> GameCameras;
 
-    // Game info 
-    Entity* player = nullptr;
+    // Game info
     bool isPlayingGame = false;
     std::string projectEntryPath = "";
     GameCamera* activeCameraTracker = nullptr;
@@ -30,7 +29,7 @@ namespace GameManager {
     bool windowHasFocus = false;
     KeyboardKey lastKeyboardInput = KEY_NULL;
     MouseButton lastMouseInput = MOUSE_BUTTON_LEFT;
-    Vector2 lastMousePosition = {0,0};
+    Vector2 WorldMousePosition = {0,0};
     std::unordered_map<KeyboardKey, bool> keypresses;
 
     // Lua
@@ -142,7 +141,6 @@ namespace GameManager {
         }
 
         // Reset game info
-        player = nullptr;
         current_camera = nullptr;
         isPlayingGame = false;
         projectEntryPath = "";

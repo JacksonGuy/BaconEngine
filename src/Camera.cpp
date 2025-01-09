@@ -192,4 +192,8 @@ void GameCamera::DrawPropertiesUI() {
     if (GameManager::activeCameraTracker != nullptr && GameManager::activeCameraTracker != this) {
         ImGui::EndDisabled();
     }
+
+    if (ImGui::Button("Delete")) {
+        delete this;
+    }
 }

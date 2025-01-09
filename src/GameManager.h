@@ -37,7 +37,6 @@ namespace GameManager {
     extern std::vector<GameCamera*> GameCameras;
 
     // Game info
-    extern Entity* player;
     extern bool isPlayingGame;
     extern std::string projectEntryPath;
     
@@ -45,7 +44,7 @@ namespace GameManager {
     extern bool windowHasFocus;
     extern KeyboardKey lastKeyboardInput;
     extern MouseButton lastMouseInput;
-    extern Vector2 lastMousePosition;
+    extern Vector2 WorldMousePosition;
     extern std::unordered_map<KeyboardKey, bool> keypresses;
 
     // Lua
@@ -63,6 +62,7 @@ namespace GameManager {
     void ConsoleError(std::string message);
 
     GameObject* FindObjectByID(u32 id);
+
     bool PointIntersects(const GameObject& p1, Vector2 p2);
 
     void Reset();

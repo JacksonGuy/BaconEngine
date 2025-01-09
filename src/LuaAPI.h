@@ -22,15 +22,22 @@ namespace Lua {
     bool GetMouseDown(std::string button);
     bool GetMouseUp(std::string button);
     bool GetMouseRelease(std::string button);
+    sol::object GetMousePosition();
 
     // GameObject management
     sol::object CreateObjectFromPrefab(std::string path);
     sol::object CreateCopyObject(u32 id);
     void DeleteObject(u32 id); 
 
-    // Engine
+    // Retrieve Objects
     u32 GetObjectIDByName(std::string name);
     sol::object GetObjectByID(u32 id);
+    sol::object GetObjectByName(std::string name);
+
+    // Physics
+    bool CheckCollisionAll(u32 id);
+    bool CheckCollision(u32 id1, u32 id2);
+    sol::object GetCollisionObject(u32 id);
 
     // Testing
     void TestFunction(); 

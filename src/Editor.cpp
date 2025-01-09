@@ -1,7 +1,6 @@
 #include <iostream>
 #include <ctime>
 
-#define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
 
@@ -17,6 +16,9 @@
 #include "File.h"
 #include "LuaAPI.h"
 #include "Input.h"
+
+// #define _CRTDBG_MAP_ALLOC
+// #define SOL_ALL_SAFETIES_ON 1 
 
 namespace Editor {
     // Project Details
@@ -143,6 +145,24 @@ void ClearEditorBuffers() {
     strcpy(Editor::createTexturePathBuff, "");
     Editor::createSizeBuff[0] = 64, Editor::createSizeBuff[1] = 64;
     strcpy(Editor::createTextBuff, "");
+}
+
+
+/**
+ * @brief Ends engine play test of game.
+ * 
+ */
+void EndGame() {
+    GameManager::Reset();
+
+    File::LoadProject(Editor::projectTitle);
+    Editor::viewPropertiesObject = nullptr;
+
+    // Set camera back
+    GameManager::current_camera = Editor::camera;
+
+    GameManager::ConsoleMessage("Game ended. Editor data restored.");
+    GameManager::isPlayingGame = false;
 }
 
 /**
@@ -308,16 +328,7 @@ void DrawUI(f32 deltaTime) {
             // End playtest button
             else {
                 if (ImGui::Button("End Game")) {
-                    GameManager::Reset();
-
-                    File::LoadProject(Editor::projectTitle);
-                    Editor::viewPropertiesObject = nullptr;
-
-                    // Set camera back
-                    GameManager::current_camera = Editor::camera;
-
-                    GameManager::ConsoleMessage("Game ended. Editor data restored.");
-                    GameManager::isPlayingGame = false;
+                    EndGame();
                 }
             }
 
@@ -549,7 +560,7 @@ void Update(f32 deltaTime) {
     Vector2 mouse_pos = GetMousePosition();
     Vector2 world_mouse_pos = {mouse_pos.x - Editor::sceneWindowPosition.x - 8, 
                                 mouse_pos.y - Editor::sceneWindowPosition.y - 30};
-    world_mouse_pos = GetScreenToWorld2D(world_mouse_pos, Editor::camera->camera);
+    world_mouse_pos = GetScreenToWorld2D(world_mouse_pos, GameManager::current_camera->camera);
 
     // We are editing the game
     if (!GameManager::isPlayingGame) {
@@ -614,6 +625,8 @@ void Update(f32 deltaTime) {
     }
     // We are playing the game 
     else {
+        GameManager::WorldMousePosition = world_mouse_pos;
+
         // Lua Scripts
         for (GameObject* obj : GameManager::GameObjects) {
             if (obj->type != ENTITY) continue;
@@ -622,10 +635,15 @@ void Update(f32 deltaTime) {
 
             GameManager::lua["this"] = e;
             for (std::string script : e->lua_scripts) {
-                auto result = GameManager::lua.script_file(script);
-                if (!result.valid()) {
-                    GameManager::ConsoleMessage("ERROR: Running script \"" + script + "\"");
-                    // TODO End game
+                try {
+                    auto result = GameManager::lua.script_file(script);
+                    if (!result.valid()) {
+                        GameManager::ConsoleError("Could not find script: " + script);
+                    }
+                } catch (sol::error error) {
+                    GameManager::ConsoleError("Error running script: " + script);
+                    GameManager::ConsoleError(error.what());
+                    EndGame();
                 }
             }
             // Update Entity just in case
