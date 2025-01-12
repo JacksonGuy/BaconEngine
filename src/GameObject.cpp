@@ -106,6 +106,21 @@ GameObject::~GameObject() {
 }
 
 /**
+ * @brief Swaps the objects rendering layer 
+ * 
+ * @param layer the new layer
+ */
+void GameObject::SetLayer(int layer) {
+    u8 newLayer = 0;
+    if (layer >= 0) {
+        newLayer = layer;
+    }
+    Rendering::RemoveFromLayer(this);
+    this->layer = newLayer;
+    Rendering::AddToLayer(this);
+}
+
+/**
  * @brief Saves the GameObject's data to a JSON object
  * 
  * @param data the JSON object to save to

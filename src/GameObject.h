@@ -44,6 +44,9 @@ class GameObject {
         GameObject();
         GameObject(const GameObject* obj);
         ~GameObject();
+
+        void SetLayer(int layer);
+
         void SaveGameObjectJson(nlohmann::json& data);
         void LoadGameObjectJson(nlohmann::json& data);
         void SaveGameObjectPrefab(nlohmann::json& data);

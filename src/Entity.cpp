@@ -66,9 +66,8 @@ Entity::~Entity() {
  * @param path 
  */
 void Entity::SetTexture(std::string path) {
-    UnloadTexture(this->texture);
-    
-    Image image = LoadImage(path.c_str());
+    std::string absPath = GameManager::projectEntryPath + "/" + std::string(path);   
+    Image image = LoadImage(absPath.c_str());
 
     // Check if image was successfully loaded
     if (image.data == NULL) {
@@ -76,10 +75,10 @@ void Entity::SetTexture(std::string path) {
         return;
     }
 
+    UnloadTexture(this->texture);
     ImageResize(&image, size.x, size.y);
-    texture = LoadTextureFromImage(image);
-    texturePath = path;
-
+    this->texture = LoadTextureFromImage(image);
+    this->texturePath = absPath;
     UnloadImage(image);
 }
 
@@ -182,8 +181,7 @@ void Entity::LoadEntityJson(nlohmann::json& data) {
         auto value = *it;
 
         if (key == "texture") {
-            std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
-            this->SetTexture(absPath);
+            this->SetTexture(std::string(value));
         }
         else if (key == "bodytype") {
             bodytype = PhysicsBody_t(value);

@@ -59,6 +59,8 @@ namespace Lua {
         entity_type["solid"] = &Entity::solid;
         entity_type["physicsObject"] = &Entity::physicsObject;
         entity_type["velocity"] = &Entity::velocity;
+        entity_type["SetLayer"] = &GameObject::SetLayer;
+        entity_type["SetTexture"] = &Entity::SetTexture;
         entity_type["GetVariable"] = &Entity::GetVariable;
         entity_type["SetVariable"] = sol::overload(
             sol::resolve<void(std::string, f64)>(&Entity::SetVariable),
@@ -81,6 +83,17 @@ namespace Lua {
         textobject_type["text"] = sol::readonly(&TextObject::text);
         textobject_type["fontSize"] = sol::readonly(&TextObject::fontSize);
         textobject_type["charSpacing"] = sol::readonly(&TextObject::charSpacing);
+        textobject_type["SetLayer"] = &GameObject::SetLayer;
+        textobject_type["SetText"] = [](TextObject* obj, std::string text) {
+            obj->text = text;
+            obj->CalculateSize();
+        };
+        textobject_type["SetSpacing"] = [](TextObject* obj, i32 spacing) {
+            obj->charSpacing = spacing;
+            obj->CalculateSize();
+        };
+        textobject_type["SetFont"] = &TextObject::SetFont;
+
     }
 
     sol::object CreateLuaObject(GameObject* obj) {

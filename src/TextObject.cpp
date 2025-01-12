@@ -49,8 +49,10 @@ TextObject::~TextObject() {
 void TextObject::SetFont(std::string path) {
     if (path == "") return;
 
-    font = Rendering::b_LoadFont(path);
-    fontPath = path;
+    std::string absPath = GameManager::projectEntryPath + "/" + path;
+    font = Rendering::b_LoadFont(absPath);
+    fontPath = absPath;
+    CalculateSize();
 }
 
 /**
@@ -103,9 +105,7 @@ void TextObject::LoadTextObjectJson(nlohmann::json& data) {
                 continue;
             }
 
-            std::string absPath = GameManager::projectEntryPath + "/" + std::string(value);
-            font = Rendering::b_LoadFont(absPath);
-            fontPath = absPath;
+            this->SetFont(value);
         }
         else if (key == "fontSize") {
             fontSize = value;
