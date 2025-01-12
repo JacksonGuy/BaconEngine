@@ -47,12 +47,39 @@ void GameCamera::MoveCamera(Vector2 change) {
     this->camera.target = this->position;
 }
 
+/**
+ * @brief Sets the absolute position of the camera
+ * 
+ * @param pos the position to set the camera to
+ */
+void GameCamera::SetPosition(Vector2 pos) {
+    this->position = pos;
+    this->camera.target = pos;
+}
 
+/**
+ * @brief Sets the size of the camera object based on the 
+ * window size and the camera zoom
+ * 
+ * @param windowSize 
+ */
 void GameCamera::CalculateSize(Vector2 windowSize) {
     size = {
         windowSize.x * camera.zoom,
         windowSize.y * camera.zoom
     };
+}
+
+/**
+ * @brief Sets this camera to the active GameCamera
+ * 
+ */
+void GameCamera::SetActive() {
+    for (GameCamera* cam : GameManager::GameCameras) {
+        cam->isActive = false;
+    }
+    this->isActive = true;
+    GameManager::activeCameraTracker = this;
 }
 
 /**

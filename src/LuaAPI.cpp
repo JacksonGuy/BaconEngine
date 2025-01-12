@@ -59,7 +59,7 @@ namespace Lua {
         entity_type["solid"] = &Entity::solid;
         entity_type["physicsObject"] = &Entity::physicsObject;
         entity_type["velocity"] = &Entity::velocity;
-        entity_type["SetLayer"] = &GameObject::SetLayer;
+        entity_type["SetLayer"] = &Entity::SetLayer;
         entity_type["SetTexture"] = &Entity::SetTexture;
         entity_type["GetVariable"] = &Entity::GetVariable;
         entity_type["SetVariable"] = sol::overload(
@@ -84,7 +84,7 @@ namespace Lua {
         textobject_type["text"] = sol::readonly(&TextObject::text);
         textobject_type["fontSize"] = sol::readonly(&TextObject::fontSize);
         textobject_type["charSpacing"] = sol::readonly(&TextObject::charSpacing);
-        textobject_type["SetLayer"] = &GameObject::SetLayer;
+        textobject_type["SetLayer"] = &TextObject::SetLayer;
         textobject_type["SetText"] = [](TextObject* obj, std::string text) {
             obj->text = text;
             obj->CalculateSize();
@@ -95,6 +95,27 @@ namespace Lua {
         };
         textobject_type["SetFont"] = &TextObject::SetFont;
 
+        sol::usertype<GameCamera> camera_type = GameManager::lua.new_usertype<GameCamera>(
+            "GameCamera",
+            sol::constructors<GameCamera()>(),
+            sol::base_classes, sol::bases<GameObject>()
+        );
+        camera_type["ID"] = sol::readonly(&GameCamera::ID);
+        camera_type["name"] = &GameCamera::name;
+        camera_type["tag"] = &GameCamera::tag;
+        camera_type["position"] = sol::readonly(&GameCamera::position);
+        camera_type["size"] = &GameCamera::size;
+        camera_type["rotation"] = &GameCamera::rotation;
+        camera_type["isVisible"] = &GameCamera::isVisible;
+        camera_type["layer"] = sol::readonly(&GameCamera::layer);
+        camera_type["SetLayer"] = &GameCamera::SetLayer;
+        camera_type["SetPosition"] = [](GameCamera* cam, f32 x, f32 y) {
+            cam->SetPosition({x, y});
+        };
+        camera_type["MoveCamera"] = [](GameCamera* cam, f32 dx, f32 dy) {
+            cam->MoveCamera({dx, dy});
+        };
+        camera_type["SetActive"] = &GameCamera::SetActive;
     }
 
     sol::object CreateLuaObject(GameObject* obj) {
@@ -111,12 +132,10 @@ namespace Lua {
             TextObject* text = (TextObject*)obj;
             return sol::make_object(GameManager::lua, text);
         }
-        /* TODO
         else if (obj->type == CAMERA) {
             GameCamera* cam = (GameCamera*)obj;
             return sol::make_object(GameManager::lua, cam);
         }
-        */
         else {
             GameManager::ConsoleError("Could not create Lua object: object has unknown type");
             return sol::make_object(GameManager::lua, sol::nil);
@@ -174,6 +193,11 @@ namespace Lua {
             text->LoadTextObjectPrefab(data);
             return sol::make_object(GameManager::lua, text);
         }
+        else if (data["type"] == 3) {
+            GameCamera* cam = new GameCamera();
+            cam->LoadCameraPrefab(data);
+            return sol::make_object(GameManager::lua, cam);
+        }
         else {
             GameManager::ConsoleError("Invalid object type");
             return sol::make_object(GameManager::lua, sol::nil);
@@ -197,13 +221,11 @@ namespace Lua {
             TextObject* newText = new TextObject(text);
             return sol::make_object(GameManager::lua, newText);
         }
-        /* TODO
         else if (object->type == CAMERA) {
             GameCamera* camera = (GameCamera*)object;
             GameCamera* newCam = new GameCamera(camera);
             return sol::make_object(GameManager::lua, newCam);
         }
-        */
         else {
             GameManager::ConsoleError("Invalid object type");
             return sol::make_object(GameManager::lua, sol::nil);

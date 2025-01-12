@@ -1,6 +1,6 @@
 cc = g++
 
-CFLAGS = -ggdb
+CFLAGS = -ggdb -O3
 CFLAGS += -Iextern/raylib/src -Lextern/raylib/src
 CFLAGS += -Iextern/box2d/include -Lextern/box2d/
 CFLAGS += -Iextern/rlImGui
