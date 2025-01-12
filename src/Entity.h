@@ -8,7 +8,8 @@
 
 enum EntityVar_t {
     NUMBER,
-    STRING
+    STRING,
+    BOOLEAN
 };
 
 enum PhysicsBody_t {
@@ -20,6 +21,7 @@ typedef struct {
     EntityVar_t type;
     std::string stringval;
     f64 numval;
+    bool boolval;
 } EntityVar;
 
 class Entity : public GameObject {
@@ -38,7 +40,6 @@ class Entity : public GameObject {
 
         // Lua Scripting
         std::vector<std::string> lua_scripts;
-        // std::vector<EntityVar> variables;
         std::map<std::string, EntityVar> variables;
 
         // Functions
@@ -50,6 +51,7 @@ class Entity : public GameObject {
         
         void SetVariable(std::string name, f64 value);
         void SetVariable(std::string name, std::string value);
+        void SetVariable(std::string name, bool value);
         sol::lua_value GetVariable(std::string name);
 
         void SaveEntityJson(nlohmann::json& data);

@@ -63,6 +63,7 @@ namespace Editor {
     i32 addVariableType = 0;
     f64 addVariableNumberVal = 0;
     char addVariableStringVal[BUFFSIZE] = {0};
+    i32 addVariableBoolVal = 0;
 };
 
 /**
@@ -632,7 +633,6 @@ void Update(f32 deltaTime) {
             if (e->lua_scripts.empty()) continue;
 
             GameManager::lua["this"] = Lua::CreateLuaObject(e);
-            GameManager::lua["variables"] = sol::new_table();
 
             // Run scripts
             for (std::string script : e->lua_scripts) {
@@ -808,7 +808,15 @@ int main() {
     // GameManager
     Input::InitInputMaps();
     GameManager::defaultFont = Rendering::b_LoadFont("./arial.ttf");
-    GameManager::lua.open_libraries(sol::lib::base, sol::lib::package);
+    GameManager::lua.open_libraries(
+        sol::lib::base, 
+        sol::lib::package,
+        sol::lib::math,
+        sol::lib::coroutine,
+        sol::lib::io,
+        sol::lib::string,
+        sol::lib::os
+    );
     Lua::RegisterFunctions();
     Lua::RegisterClasses();
 

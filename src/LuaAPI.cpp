@@ -64,7 +64,8 @@ namespace Lua {
         entity_type["GetVariable"] = &Entity::GetVariable;
         entity_type["SetVariable"] = sol::overload(
             sol::resolve<void(std::string, f64)>(&Entity::SetVariable),
-            sol::resolve<void(std::string, std::string)>(&Entity::SetVariable)
+            sol::resolve<void(std::string, std::string)>(&Entity::SetVariable),
+            sol::resolve<void(std::string, bool)>(&Entity::SetVariable)
         );
 
         sol::usertype<TextObject> textobject_type = GameManager::lua.new_usertype<TextObject>(

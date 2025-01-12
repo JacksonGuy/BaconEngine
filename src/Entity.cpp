@@ -111,6 +111,16 @@ void Entity::SetVariable(std::string name, std::string value) {
 }
 
 /**
+ * @brief Sets the value of a boolean variable. For Lua scripting.
+ * 
+ * @param name the name of the variable
+ * @param value the boolean value
+ */
+void Entity::SetVariable(std::string name, bool value) {
+    this->variables[name].boolval = value;
+}
+
+/**
  * @brief Return the value of a variable. For Lua scripting.
  * 
  * @param name the name of the variable
@@ -121,12 +131,13 @@ sol::lua_value Entity::GetVariable(std::string name) {
     if (variables.find(name) != variables.end()) {
         EntityVar var = variables[name];
         if (var.type == NUMBER) {
-            // return sol::make_object(GameManager::lua, var.numval);
             return var.numval;
         }
         else if (var.type == STRING) {
-            // return sol::make_object(GameManager::lua, var.stringval);
             return var.stringval;
+        }
+        else if (var.type == BOOLEAN) {
+            return var.boolval;
         }
     }
 
@@ -163,6 +174,7 @@ void Entity::SaveEntityJson(nlohmann::json& data) {
             {"type", it->second.type},
             {"numval", it->second.numval},
             {"stringval", it->second.stringval},
+            {"boolval", it->second.boolval}
         };
         i++;
     }
@@ -207,6 +219,7 @@ void Entity::LoadEntityJson(nlohmann::json& data) {
                 var.type = EntityVar_t(data["variables"][i]["type"]);
                 var.stringval = data["variables"][i]["stringval"];
                 var.numval = data["variables"][i]["numval"];
+                var.boolval = data["variables"][i]["boolval"];
                 variables[data["variables"][i]["name"]] = var;
             }
         }
@@ -241,6 +254,7 @@ void Entity::SaveEntityPrefab(nlohmann::json& data) {
             {"type", it->second.type},
             {"numval", it->second.numval},
             {"stringval", it->second.stringval},
+            {"boolval", it->second.boolval}
         };
         i++;
     }
@@ -286,6 +300,7 @@ void Entity::LoadEntityPrefab(nlohmann::json& data) {
                 var.type = EntityVar_t(data["variables"][i]["type"]);
                 var.stringval = data["variables"][i]["stringval"];
                 var.numval = data["variables"][i]["numval"];
+                var.boolval = data["variables"][i]["boolval"];
                 variables[data["variables"][i]["name"]] = var;
             }
         }
@@ -507,33 +522,53 @@ void Entity::DrawPropertiesUI() {
 
             // Display Entity Variables
             ImGui::Text("Variables");
-            for (auto it = variables.begin(); it != variables.end(); it++) {
+            auto it = variables.begin();
+            while(it != variables.end()) {
                 EntityVar& var = it->second;
+                const char* varName = it->first.c_str(); 
 
                 if (var.type == NUMBER) {
-                    ImGui::InputDouble(it->first.c_str(), &var.numval, 1.0, 1.0, "%.3f");
+                    ImGui::InputDouble(varName, &var.numval, 1.0, 1.0, "%.3f");
 
                     ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-                    ImGui::PushID(it->first.c_str());
+                    ImGui::PushID(varName);
                     if (ImGui::Button("X")) {
-                        variables.erase(it);
+                        it = variables.erase(it);
+                        ImGui::PopID();
+                        continue;
                     }
                     ImGui::PopID();
                 }
                 else if (var.type == STRING) {
                     char textBuff[512];
                     strcpy(textBuff, var.stringval.data());
-                    if (ImGui::InputText(it->first.c_str(), textBuff, 512)) {
+                    if (ImGui::InputText(varName, textBuff, 512)) {
                         var.stringval = textBuff;
                     }
 
                     ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-                    ImGui::PushID(it->first.c_str());
+                    ImGui::PushID(varName);
                     if (ImGui::Button("X")) {
-                        variables.erase(it);
+                        it = variables.erase(it);
+                        ImGui::PopID();
+                        continue;
                     }
                     ImGui::PopID();
                 }
+                else if (var.type == BOOLEAN) {
+                    ImGui::Checkbox(varName, &var.boolval);
+
+                    ImGui::SameLine(ImGui::GetWindowWidth() - 30);
+                    ImGui::PushID(varName);
+                    if (ImGui::Button("X")) {
+                        it = variables.erase(it);
+                        ImGui::PopID();
+                        continue;
+                    }
+                    ImGui::PopID();
+                }
+
+                ++it;
             }
 
             // Create Entity Variable
@@ -557,6 +592,8 @@ void Entity::DrawPropertiesUI() {
                 ImGui::RadioButton("Number", &Editor::addVariableType, 0);
                 ImGui::SameLine();
                 ImGui::RadioButton("String", &Editor::addVariableType, 1);
+                ImGui::SameLine();
+                ImGui::RadioButton("Boolean", &Editor::addVariableType, 2);
 
                 // Variable value
                 if (Editor::addVariableType == 0) {
@@ -564,6 +601,11 @@ void Entity::DrawPropertiesUI() {
                 }
                 else if (Editor::addVariableType == 1) {
                     ImGui::InputText("Value", Editor::addVariableStringVal, Editor::BUFFSIZE); 
+                }
+                else if (Editor::addVariableType == 2) {
+                    ImGui::RadioButton("False", &Editor::addVariableBoolVal, 0);
+                    ImGui::SameLine();
+                    ImGui::RadioButton("True", &Editor::addVariableBoolVal, 1);
                 }
 
                 // Add Variable
@@ -578,6 +620,10 @@ void Entity::DrawPropertiesUI() {
                         var.type = STRING;
                         var.stringval = Editor::addVariableStringVal;
                     }
+                    else if (Editor::addVariableType == 2) {
+                        var.type = BOOLEAN;
+                        var.boolval = Editor::addVariableBoolVal;
+                    }
 
                     variables[name] = var;
 
@@ -586,6 +632,7 @@ void Entity::DrawPropertiesUI() {
                     Editor::addVariableType = 0;
                     Editor::addVariableNumberVal = 0;
                     *Editor::addVariableStringVal = {0};
+                    Editor::addVariableBoolVal = 0;
 
                     ImGui::CloseCurrentPopup();
                 }

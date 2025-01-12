@@ -13,4 +13,5 @@ namespace Editor {
     extern i32 addVariableType;
     extern f64 addVariableNumberVal;
     extern char addVariableStringVal[BUFFSIZE];
+    extern i32 addVariableBoolVal;
 }
