@@ -628,12 +628,13 @@ void Update(f32 deltaTime) {
         GameManager::WorldMousePosition = world_mouse_pos;
 
         // Lua Scripts
-        for (GameObject* obj : GameManager::GameObjects) {
-            if (obj->type != ENTITY) continue;
-            Entity* e = (Entity*)obj;
+        for (Entity* e : GameManager::Entities) {
             if (e->lua_scripts.empty()) continue;
 
-            GameManager::lua["this"] = e;
+            GameManager::lua["this"] = Lua::CreateLuaObject(e);
+            GameManager::lua["variables"] = sol::new_table();
+
+            // Run scripts
             for (std::string script : e->lua_scripts) {
                 try {
                     auto result = GameManager::lua.script_file(script);
@@ -646,26 +647,6 @@ void Update(f32 deltaTime) {
                     EndGame();
                 }
             }
-            // Update Entity just in case
-            e->SetTexture(e->texturePath);
-            e->UpdateRect();
-        }
-        // If the current object modifies some other object
-        // in any of its scripts, we need to update that
-        // object as well.
-        while (!Lua::object_references.empty()) {
-            GameObject* obj = Lua::object_references.back();
-            if (obj->type == ENTITY) {
-                Entity* e = (Entity*)obj;
-                e->SetTexture(e->texturePath);
-                e->UpdateRect();
-            }
-            else if (obj->type == TEXT) {
-                TextObject* text = (TextObject*)obj;
-                text->SetFont(text->fontPath);
-                text->CalculateSize();
-            }
-            Lua::object_references.pop_back();
         }
     }
 
@@ -692,7 +673,7 @@ void Update(f32 deltaTime) {
 }
 
 /**
- * @brief Physics and Scripting
+ * @brief Physics
  * 
  */
 void FixedUpdate(f32 deltaTime) {

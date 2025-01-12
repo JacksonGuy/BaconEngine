@@ -4,6 +4,7 @@
 
 #include "raylib.h"
 #include "json.hpp"
+#include <sol/sol.hpp>
 
 enum EntityVar_t {
     NUMBER,
@@ -16,7 +17,6 @@ enum PhysicsBody_t {
 };
 
 typedef struct {
-    std::string name;
     EntityVar_t type;
     std::string stringval;
     f64 numval;
@@ -38,7 +38,8 @@ class Entity : public GameObject {
 
         // Lua Scripting
         std::vector<std::string> lua_scripts;
-        std::vector<EntityVar> variables;
+        // std::vector<EntityVar> variables;
+        std::map<std::string, EntityVar> variables;
 
         // Functions
         Entity();
@@ -46,6 +47,11 @@ class Entity : public GameObject {
         ~Entity();
         void SetTexture(std::string path);
         void UpdateRect();
+        
+        void SetVariable(std::string name, f64 value);
+        void SetVariable(std::string name, std::string value);
+        sol::lua_value GetVariable(std::string name);
+
         void SaveEntityJson(nlohmann::json& data);
         void LoadEntityJson(nlohmann::json& data);
         void SaveEntityPrefab(nlohmann::json& data);

@@ -10,10 +10,9 @@
 #include "TextObject.h"
 
 namespace Lua {
-    extern std::vector<GameObject*> object_references;
-
     void RegisterFunctions();
     void RegisterClasses();
+    sol::object CreateLuaObject(GameObject* obj);
 
     // Input
     bool GetKeyDown(std::string key);
@@ -27,7 +26,7 @@ namespace Lua {
     // GameObject management
     sol::object CreateObjectFromPrefab(std::string path);
     sol::object CreateCopyObject(u32 id);
-    void DeleteObject(u32 id); 
+    void DeleteObject(u32 id);
 
     // Retrieve Objects
     u32 GetObjectIDByName(std::string name);

@@ -92,6 +92,51 @@ void Entity::UpdateRect() {
 }
 
 /**
+ * @brief Sets the value of a number variable. For Lua scripting.
+ * 
+ * @param name the name of the variable.
+ * @param value the double value
+ */
+void Entity::SetVariable(std::string name, f64 value) {
+    this->variables[name].numval = value;
+}
+
+/**
+ * @brief Sets the value of a string variable. For Lua scripting.
+ * 
+ * @param name the name of the variable
+ * @param value the string value
+ */
+void Entity::SetVariable(std::string name, std::string value) {
+    this->variables[name].stringval = value;
+}
+
+/**
+ * @brief Return the value of a variable. For Lua scripting.
+ * 
+ * @param name the name of the variable
+ * @return sol::lua_value the value 
+ */
+sol::lua_value Entity::GetVariable(std::string name) {
+    // We don't want to create new variables when there isn't one
+    if (variables.find(name) != variables.end()) {
+        EntityVar var = variables[name];
+        if (var.type == NUMBER) {
+            // return sol::make_object(GameManager::lua, var.numval);
+            return var.numval;
+        }
+        else if (var.type == STRING) {
+            // return sol::make_object(GameManager::lua, var.stringval);
+            return var.stringval;
+        }
+    }
+
+    GameManager::ConsoleError("Entity with ID=" + std::to_string(this->ID)
+        + " has no variable with name " + name);
+    return sol::make_object(GameManager::lua, sol::nil);
+}
+
+/**
  * @brief Writes entity data to JSON object
  * 
  * @param data JSON object to write to
@@ -112,14 +157,15 @@ void Entity::SaveEntityJson(nlohmann::json& data) {
     }
 
     // Save custom variables
-    for (size_t i = 0; i < variables.size(); i++) {
-        EntityVar var = variables[i];
+    int i = 0;
+    for (auto it = variables.begin(); it != variables.end(); it++) {
         data["variables"][i] = {
-            {"name", var.name},
-            {"type", var.type},
-            {"stringVal", var.stringval},
-            {"numvVal", var.numval}
+            {"name", it->first},
+            {"type", it->second.type},
+            {"numval", it->second.numval},
+            {"stringval", it->second.stringval},
         };
+        i++;
     }
 }
 
@@ -160,11 +206,10 @@ void Entity::LoadEntityJson(nlohmann::json& data) {
         else if (key == "variables") {
             for (size_t i = 0; i < data["variables"].size(); i++) {
                 EntityVar var;
-                var.name = data["variables"][i][0];
-                var.type = EntityVar_t(data["variables"][i][1]);
-                var.stringval = data["variables"][i][2];
-                var.numval = data["variables"][i][3];
-                variables.push_back(var);
+                var.type = EntityVar_t(data["variables"][i]["type"]);
+                var.stringval = data["variables"][i]["stringval"];
+                var.numval = data["variables"][i]["numval"];
+                variables[data["variables"][i]["name"]] = var;
             }
         }
     }
@@ -191,14 +236,15 @@ void Entity::SaveEntityPrefab(nlohmann::json& data) {
     }
 
     // Save custom variables
-    for (size_t i = 0; i < variables.size(); i++) {
-        EntityVar var = variables[i];
+    int i = 0;
+    for (auto it = variables.begin(); it != variables.end(); it++) {
         data["variables"][i] = {
-            {"name", var.name},
-            {"type", var.type},
-            {"stringVal", var.stringval},
-            {"numvVal", var.numval}
+            {"name", it->first},
+            {"type", it->second.type},
+            {"numval", it->second.numval},
+            {"stringval", it->second.stringval},
         };
+        i++;
     }
 }
 
@@ -239,10 +285,10 @@ void Entity::LoadEntityPrefab(nlohmann::json& data) {
         else if (key == "variables") {
             for (size_t i = 0; i < data["variables"].size(); i++) {
                 EntityVar var;
-                var.name = data["variables"][i][0];
-                var.type = EntityVar_t(data["variables"][i][1]);
-                var.stringval = data["variables"][i][2];
-                var.numval = data["variables"][i][3];
+                var.type = EntityVar_t(data["variables"][i]["type"]);
+                var.stringval = data["variables"][i]["stringval"];
+                var.numval = data["variables"][i]["numval"];
+                variables[data["variables"][i]["name"]] = var;
             }
         }
     }
@@ -463,28 +509,30 @@ void Entity::DrawPropertiesUI() {
 
             // Display Entity Variables
             ImGui::Text("Variables");
-            for (size_t i = 0; i < variables.size(); i++) {
-                EntityVar var = variables[i];
+            for (auto it = variables.begin(); it != variables.end(); it++) {
+                EntityVar& var = it->second;
 
                 if (var.type == NUMBER) {
-                    ImGui::InputDouble(var.name.data(), &variables[i].numval);
+                    ImGui::InputDouble(it->first.c_str(), &var.numval, 1.0, 1.0, "%.3f");
 
                     ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-                    ImGui::PushID(var.name.data());
+                    ImGui::PushID(it->first.c_str());
                     if (ImGui::Button("X")) {
-                        variables.erase(variables.begin() + i);
+                        variables.erase(it);
                     }
                     ImGui::PopID();
                 }
                 else if (var.type == STRING) {
                     char textBuff[512];
-                    strcpy(textBuff, variables[i].stringval.data());
-                    ImGui::InputText(var.name.data(), textBuff, 512);
+                    strcpy(textBuff, var.stringval.data());
+                    if (ImGui::InputText(it->first.c_str(), textBuff, 512)) {
+                        var.stringval = textBuff;
+                    }
 
                     ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-                    ImGui::PushID(var.name.data());
+                    ImGui::PushID(it->first.c_str());
                     if (ImGui::Button("X")) {
-                        variables.erase(variables.begin() + i);
+                        variables.erase(it);
                     }
                     ImGui::PopID();
                 }
@@ -523,7 +571,7 @@ void Entity::DrawPropertiesUI() {
                 // Add Variable
                 if (ImGui::Button("Add")) {
                     EntityVar var;
-                    var.name = Editor::addVariableName;
+                    std::string name = Editor::addVariableName;
                     if (Editor::addVariableType == 0) {
                         var.type = NUMBER;
                         var.numval = Editor::addVariableNumberVal;
@@ -533,7 +581,7 @@ void Entity::DrawPropertiesUI() {
                         var.stringval = Editor::addVariableStringVal;
                     }
 
-                    variables.push_back(var);
+                    variables[name] = var;
 
                     // Reset buffers
                     *Editor::addVariableName = {0};
@@ -555,5 +603,6 @@ void Entity::DrawPropertiesUI() {
 
             ImGui::EndTabItem();
         }
+
     ImGui::EndTabBar();
 }

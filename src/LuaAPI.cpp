@@ -10,8 +10,6 @@
 #define SOL_ALL_SAFETIES_ON 1 
 
 namespace Lua {
-    std::vector<GameObject*> object_references;
-
     void RegisterFunctions() {
         GameManager::lua["GetKeyDown"] = Lua::GetKeyDown;
         GameManager::lua["GetKeyUp"] = Lua::GetKeyUp;
@@ -49,36 +47,71 @@ namespace Lua {
             sol::constructors<Entity()>(),
             sol::base_classes, sol::bases<GameObject>()
         );
-        entity_type["ID"] = &Entity::ID;
+        entity_type["ID"] = sol::readonly(&Entity::ID);
         entity_type["name"] = &Entity::name;
         entity_type["tag"] = &Entity::tag;
         entity_type["position"] = &Entity::position;
         entity_type["size"] = &Entity::size;
         entity_type["rotation"] = &Entity::rotation;
         entity_type["isVisible"] = &Entity::isVisible;
-        entity_type["layer"] = &Entity::layer;
-        entity_type["texture"] = &Entity::texturePath;
+        entity_type["layer"] = sol::readonly(&Entity::layer);
+        entity_type["texture"] = sol::readonly(&Entity::texturePath);
         entity_type["solid"] = &Entity::solid;
         entity_type["physicsObject"] = &Entity::physicsObject;
         entity_type["velocity"] = &Entity::velocity;
+        entity_type["GetVariable"] = &Entity::GetVariable;
+        entity_type["SetVariable"] = sol::overload(
+            sol::resolve<void(std::string, f64)>(&Entity::SetVariable),
+            sol::resolve<void(std::string, std::string)>(&Entity::SetVariable)
+        );
 
         sol::usertype<TextObject> textobject_type = GameManager::lua.new_usertype<TextObject>(
             "TextObject",
             sol::constructors<TextObject()>(),
             sol::base_classes, sol::bases<GameObject>()
         );
-        textobject_type["ID"] = &TextObject::ID;
+        textobject_type["ID"] = sol::readonly(&TextObject::ID);
         textobject_type["name"] = &TextObject::name;
         textobject_type["tag"] = &TextObject::tag;
         textobject_type["position"] = &TextObject::position;
         textobject_type["size"] = &TextObject::size;
         textobject_type["rotation"] = &TextObject::rotation;
         textobject_type["isVisible"] = &TextObject::isVisible;
-        textobject_type["layer"] = &TextObject::layer;
-        textobject_type["text"] = &TextObject::text;
-        textobject_type["fontSize"] = &TextObject::fontSize;
-        textobject_type["charSpacing"] = &TextObject::charSpacing;
+        textobject_type["layer"] = sol::readonly(&TextObject::layer);
+        textobject_type["text"] = sol::readonly(&TextObject::text);
+        textobject_type["fontSize"] = sol::readonly(&TextObject::fontSize);
+        textobject_type["charSpacing"] = sol::readonly(&TextObject::charSpacing);
     }
+
+    sol::object CreateLuaObject(GameObject* obj) {
+        if (obj == nullptr) {
+            GameManager::ConsoleError("Could not create Lua object: object does not exist");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+
+        if (obj->type == ENTITY) {
+            Entity* e = (Entity*)obj;
+            return sol::make_object(GameManager::lua, e);
+        }
+        else if (obj->type == TEXT) {
+            TextObject* text = (TextObject*)obj;
+            return sol::make_object(GameManager::lua, text);
+        }
+        /* TODO
+        else if (obj->type == CAMERA) {
+            GameCamera* cam = (GameCamera*)obj;
+            return sol::make_object(GameManager::lua, cam);
+        }
+        */
+        else {
+            GameManager::ConsoleError("Could not create Lua object: object has unknown type");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+    }
+
+
+    // ----------------------------------------------------------------
+
 
     // Input
     bool GetKeyDown(std::string key) {
@@ -120,13 +153,11 @@ namespace Lua {
         if (data["type"] == 1) {
             Entity* entity = new Entity();
             entity->LoadEntityPrefab(data);
-            object_references.push_back(entity);
             return sol::make_object(GameManager::lua, entity);
         }
         else if (data["type"] == 2) {
             TextObject* text = new TextObject();
             text->LoadTextObjectPrefab(data);
-            object_references.push_back(text);
             return sol::make_object(GameManager::lua, text);
         }
         else {
@@ -145,21 +176,20 @@ namespace Lua {
         if (object->type == ENTITY) {
             Entity* e = (Entity*)object;
             Entity* newEntity = new Entity(e);
-            object_references.push_back(newEntity);
             return sol::make_object(GameManager::lua, newEntity);
         }
         else if (object->type == TEXT) {
             TextObject* text = (TextObject*)object;
             TextObject* newText = new TextObject(text);
-            object_references.push_back(newText);
             return sol::make_object(GameManager::lua, newText);
         }
+        /* TODO
         else if (object->type == CAMERA) {
             GameCamera* camera = (GameCamera*)object;
             GameCamera* newCam = new GameCamera(camera);
-            object_references.push_back(newCam);
             return sol::make_object(GameManager::lua, newCam);
         }
+        */
         else {
             GameManager::ConsoleError("Invalid object type");
             return sol::make_object(GameManager::lua, sol::nil);
@@ -195,8 +225,8 @@ namespace Lua {
             delete object;
         }
     }
-
     
+
     // ----------------------------------------------------------------
 
 
@@ -210,55 +240,22 @@ namespace Lua {
 
     sol::object GetObjectByID(u32 id) {
         GameObject* object = GameManager::FindObjectByID(id);
+
         if (object == nullptr) {
             GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
             return sol::make_object(GameManager::lua, sol::nil);
         }
 
-        if (object->type == ENTITY) {
-            Entity* e = (Entity*)object;
-            object_references.push_back(e);
-            return sol::make_object(GameManager::lua, e);
-        }
-        else if (object->type == TEXT) {
-            TextObject* text = (TextObject*)object;
-            object_references.push_back(text);
-            return sol::make_object(GameManager::lua, text);
-        }
-        else if (object->type == CAMERA) {
-            GameCamera* camera = (GameCamera*)object;
-            object_references.push_back(camera);
-            return sol::make_object(GameManager::lua, camera);
-        }
-        else {
-            GameManager::ConsoleError("Object with ID=" + std::to_string(id) + " has unknown type");
-            return sol::make_object(GameManager::lua, sol::nil);
-        }
+        sol::object luaObject = Lua::CreateLuaObject(object);
+        return luaObject;
     }
 
     sol::object GetObjectByName(std::string name) {
         for (GameObject* object : GameManager::GameObjects) {
             if (object->name != name) continue;
             
-            if (object->type == ENTITY) {
-                Entity* e = (Entity*)object;
-                object_references.push_back(e);
-                return sol::make_object(GameManager::lua, e);
-            }
-            else if (object->type == TEXT) {
-                TextObject* text = (TextObject*)object;
-                object_references.push_back(text);
-                return sol::make_object(GameManager::lua, text);
-            }
-            else if (object->type == CAMERA) {
-                GameCamera* camera = (GameCamera*)object;
-                object_references.push_back(camera);
-                return sol::make_object(GameManager::lua, camera);
-            }
-            else {
-                GameManager::ConsoleError("Object with name " + name + " has unknown type");
-                return sol::make_object(GameManager::lua, sol::nil);
-            }
+            sol::object luaObject = Lua::CreateLuaObject(object);
+            return luaObject;
         }
         GameManager::ConsoleError("Could not find object with name " + name);
         return sol::make_object(GameManager::lua, sol::nil);
@@ -350,9 +347,7 @@ namespace Lua {
 
 
     void TestFunction() {
-        std::cout << "\n" << GameManager::GameObjects.size() << "\n";
-        for (GameObject* obj : GameManager::GameObjects) {
-            std::cout << obj->name << std::endl;
-        }
+        Entity* player = GameManager::Entities[0];
+        player->variables["health"].numval++; 
     }
 }
