@@ -6,6 +6,7 @@
 #include "LuaAPI.h"
 #include "Input.h"
 #include "GameManager.h"
+#include "Audio.h"
 
 #define SOL_ALL_SAFETIES_ON 1 
 
@@ -30,6 +31,15 @@ namespace Lua {
         GameManager::lua["CheckCollision"] = sol::overload(
             Lua::CheckCollisionAll, Lua::CheckCollision);
         GameManager::lua["GetCollisionObject"] = Lua::GetCollisionObject;
+
+        GameManager::lua["PlaySound"] = sol::overload(
+            sol::resolve<void(std::string)>(Audio::b_PlaySound),
+            sol::resolve<void(std::string, f32, f32, f32)>(Audio::b_PlaySound)
+        );
+        GameManager::lua["PlayMusic"] = sol::overload(
+            sol::resolve<void(std::string)>(Audio::b_PlayMusic),
+            sol::resolve<void(std::string, f32, f32, f32)>(Audio::b_PlayMusic)
+        );
 
         GameManager::lua["TestFunction"] = Lua::TestFunction;
     }

@@ -16,6 +16,7 @@
 #include "File.h"
 #include "LuaAPI.h"
 #include "Input.h"
+#include "Audio.h"
 
 // #define _CRTDBG_MAP_ALLOC
 // #define SOL_ALL_SAFETIES_ON 1 
@@ -47,6 +48,7 @@ namespace Editor {
     bool showCreateEntityMenu = false;
     bool showCreateTextMenu = false;
     bool showCreateCameraMenu = false;
+    bool showSettingsWindow = false;
 
     // ImGui Variables
     GameObject* viewPropertiesObject = nullptr;
@@ -156,6 +158,19 @@ void ClearEditorBuffers() {
 void EndGame() {
     GameManager::Reset();
 
+    // Stop Audio
+    for (auto it = Audio::music_list.begin(); it != Audio::music_list.end(); it++) {
+        MusicAsset& music = it->second;
+        StopMusicStream(music.music);
+        UnloadMusicStream(music.music);
+    }
+    for (Sound& sound : Audio::sound_list) {
+        StopSound(sound);
+        UnloadSound(sound);
+    }
+    CloseAudioDevice();
+    InitAudioDevice();
+
     File::LoadProject(Editor::projectTitle);
     Editor::viewPropertiesObject = nullptr;
 
@@ -215,7 +230,7 @@ void DrawUI(f32 deltaTime) {
     // Top Menu Bar
     {
         ImGui::BeginMainMenuBar(); 
-            if (ImGui::BeginMenu("File")) {
+            if (ImGui::BeginMenu("Menu")) {
                 // We don't want the user to save and load project while testing it  
                 if (GameManager::isPlayingGame) {
                     ImGui::BeginDisabled();
@@ -292,6 +307,10 @@ void DrawUI(f32 deltaTime) {
                 if (GameManager::isPlayingGame) {
                     ImGui::EndDisabled();
                 }
+
+                ImGui::Separator();
+
+                ImGui::MenuItem("Settings", NULL, &Editor::showSettingsWindow);
 
                 ImGui::EndMenu();
             }
@@ -549,6 +568,32 @@ void DrawUI(f32 deltaTime) {
         ImGui::End();
     }
 
+    // Settings Window
+    {
+        if (Editor::showSettingsWindow) {
+            ImGui::Begin("Settings", &Editor::showSettingsWindow);
+            ImGui::BeginTabBar("SettingsMenu");
+
+            if (ImGui::BeginTabItem("Graphics")) {
+
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Sound")) {
+
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Physics")) {
+
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+            ImGui::End();
+        }
+    }
+
     rlImGuiEnd();
 }
 
@@ -647,6 +692,21 @@ void Update(f32 deltaTime) {
                     EndGame();
                 }
             }
+        }
+
+        // Update music streams and
+        // unload finished sounds  
+        for (auto it = Audio::music_list.begin(); it != Audio::music_list.end(); it++) {
+            MusicAsset& music = it->second;
+            UpdateMusicStream(music.music);
+        }
+        auto it = Audio::sound_list.begin();
+        while (it != Audio::sound_list.end()) {
+            Sound& sound = *it;
+            if (!IsSoundPlaying(sound)) {
+                it = Audio::sound_list.erase(it);
+            }
+            else it++;
         }
     }
 
@@ -804,6 +864,9 @@ int main() {
     BeginTextureMode(Rendering::frame);
         ClearBackground(DARKGRAY);
     EndTextureMode();
+
+    // Audio
+    InitAudioDevice();
 
     // GameManager
     Input::InitInputMaps();
