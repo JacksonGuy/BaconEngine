@@ -5,6 +5,10 @@ namespace Audio {
     std::vector<Sound> sound_list;
     std::unordered_map<std::string, MusicAsset> music_list;
 
+    f32 masterVolume = 1.0;
+    f32 effectVolume = 1.0;
+    f32 musicVolume = 1.0;
+
     bool IsSoundValid(Sound sound) {
         return ((sound.frameCount > 0) &&       // Validate frame count
             (sound.stream.buffer != NULL) &&    // Validate stream buffer
@@ -25,6 +29,9 @@ namespace Audio {
         std::string absPath = GameManager::projectEntryPath + "/" + path;
         Sound sound = LoadSound(absPath.c_str());
         sound_list.push_back(sound);
+
+        SetSoundVolume(sound, masterVolume * effectVolume);
+
         PlaySound(sound);
     }
 
@@ -32,7 +39,9 @@ namespace Audio {
         std::string absPath = GameManager::projectEntryPath + "/" + path;
         Sound sound = LoadSound(absPath.c_str());
 
-        SetSoundVolume(sound, volume);
+        f32 finalVol = volume * masterVolume * effectVolume;
+
+        SetSoundVolume(sound, finalVol);
         SetSoundPitch(sound, pitch);
         SetSoundPan(sound, pan);
 
@@ -49,10 +58,13 @@ namespace Audio {
             };
             music_list[path] = music;
             
+            SetMusicVolume(music.music, masterVolume * musicVolume);
+
             PlayMusicStream(music.music);
         }
         else {
             MusicAsset& music = music_list[path];
+            SetMusicVolume(music.music, masterVolume * musicVolume);
             if (IsAudioStreamPlaying(music.music.stream)) return;
             PlayMusicStream(music.music);
         }
@@ -61,6 +73,8 @@ namespace Audio {
     void b_PlayMusic(std::string path, f32 volume, f32 pitch, f32 pan) {
         std::string absPath = GameManager::projectEntryPath + "/" + path;
 
+        f32 finalVol = volume * masterVolume * musicVolume;
+
         if (music_list.find(path) == music_list.end()) {
             MusicAsset music = {
                 LoadMusicStream(absPath.c_str()),
@@ -68,7 +82,7 @@ namespace Audio {
             };
             music_list[path] = music;
 
-            SetMusicVolume(music.music, volume);
+            SetMusicVolume(music.music, finalVol);
             SetMusicPitch(music.music, pitch);
             SetMusicPan(music.music, pan);
             
@@ -77,7 +91,7 @@ namespace Audio {
         else {
             MusicAsset& music = music_list[path];
 
-            SetMusicVolume(music.music, volume);
+            SetMusicVolume(music.music, finalVol);
             SetMusicPitch(music.music, pitch);
             SetMusicPan(music.music, pan);
 

@@ -40,6 +40,24 @@ namespace Lua {
             sol::resolve<void(std::string)>(Audio::b_PlayMusic),
             sol::resolve<void(std::string, f32, f32, f32)>(Audio::b_PlayMusic)
         );
+        GameManager::lua["SetMasterVolume"] = [](f32 volume) {
+            f32 finalVol = volume;
+            if (finalVol > 1.0) finalVol = 1.0;
+            if (finalVol < 0.0) finalVol = 0;
+            Audio::masterVolume = finalVol;
+        };
+        GameManager::lua["SetEffectsVolume"] = [](f32 volume) {
+            f32 finalVol = volume;
+            if (finalVol > 1.0) finalVol = 1.0;
+            if (finalVol < 0.0) finalVol = 0;
+            Audio::effectVolume = finalVol;
+        };
+        GameManager::lua["SetMusicVolume"] = [](f32 volume) {
+            f32 finalVol = volume;
+            if (finalVol > 1.0) finalVol = 1.0;
+            if (finalVol < 0.0) finalVol = 0;
+            Audio::musicVolume = finalVol;
+        };
 
         GameManager::lua["TestFunction"] = Lua::TestFunction;
     }
@@ -51,6 +69,15 @@ namespace Lua {
         );
         vector2_type["x"] = &Vector2::x;
         vector2_type["y"] = &Vector2::y;
+
+        sol::usertype<Color> color_type = GameManager::lua.new_usertype<Color>(
+            "Color",
+            sol::constructors<Color()>()
+        );
+        color_type["r"] = &Color::r;
+        color_type["g"] = &Color::g;
+        color_type["b"] = &Color::b;
+        color_type["a"] = &Color::a;
 
         sol::usertype<Entity> entity_type = GameManager::lua.new_usertype<Entity>(
             "Entity",
@@ -92,6 +119,7 @@ namespace Lua {
         textobject_type["isVisible"] = &TextObject::isVisible;
         textobject_type["layer"] = sol::readonly(&TextObject::layer);
         textobject_type["text"] = sol::readonly(&TextObject::text);
+        textobject_type["color"] = &TextObject::color;
         textobject_type["fontSize"] = sol::readonly(&TextObject::fontSize);
         textobject_type["charSpacing"] = sol::readonly(&TextObject::charSpacing);
         textobject_type["SetLayer"] = &TextObject::SetLayer;

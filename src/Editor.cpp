@@ -1,8 +1,9 @@
-#include <iostream>
-#include <ctime>
-
 #include <stdlib.h>
 #include <crtdbg.h>
+
+#include <iostream>
+#include <ctime>
+#include <fstream>
 
 #include "raylib.h"
 #include "box2d/box2d.h"
@@ -168,6 +169,8 @@ void EndGame() {
         StopSound(sound);
         UnloadSound(sound);
     }
+    Audio::music_list.clear();
+    Audio::sound_list.clear();
     CloseAudioDevice();
     InitAudioDevice();
 
@@ -575,12 +578,19 @@ void DrawUI(f32 deltaTime) {
             ImGui::BeginTabBar("SettingsMenu");
 
             if (ImGui::BeginTabItem("Graphics")) {
-
+                int fpsLimit = GameManager::framerateLimit;
+                if (ImGui::InputInt("FPS Limit", &fpsLimit)) {
+                    GameManager::framerateLimit = fpsLimit;
+                    SetTargetFPS(GameManager::framerateLimit);
+                }
                 ImGui::EndTabItem();
             }
 
             if (ImGui::BeginTabItem("Sound")) {
-
+                ImGui::Text("Volume");
+                ImGui::SliderFloat("Master", &Audio::masterVolume, 0.0, 1.0, "%.2f");
+                ImGui::SliderFloat("Effects", &Audio::effectVolume, 0.0, 1.0, "%.2f");
+                ImGui::SliderFloat("Music", &Audio::musicVolume, 0.0, 1.0, "%.2f");
                 ImGui::EndTabItem();
             }
 
@@ -673,6 +683,57 @@ void Update(f32 deltaTime) {
     else {
         GameManager::WorldMousePosition = world_mouse_pos;
 
+        // Update Children
+        // Yes I know this is also in FixedUpdate()
+        // Yes this is necessary
+        for (GameObject* obj : GameManager::GameObjects) {
+            Vector2 deltaPos = {obj->position.x - obj->previousPosition.x,
+                                obj->position.y - obj->previousPosition.y};
+
+            for (GameObject* child : obj->children) {
+                child->position = {child->position.x + deltaPos.x,
+                                    child->position.y + deltaPos.y};
+            }
+            obj->previousPosition = obj->position;
+
+            if (obj->type == CAMERA) {
+                GameCamera* camera = (GameCamera*)obj;
+                camera->camera.target = camera->position;
+                camera->CalculateSize(Editor::sceneWindowSize);
+            }
+        }
+
+        // Update music streams and
+        // unload finished sounds  
+        for (auto it = Audio::music_list.begin(); it != Audio::music_list.end(); it++) {
+            MusicAsset& music = it->second;
+            UpdateMusicStream(music.music);
+        }
+        auto it = Audio::sound_list.begin();
+        while (it != Audio::sound_list.end()) {
+            Sound& sound = *it;
+            if (!IsSoundPlaying(sound)) {
+                it = Audio::sound_list.erase(it);
+            }
+            else it++;
+        }
+    }
+
+    Editor::LastFrameMousePos = mouse_pos;
+}
+
+/**
+ * @brief Physics
+ * 
+ */
+void FixedUpdate(f32 deltaTime) {
+    if (!GameManager::isPlayingGame) return;
+    
+    Editor::lastFixedUpdate += deltaTime;
+
+    if (Editor::lastFixedUpdate >= Editor::fixedUpdateRate) {
+        Editor::lastFixedUpdate -= Editor::fixedUpdateRate;
+        
         // Lua Scripts
         for (Entity* e : GameManager::Entities) {
             if (e->lua_scripts.empty()) continue;
@@ -694,55 +755,7 @@ void Update(f32 deltaTime) {
             }
         }
 
-        // Update music streams and
-        // unload finished sounds  
-        for (auto it = Audio::music_list.begin(); it != Audio::music_list.end(); it++) {
-            MusicAsset& music = it->second;
-            UpdateMusicStream(music.music);
-        }
-        auto it = Audio::sound_list.begin();
-        while (it != Audio::sound_list.end()) {
-            Sound& sound = *it;
-            if (!IsSoundPlaying(sound)) {
-                it = Audio::sound_list.erase(it);
-            }
-            else it++;
-        }
-    }
-
-    for (GameObject* obj : GameManager::GameObjects) {
-        Vector2 deltaPos = {obj->position.x - obj->previousPosition.x,
-                            obj->position.y - obj->previousPosition.y};
-
-        if (deltaPos.x != 0 || deltaPos.y != 0) {
-            for (GameObject* child : obj->children) {
-                child->position = {child->position.x + deltaPos.x,
-                                    child->position.y + deltaPos.y};
-            }
-        }
-        obj->previousPosition = obj->position;
-
-        if (obj->type == CAMERA) {
-            GameCamera* camera = (GameCamera*)obj;
-            camera->camera.target = camera->position;
-            camera->CalculateSize(Editor::sceneWindowSize);
-        }
-    }
-
-    Editor::LastFrameMousePos = mouse_pos;
-}
-
-/**
- * @brief Physics
- * 
- */
-void FixedUpdate(f32 deltaTime) {
-    if (!GameManager::isPlayingGame) return;
-    
-    Editor::lastFixedUpdate += deltaTime;
-
-    if (Editor::lastFixedUpdate >= Editor::fixedUpdateRate) {
-        Editor::lastFixedUpdate -= Editor::fixedUpdateRate;
+        // Physics
         for (Entity* e : GameManager::Entities) {
             if (e->bodytype == STATIC) continue;
             
@@ -780,6 +793,26 @@ void FixedUpdate(f32 deltaTime) {
             e->position.x += e->velocity.x;
             e->position.y += e->velocity.y;
             e->UpdateRect();
+        }
+
+        // Update Children
+        // Yes I know this is also in Update()
+        // Yes this is necessary
+        for (GameObject* obj : GameManager::GameObjects) {
+            Vector2 deltaPos = {obj->position.x - obj->previousPosition.x,
+                                obj->position.y - obj->previousPosition.y};
+
+            for (GameObject* child : obj->children) {
+                child->position = {child->position.x + deltaPos.x,
+                                    child->position.y + deltaPos.y};
+            }
+            obj->previousPosition = obj->position;
+
+            if (obj->type == CAMERA) {
+                GameCamera* camera = (GameCamera*)obj;
+                camera->camera.target = camera->position;
+                camera->CalculateSize(Editor::sceneWindowSize);
+            }
         }
     }
 }
@@ -833,11 +866,25 @@ void SetImGuiStyle() {
 int main() {
     // _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     
+    // Load settings from config file
+    std::ifstream configFile("config.json");
+    nlohmann::json configData;
+    if (!configFile) {
+        configData["version"] = "0.5.0a";
+        configData["graphics"]["fpsLimit"] = 244;
+        configData["sound"]["master"] = 1.0;
+        configData["sound"]["effects"] = 1.0;
+        configData["sound"]["music"] = 1.0;
+    }
+    else {
+        configData = nlohmann::json::parse(configFile);
+    }
+
     // Initialize variables
     // Window
     GameManager::screenWidth = 1280;
     GameManager::screenHeight = 720;
-    GameManager::framerateLimit = 244;
+    GameManager::framerateLimit = configData["graphics"]["fpsLimit"];
 
     // Project Details
     std::string projectTitle;
@@ -867,6 +914,9 @@ int main() {
 
     // Audio
     InitAudioDevice();
+    Audio::masterVolume = configData["sound"]["master"];
+    Audio::effectVolume = configData["sound"]["effects"];
+    Audio::musicVolume = configData["sound"]["music"];
 
     // GameManager
     Input::InitInputMaps();
@@ -921,6 +971,15 @@ int main() {
 
     rlImGuiShutdown();
     CloseWindow();
+
+    std::ofstream cfgFile("config.json");
+    configData["graphics"]["fpsLimit"] = GameManager::framerateLimit;
+    configData["sound"]["master"] = Audio::masterVolume;
+    configData["sound"]["effects"] = Audio::effectVolume;
+    configData["sound"]["music"] = Audio::musicVolume;
+    cfgFile << std::setw(4) << configData;
+
+    cfgFile.close();
 
     // _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
     // _CrtDumpMemoryLeaks();

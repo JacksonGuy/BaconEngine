@@ -16,6 +16,10 @@ namespace Audio {
     extern std::vector<Sound> sound_list;
     extern std::unordered_map<std::string, MusicAsset> music_list;
 
+    extern f32 masterVolume;
+    extern f32 effectVolume;
+    extern f32 musicVolume;
+
     bool IsSoundValid(Sound sound);
     bool IsMusicValid(Music music);
 
