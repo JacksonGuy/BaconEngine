@@ -18,15 +18,19 @@ namespace Lua {
         GameManager::lua["GetMouseDown"] = Lua::GetMouseDown;
         GameManager::lua["GetMouseUp"] = Lua::GetMouseUp;
         GameManager::lua["GetMouseRelease"] = Lua::GetMouseRelease;
+        GameManager::lua["GetMouseWheelScroll"] = Lua::GetMouseWheelScroll;
         GameManager::lua["GetMousePosition"] = Lua::GetMousePosition;
 
         GameManager::lua["ConsoleWrite"] = GameManager::ConsoleMessage;
         GameManager::lua["GetObjectIDByName"] = Lua::GetObjectIDByName;
         GameManager::lua["GetObjectByID"] = Lua::GetObjectByID;
         GameManager::lua["GetObjectByName"] = Lua::GetObjectByName;
+        GameManager::lua["GetObjectIDs"] = Lua::GetObjectIDs;
         GameManager::lua["CreateObjectFromPrefab"] = Lua::CreateObjectFromPrefab;
         GameManager::lua["CreateCopyObject"] = Lua::CreateCopyObject;
         GameManager::lua["DeleteObject"] = Lua::DeleteObject;
+        GameManager::lua["ObjectAddChild"] = Lua::ObjectAddChild;
+        GameManager::lua["ObjectRemoveChild"] = Lua::ObjectRemoveChild;
 
         GameManager::lua["CheckCollision"] = sol::overload(
             Lua::CheckCollisionAll, Lua::CheckCollision);
@@ -104,6 +108,13 @@ namespace Lua {
             sol::resolve<void(std::string, std::string)>(&Entity::SetVariable),
             sol::resolve<void(std::string, bool)>(&Entity::SetVariable)
         );
+        entity_type["GetChildrenIDs"] = [](Entity* e) -> std::vector<u32> {
+            std::vector<u32> ids;
+            for (GameObject* child : e->children) {
+                ids.push_back(child->ID);
+            }
+            return ids;
+        };
 
         sol::usertype<TextObject> textobject_type = GameManager::lua.new_usertype<TextObject>(
             "TextObject",
@@ -209,6 +220,20 @@ namespace Lua {
         return IsMouseButtonReleased(Input::mouse_map[button]);
     }
 
+    bool GetMouseWheelScroll(std::string direction) {
+        float result = GameManager::MouseWheelDirection;
+        
+        if (result == 1 && direction == "UP") {
+            return true;
+        }
+        else if (result == -1 && direction == "DOWN") {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     sol::object GetMousePosition() {
         return sol::make_object(GameManager::lua, GameManager::WorldMousePosition);
     }
@@ -300,6 +325,74 @@ namespace Lua {
         }
     }
     
+    void ObjectAddChild(u32 parentID, u32 childID) {
+        // Make sure objects with the given IDs exist
+        if (parentID >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Parent ID=" + std::to_string(parentID) + " does not exist");
+            return;
+        }
+        if (childID >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Child ID=" + std::to_string(childID) + " does not exist");
+            return;
+        }
+        
+        // Get Objects
+        GameObject* object = GameManager::GameObjects[parentID];
+        GameObject* child = GameManager::GameObjects[childID];
+
+        // Remove from current parent if it has one
+        if (child->parent != nullptr) {
+            GameObject* parent = child->parent;
+            for (size_t i = 0; i < parent->children.size(); i++) {
+                if (parent->children[i]->ID == child->ID) {
+                    parent->children.erase(parent->children.begin() + i);
+                    break;
+                }
+            }
+        }
+        child->parent = nullptr;
+        
+        // Add to new parent
+        object->children.push_back(child);
+        child->parent = object;
+    }
+
+    void ObjectRemoveChild(u32 parentID, u32 childID) {
+        // Make sure objects with the given IDs exist
+        if (parentID >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Parent ID=" + std::to_string(parentID) + " does not exist");
+            return;
+        }
+        if (childID >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Child ID=" + std::to_string(childID) + " does not exist");
+            return;
+        }
+
+        // Get Objects
+        GameObject* parent = GameManager::GameObjects[parentID];
+        GameObject* child = GameManager::GameObjects[childID];
+
+        // Remove child from parent
+        bool found = false;
+        for (size_t i = 0; i < parent->children.size(); i++) {
+            GameObject* obj = parent->children[i];
+            if (obj->ID == child->ID) {
+                parent->children.erase(parent->children.begin() + i);
+                found = true;
+                break;
+            }
+        }
+        // If the user made a mistake, and the given parentID is not actually
+        // the parent of childID, we don't want to change anything.
+        if (found) {
+            child->parent = nullptr;
+        }
+        else {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(childID) + 
+                " is not a child of object with ID=" + std::to_string(parentID));
+        }
+    }
+
 
     // ----------------------------------------------------------------
 
@@ -333,6 +426,16 @@ namespace Lua {
         }
         GameManager::ConsoleError("Could not find object with name " + name);
         return sol::make_object(GameManager::lua, sol::nil);
+    }
+
+    std::vector<u32> GetObjectIDs() {
+        std::vector<u32> ids;
+
+        for (GameObject* obj : GameManager::GameObjects) {
+            ids.push_back(obj->ID);
+        }
+
+        return ids;
     }
 
     

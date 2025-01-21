@@ -682,6 +682,7 @@ void Update(f32 deltaTime) {
     // We are playing the game 
     else {
         GameManager::WorldMousePosition = world_mouse_pos;
+        GameManager::MouseWheelDirection = GetMouseWheelMove();
 
         // Update Children
         // Yes I know this is also in FixedUpdate()

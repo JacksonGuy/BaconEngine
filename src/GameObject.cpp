@@ -70,7 +70,15 @@ GameObject::GameObject(const GameObject* obj) {
 
     showBoundingBox = false;
 
-    GameManager::GameObjects.push_back(this);
+    if (this->ID == GameManager::GameObjects.size()) {
+        // O(1)
+        GameManager::GameObjects.push_back(this);
+    }
+    else {
+        // We want to keep GameObjects sorted by ID
+        // O(n)
+        GameManager::GameObjects.insert(GameManager::GameObjects.begin() + this->ID, this);
+    }
     Rendering::AddToLayer(this);
 }
 

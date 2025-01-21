@@ -45,6 +45,7 @@ namespace GameManager {
     extern KeyboardKey lastKeyboardInput;
     extern MouseButton lastMouseInput;
     extern Vector2 WorldMousePosition;
+    extern float MouseWheelDirection;
     extern std::unordered_map<KeyboardKey, bool> keypresses;
 
     // Lua

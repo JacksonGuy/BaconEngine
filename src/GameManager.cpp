@@ -30,6 +30,7 @@ namespace GameManager {
     KeyboardKey lastKeyboardInput = KEY_NULL;
     MouseButton lastMouseInput = MOUSE_BUTTON_LEFT;
     Vector2 WorldMousePosition = {0,0};
+    float MouseWheelDirection = 0;
     std::unordered_map<KeyboardKey, bool> keypresses;
 
     // Lua
