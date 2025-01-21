@@ -44,6 +44,27 @@ namespace Lua {
             sol::resolve<void(std::string)>(Audio::b_PlayMusic),
             sol::resolve<void(std::string, f32, f32, f32)>(Audio::b_PlayMusic)
         );
+        GameManager::lua["IsMusicPlaying"] = [](std::string name) -> bool {
+            if (Audio::music_list.find(name) != Audio::music_list.end()) {
+                return IsMusicStreamPlaying(Audio::music_list[name].music);
+            }
+        };
+        GameManager::lua["PauseMusic"] = [](std::string name) {
+            if (Audio::music_list.find(name) != Audio::music_list.end()) {
+                PauseMusicStream(Audio::music_list[name].music);
+            }
+        };
+        GameManager::lua["ResumeMusic"] = [](std::string name) {
+            if (Audio::music_list.find(name) != Audio::music_list.end()) {
+                ResumeMusicStream(Audio::music_list[name].music);
+            }
+        };
+        GameManager::lua["StopMusic"] = [](std::string name) {
+            if (Audio::music_list.find(name) != Audio::music_list.end()) {
+                StopMusicStream(Audio::music_list[name].music);
+            }
+        };
+
         GameManager::lua["SetMasterVolume"] = [](f32 volume) {
             f32 finalVol = volume;
             if (finalVol > 1.0) finalVol = 1.0;

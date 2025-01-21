@@ -151,9 +151,8 @@ void ClearEditorBuffers() {
     strcpy(Editor::createTextBuff, "");
 }
 
-
 /**
- * @brief Ends engine play test of game.
+ * @brief Ends engine play test of the game.
  * 
  */
 void EndGame() {
@@ -182,6 +181,55 @@ void EndGame() {
 
     GameManager::ConsoleMessage("Game ended. Editor data restored.");
     GameManager::isPlayingGame = false;
+}
+
+/**
+ * @brief Starts engine play test of the game.
+ * 
+ */
+void StartGame() {
+    // Save changes before starting 
+    File::SaveProject(Editor::projectTitle);
+
+    // Change Camera
+    if (GameManager::activeCameraTracker != nullptr) {
+        GameManager::current_camera = GameManager::activeCameraTracker;
+    }
+
+    // Run Lua OnStart functions
+    for (Entity* e : GameManager::Entities) {
+        if (e->lua_scripts.empty()) continue;
+
+        GameManager::lua["this"] = Lua::CreateLuaObject(e);
+
+        // Run scripts
+        for (std::string script : e->lua_scripts) {
+            try {
+                auto result = GameManager::lua.script_file(script);
+                if (!result.valid()) {
+                    GameManager::ConsoleError("Could not find script: " + script);
+                }
+                else {
+                    sol::protected_function startFunc = GameManager::lua["OnStart"];
+                    sol::protected_function_result startResult = startFunc();
+
+                    if (!startResult.valid()) {
+                        sol::error err = startResult;
+                        GameManager::ConsoleError("Could not run OnStart function on Entity with ID="
+                            + std::to_string(e->ID));
+                        GameManager::ConsoleError(err.what());
+                    }
+                }
+            } catch (sol::error error) {
+                GameManager::ConsoleError("Error running script: " + script);
+                GameManager::ConsoleError(error.what());
+                EndGame();
+            }
+        }
+    }
+
+    GameManager::ConsoleMessage("Editor data saved. Starting game...");
+    GameManager::isPlayingGame = true;
 }
 
 /**
@@ -337,15 +385,7 @@ void DrawUI(f32 deltaTime) {
             // Playtest game button
             if (!GameManager::isPlayingGame) {
                 if (ImGui::Button("Play Game")) {
-                    File::SaveProject(Editor::projectTitle);
-
-                    // Change Camera
-                    if (GameManager::activeCameraTracker != nullptr) {
-                        GameManager::current_camera = GameManager::activeCameraTracker;
-                    }
-
-                    GameManager::ConsoleMessage("Editor data saved. Starting game...");
-                    GameManager::isPlayingGame = true;
+                    StartGame();
                 }
             }
             // End playtest button
@@ -684,6 +724,37 @@ void Update(f32 deltaTime) {
         GameManager::WorldMousePosition = world_mouse_pos;
         GameManager::MouseWheelDirection = GetMouseWheelMove();
 
+        // Lua Scripts
+        for (Entity* e : GameManager::Entities) {
+            if (e->lua_scripts.empty()) continue;
+
+            GameManager::lua["this"] = Lua::CreateLuaObject(e);
+
+            for (std::string script : e->lua_scripts) {
+                try {
+                    auto result = GameManager::lua.script_file(script);
+                    if (!result.valid()) {
+                        GameManager::ConsoleError("Could not find script: " + script);
+                    }
+                    else {
+                        sol::protected_function updateFunc = GameManager::lua["Update"];
+                        sol::protected_function_result updateResult = updateFunc();
+
+                        if (!updateResult.valid()) {
+                            sol::error err = updateResult;
+                            GameManager::ConsoleError("Could not run Update function on Entity with ID="
+                                + std::to_string(e->ID));
+                            GameManager::ConsoleError(err.what());
+                        }
+                    }
+                } catch (sol::error error) {
+                    GameManager::ConsoleError("Error running script: " + script);
+                    GameManager::ConsoleError(error.what());
+                    EndGame();
+                }
+            }
+        }
+
         // Update Children
         // Yes I know this is also in FixedUpdate()
         // Yes this is necessary
@@ -708,7 +779,9 @@ void Update(f32 deltaTime) {
         // unload finished sounds  
         for (auto it = Audio::music_list.begin(); it != Audio::music_list.end(); it++) {
             MusicAsset& music = it->second;
-            UpdateMusicStream(music.music);
+            if (IsMusicStreamPlaying(music.music)) {
+                UpdateMusicStream(music.music);
+            }
         }
         auto it = Audio::sound_list.begin();
         while (it != Audio::sound_list.end()) {
@@ -747,6 +820,17 @@ void FixedUpdate(f32 deltaTime) {
                     auto result = GameManager::lua.script_file(script);
                     if (!result.valid()) {
                         GameManager::ConsoleError("Could not find script: " + script);
+                    }
+                    else {
+                        sol::protected_function updateFunc = GameManager::lua["FixedUpdate"];
+                        sol::protected_function_result updateResult = updateFunc();
+
+                        if (!updateResult.valid()) {
+                            sol::error err = updateResult;
+                            GameManager::ConsoleError("Could not run FixedUpdate function on Entity with ID="
+                                + std::to_string(e->ID));
+                            GameManager::ConsoleError(err.what());
+                        }
                     }
                 } catch (sol::error error) {
                     GameManager::ConsoleError("Error running script: " + script);
