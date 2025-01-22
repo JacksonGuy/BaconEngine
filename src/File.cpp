@@ -99,8 +99,8 @@ namespace File {
             i64 childID = obj["ID"];
 
             if (parentID != -1) {
-                GameObject* parent = GameManager::FindObjectByID(parentID);
-                GameObject* child = GameManager::FindObjectByID(childID);
+                GameObject* parent = GameManager::GameObjects[parentID];
+                GameObject* child = GameManager::GameObjects[childID];
                 if (parent != nullptr && child != nullptr) {
                     parent->children.push_back(child);
                     child->parent = parent;

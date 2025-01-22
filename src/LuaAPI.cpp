@@ -21,7 +21,7 @@ namespace Lua {
         GameManager::lua["GetMouseWheelScroll"] = Lua::GetMouseWheelScroll;
         GameManager::lua["GetMousePosition"] = Lua::GetMousePosition;
 
-        GameManager::lua["ConsoleWrite"] = GameManager::ConsoleMessage;
+        GameManager::lua["ConsoleWrite"] = GameManager::ConsoleGameMessage;
         GameManager::lua["GetObjectIDByName"] = Lua::GetObjectIDByName;
         GameManager::lua["GetObjectByID"] = Lua::GetObjectByID;
         GameManager::lua["GetObjectByName"] = Lua::GetObjectByName;
@@ -48,6 +48,7 @@ namespace Lua {
             if (Audio::music_list.find(name) != Audio::music_list.end()) {
                 return IsMusicStreamPlaying(Audio::music_list[name].music);
             }
+            return false;
         };
         GameManager::lua["PauseMusic"] = [](std::string name) {
             if (Audio::music_list.find(name) != Audio::music_list.end()) {
@@ -289,7 +290,14 @@ namespace Lua {
     }
 
     sol::object CreateCopyObject(u32 id) {
-        GameObject* object = GameManager::FindObjectByID(id);
+        if (id >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id)
+                + " does not exist");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+
+        GameObject* object = GameManager::GameObjects[id];
+
         if (object == nullptr) {
             GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
             return sol::make_object(GameManager::lua, sol::nil);
@@ -317,7 +325,14 @@ namespace Lua {
     }
 
     void DeleteObject(u32 id) {
-        GameObject* object = GameManager::FindObjectByID(id);
+        if (id >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id)
+                + " does not exist");
+            return;
+        }
+
+        GameObject* object = GameManager::GameObjects[id];
+        
         if (object == nullptr) {
             GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
             return;
@@ -427,15 +442,14 @@ namespace Lua {
     }
 
     sol::object GetObjectByID(u32 id) {
-        GameObject* object = GameManager::FindObjectByID(id);
-
-        if (object == nullptr) {
-            GameManager::ConsoleError("Could not find object with ID=" + std::to_string(id));
+        if (id >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id)
+                + " does not exist");
             return sol::make_object(GameManager::lua, sol::nil);
         }
 
-        sol::object luaObject = Lua::CreateLuaObject(object);
-        return luaObject;
+        GameObject* object = GameManager::GameObjects[id];
+        return Lua::CreateLuaObject(object); 
     }
 
     sol::object GetObjectByName(std::string name) {
@@ -464,7 +478,14 @@ namespace Lua {
 
 
     bool CheckCollisionAll(u32 id) {
-        GameObject* obj = GameManager::FindObjectByID(id);
+        if (id >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id)
+                + " does not exist");
+            return false;
+        }
+
+        GameObject* obj = GameManager::GameObjects[id];
+        
         if (obj == nullptr) {
             GameManager::ConsoleError("No object with ID=" + std::to_string(id) + " exists");
             return false;
@@ -485,13 +506,24 @@ namespace Lua {
     }
 
     bool CheckCollision(u32 id1, u32 id2) {
-        GameObject* obj1 = GameManager::FindObjectByID(id1);
+        if (id1 >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id1)
+                + " does not exist");
+            return false;
+        }
+        if (id2 >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id1)
+                + " does not exist");
+            return false;
+        }
+
+        GameObject* obj1 = GameManager::GameObjects[id1];
         if (obj1 == nullptr) {
             GameManager::ConsoleError("No object with ID=" + std::to_string(id1) + " exists");
             return false;
         }
 
-        GameObject* obj2 = GameManager::FindObjectByID(id2);
+        GameObject* obj2 = GameManager::GameObjects[id2];
         if (obj2 == nullptr) {
             GameManager::ConsoleError("No object with ID=" + std::to_string(id2) + " exists");
             return false;
@@ -504,7 +536,13 @@ namespace Lua {
     }
 
     sol::object GetCollisionObject(u32 id) {
-        GameObject* obj = GameManager::FindObjectByID(id);
+        if (id >= GameManager::GameObjects.size()) {
+            GameManager::ConsoleError("Object with ID=" + std::to_string(id)
+                + " does not exist");
+            return sol::make_object(GameManager::lua, sol::nil);
+        }
+
+        GameObject* obj = GameManager::GameObjects[id];
         if (obj == nullptr) {
             GameManager::ConsoleError("No object with ID=" + std::to_string(id) + " exists");
             return sol::make_object(GameManager::lua, sol::nil);

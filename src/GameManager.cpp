@@ -57,6 +57,16 @@ namespace GameManager {
         ConsoleMessages.push_back(text); 
     }
 
+
+    void ConsoleGameMessage(std::string message) {
+        time_t now = time(0);
+        char* current_time = ctime(&now);
+        std::string time_str = std::string(current_time);
+        time_str.pop_back();
+        std::string text = "[GAME] (" + time_str + "): " + message + "\n";
+        ConsoleMessages.push_back(text); 
+    }
+
     /**
      * @brief Writes an error message to the console window
      * 

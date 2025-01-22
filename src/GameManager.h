@@ -60,6 +60,7 @@ namespace GameManager {
 
     // Functions
     void ConsoleMessage(std::string message);
+    void ConsoleGameMessage(std::string message);
     void ConsoleError(std::string message);
 
     GameObject* FindObjectByID(u32 id);

@@ -46,6 +46,8 @@ namespace Editor {
 
     // ImGui Toggles
     bool showEditorMessages = true;
+    bool showGameMessages = true;
+    bool showErrorMessages = true;
     bool showCreateEntityMenu = false;
     bool showCreateTextMenu = false;
     bool showCreateCameraMenu = false;
@@ -104,7 +106,7 @@ void DisplayEntityTree(GameObject* obj) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_ID")) {
             // Get Object
             u32 sourceID = *(u32*)payload->Data;
-            GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
+            GameObject* sourceObject = GameManager::GameObjects[sourceID];
 
             if (sourceObject != nullptr) {
                 // Remove from parent
@@ -550,7 +552,7 @@ void DrawUI(f32 deltaTime) {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_ID")) {
                         // Get Entity
                         u32 sourceID = *(u32*)payload->Data;
-                        GameObject* sourceObject = GameManager::FindObjectByID(sourceID);
+                        GameObject* sourceObject = GameManager::GameObjects[sourceID];
 
                         if (sourceObject != nullptr) {
                             // Remove from parent
@@ -586,28 +588,50 @@ void DrawUI(f32 deltaTime) {
     // Debug Console
     {
         ImGui::Begin("Console");
+            ImGui::Checkbox("Engine Messages", &Editor::showEditorMessages);
+            ImGui::SameLine();
+            ImGui::Checkbox("Error Messages", &Editor::showErrorMessages);
+            ImGui::SameLine();
+            ImGui::Checkbox("Game Messages", &Editor::showGameMessages);
             if (ImGui::Button("Clear")) {
                 GameManager::ConsoleMessages.clear();
-                // GameManager::ConsoleBuffer.clear();
             }
-            ImGui::SameLine();
-            ImGui::Checkbox("Engine Messages", &Editor::showEditorMessages);
             
             ImGui::Separator();
         
             // Filter console messages
             GameManager::ConsoleBuffer.clear();
             for (std::string str : GameManager::ConsoleMessages) {
-                GameManager::ConsoleBuffer.append(str.c_str());
+                // Get message prefix to determine type
+                std::string messageType = "";
+                for (size_t i = 1; i < str.size(); i++) {
+                    if (str[i] == ']') {
+                        break;
+                    }
+                    messageType += str[i];
+                }
+
+                // Filter messages based on type
+                if (messageType == "ENGINE" && Editor::showEditorMessages) {
+                    GameManager::ConsoleBuffer.append(str.c_str());
+                }
+                else if (messageType == "GAME" && Editor::showGameMessages) {
+                    GameManager::ConsoleBuffer.append(str.c_str());
+                }
+                else if (messageType == "ERROR" && Editor::showErrorMessages) {
+                    GameManager::ConsoleBuffer.append(str.c_str());
+                }
             }
 
             // Display messages
-            ImGui::TextUnformatted(GameManager::ConsoleBuffer.begin(), GameManager::ConsoleBuffer.end());
+            ImGui::BeginChild("scrollRegion");
+                ImGui::TextUnformatted(GameManager::ConsoleBuffer.begin(), GameManager::ConsoleBuffer.end());
             
-            // Auto scroll
-            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
-                ImGui::SetScrollHereY(1.f);
-            }
+                // Auto scroll
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.f);
+                }
+            ImGui::EndChild();
         ImGui::End();
     }
 
