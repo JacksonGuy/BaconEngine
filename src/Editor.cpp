@@ -55,6 +55,7 @@ namespace Editor {
 
     // ImGui Variables
     GameObject* viewPropertiesObject = nullptr;
+    GameObject* copyObject = nullptr;
 
     // Create GameObject buffers
     char createNameBuff[BUFFSIZE];
@@ -70,6 +71,25 @@ namespace Editor {
     char addVariableStringVal[BUFFSIZE] = {0};
     i32 addVariableBoolVal = 0;
 };
+
+/**
+ * @brief Checks if mouse is inside the scene window
+ * 
+ * @param mousePos the mouse pos
+ * @return true 
+ * @return false 
+ */
+bool mouseInSceneWindow() {
+    Vector2 mousePos = GetMousePosition();
+    Vector2 spos = Editor::sceneWindowPosition;
+    Vector2 ssize = Editor::sceneWindowSize;
+    return (
+        (mousePos.x >= spos.x) &&        
+        (mousePos.y >= spos.y) &&
+        (mousePos.x <= spos.x + ssize.x) &&
+        (mousePos.y <= spos.y + ssize.y)
+    );
+} 
 
 /**
  * @brief Create and display an ImGui tree from a GameObject and its children
@@ -92,7 +112,11 @@ void DisplayEntityTree(GameObject* obj) {
 
     // Change properties view if right clicked
     if (ImGui::IsItemClicked(1)) {
+        if (Editor::viewPropertiesObject != nullptr) {
+            Editor::viewPropertiesObject->showBoundingBox = false;
+        }
         Editor::viewPropertiesObject = obj;
+        obj->showBoundingBox = true;
     }
 
     // Handle mouse dragging
@@ -707,39 +731,94 @@ void Update(f32 deltaTime) {
                 Editor::camera->MoveCamera({camSpeed, 0});
             }
 
-            // Camera Zoom
-            if (GetMouseWheelMove() > 0) {
-                Editor::camera->camera.zoom += 0.1;
+            // Copy and Paste
+            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_C)) {
+                if (Editor::viewPropertiesObject != nullptr) {
+                    Editor::copyObject = Editor::viewPropertiesObject;
+                    GameManager::ConsoleMessage("Copied Object");
+                }
             }
-            else if (GetMouseWheelMove() < 0) {
-                Editor::camera->camera.zoom -= 0.1;
-            }
-
-            // Mouse Select
-            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-                for (GameObject* obj : GameManager::GameObjects) {
-                    if (GameManager::PointIntersects(*obj, world_mouse_pos)) {
-                        Editor::viewPropertiesObject = obj;
-                        break;
+            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_V)) {
+                if (Editor::copyObject != nullptr) {
+                    if (Editor::copyObject->type == ENTITY) {
+                        Entity* e = new Entity((Entity*)Editor::copyObject);
+                        e->position = world_mouse_pos;
+                        e->UpdateRect();
+                    }
+                    else if (Editor::copyObject->type == TEXT) {
+                        TextObject* text = new TextObject((TextObject*)Editor::copyObject);
+                        text->position = world_mouse_pos;
+                    }
+                    else if (Editor::copyObject->type == CAMERA) {
+                        GameCamera* cam = new GameCamera((GameCamera*)Editor::copyObject);
+                        cam->position = world_mouse_pos;
                     }
                 }
             }
 
-            // Middle Mouse Button
-            // AKA Camera Move
-            if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
-                Editor::ToggleCameraMove = true;
+            // Save Project
+            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
+                File::SaveProject(Editor::projectTitle);
             }
-            if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
-                Editor::ToggleCameraMove = false;
-            }
-            if (Editor::ToggleCameraMove) {
-                Vector2 delta = {Editor::LastFrameMousePos.x - mouse_pos.x, 
-                                 Editor::LastFrameMousePos.y - mouse_pos.y};
-                // Multiply for speed
-                delta.x *= 1.2;
-                delta.y *= 1.2;
-                Editor::camera->MoveCamera(delta);
+
+            // Mouse Controls
+            if (mouseInSceneWindow()) {
+                // Camera Zoom
+                if (GetMouseWheelMove() > 0) {
+                    Editor::camera->camera.zoom += 0.1;
+                }
+                else if (GetMouseWheelMove() < 0) {
+                    Editor::camera->camera.zoom -= 0.1;
+                }
+
+                // Mouse Select
+                if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                    bool found = false;
+                    for (GameObject* obj : GameManager::GameObjects) {
+                        // TODO possibly remove this 
+                        if (obj->type == CAMERA) continue;
+
+                        if (GameManager::PointIntersects(*obj, world_mouse_pos)) {
+                            if (Editor::viewPropertiesObject != nullptr) {
+                                Editor::viewPropertiesObject->showBoundingBox = false;
+                            }
+                            Editor::viewPropertiesObject = obj;
+                            obj->showBoundingBox = true;
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        if (Editor::viewPropertiesObject != nullptr) {
+                            Editor::viewPropertiesObject->showBoundingBox = false;
+                        }
+                        Editor::viewPropertiesObject = nullptr;
+                    }
+                }
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    if (Editor::viewPropertiesObject != nullptr) {
+                        Editor::viewPropertiesObject->showBoundingBox = false;
+                    }
+                    Editor::viewPropertiesObject = nullptr;
+                }
+
+                // Middle Mouse Button
+                // AKA Camera Move
+                if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+                    Editor::ToggleCameraMove = true;
+                }
+                if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
+                    Editor::ToggleCameraMove = false;
+                }
+                if (Editor::ToggleCameraMove) {
+                    Vector2 delta = {Editor::LastFrameMousePos.x - mouse_pos.x, 
+                                    Editor::LastFrameMousePos.y - mouse_pos.y};
+                    // Multiply for speed
+                    delta.x *= 1.2;
+                    delta.y *= 1.2;
+                    Editor::camera->MoveCamera(delta);
+                }
             }
         }
     }

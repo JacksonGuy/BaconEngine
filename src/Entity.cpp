@@ -30,7 +30,11 @@ Entity::Entity() : GameObject() {
 Entity::Entity(const Entity* entity) : GameObject(entity) {
     type = ENTITY;
 
-    SetTexture(entity->texturePath);
+    // SetTexture(entity->texturePath);
+    std::string relativePath = std::filesystem::relative(
+        entity->texturePath.c_str(), GameManager::projectEntryPath).generic_string();
+    SetTexture(relativePath);
+    UpdateRect();
 
     bodytype = entity->bodytype;
     solid = entity->solid;

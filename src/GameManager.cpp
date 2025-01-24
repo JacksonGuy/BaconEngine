@@ -130,6 +130,26 @@ namespace GameManager {
     }
 
     /**
+     * @brief Sorts GameObjects vector by their IDs. This should only really be
+     * called when creating a new GameObject. Insertion sort since GameObjects
+     * should be mostly sorted in that case.
+     * 
+     */
+    void SortObjectsByID() {
+        int n = GameObjects.size();
+        for (int i = 1; i < n; i++) {
+            GameObject* key = GameObjects[i];
+            int j = i - 1;
+
+            while (j >= 0 && GameObjects[j]->ID > key->ID) {
+                GameObjects[j + 1] = GameObjects[j];
+                j--;
+            }
+            GameObjects[j + 1] = key;
+        }
+    }
+
+    /**
      * @brief Resets the variables of the GameManager to their default values
      * 
      */

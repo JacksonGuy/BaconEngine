@@ -67,5 +67,7 @@ namespace GameManager {
 
     bool PointIntersects(const GameObject& p1, Vector2 p2);
 
+    void SortObjectsByID();
+
     void Reset();
 };
