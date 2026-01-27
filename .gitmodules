@@ -1,0 +1,15 @@
+[submodule "extern/raylib"]
+	path = extern/raylib
+	url = https://github.com/raysan5/raylib.git
+[submodule "extern/box2d"]
+	path = extern/box2d
+	url = https://github.com/erincatto/box2d.git
+[submodule "extern/imgui"]
+	path = extern/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "extern/rlimgui"]
+	path = extern/rlimgui
+	url = https://github.com/raylib-extras/rlImGui.git
+[submodule "extern/nfd"]
+	path = extern/nfd
+	url = https://github.com/btzy/nativefiledialog-extended.git

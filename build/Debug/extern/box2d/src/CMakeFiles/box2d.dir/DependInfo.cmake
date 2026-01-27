@@ -1,0 +1,56 @@
+
+# Consider dependencies only in project.
+set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
+
+# The set of languages for which implicit dependencies are needed:
+set(CMAKE_DEPENDS_LANGUAGES
+  )
+
+# The set of dependency files which are needed:
+set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/jackson/BaconEngine/extern/box2d/src/aabb.c" "extern/box2d/src/CMakeFiles/box2d.dir/aabb.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/aabb.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/arena_allocator.c" "extern/box2d/src/CMakeFiles/box2d.dir/arena_allocator.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/arena_allocator.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/array.c" "extern/box2d/src/CMakeFiles/box2d.dir/array.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/array.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/bitset.c" "extern/box2d/src/CMakeFiles/box2d.dir/bitset.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/bitset.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/body.c" "extern/box2d/src/CMakeFiles/box2d.dir/body.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/body.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/broad_phase.c" "extern/box2d/src/CMakeFiles/box2d.dir/broad_phase.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/broad_phase.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/constraint_graph.c" "extern/box2d/src/CMakeFiles/box2d.dir/constraint_graph.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/constraint_graph.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/contact.c" "extern/box2d/src/CMakeFiles/box2d.dir/contact.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/contact.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/contact_solver.c" "extern/box2d/src/CMakeFiles/box2d.dir/contact_solver.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/contact_solver.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/core.c" "extern/box2d/src/CMakeFiles/box2d.dir/core.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/core.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/distance.c" "extern/box2d/src/CMakeFiles/box2d.dir/distance.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/distance.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/distance_joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/distance_joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/distance_joint.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/dynamic_tree.c" "extern/box2d/src/CMakeFiles/box2d.dir/dynamic_tree.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/dynamic_tree.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/geometry.c" "extern/box2d/src/CMakeFiles/box2d.dir/geometry.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/geometry.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/hull.c" "extern/box2d/src/CMakeFiles/box2d.dir/hull.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/hull.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/id_pool.c" "extern/box2d/src/CMakeFiles/box2d.dir/id_pool.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/id_pool.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/island.c" "extern/box2d/src/CMakeFiles/box2d.dir/island.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/island.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/joint.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/manifold.c" "extern/box2d/src/CMakeFiles/box2d.dir/manifold.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/manifold.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/math_functions.c" "extern/box2d/src/CMakeFiles/box2d.dir/math_functions.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/math_functions.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/motor_joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/motor_joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/motor_joint.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/mover.c" "extern/box2d/src/CMakeFiles/box2d.dir/mover.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/mover.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/physics_world.c" "extern/box2d/src/CMakeFiles/box2d.dir/physics_world.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/physics_world.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/prismatic_joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/prismatic_joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/prismatic_joint.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/revolute_joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/revolute_joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/revolute_joint.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/sensor.c" "extern/box2d/src/CMakeFiles/box2d.dir/sensor.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/sensor.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/shape.c" "extern/box2d/src/CMakeFiles/box2d.dir/shape.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/shape.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/solver.c" "extern/box2d/src/CMakeFiles/box2d.dir/solver.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/solver.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/solver_set.c" "extern/box2d/src/CMakeFiles/box2d.dir/solver_set.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/solver_set.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/table.c" "extern/box2d/src/CMakeFiles/box2d.dir/table.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/table.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/timer.c" "extern/box2d/src/CMakeFiles/box2d.dir/timer.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/timer.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/types.c" "extern/box2d/src/CMakeFiles/box2d.dir/types.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/types.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/weld_joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/weld_joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/weld_joint.c.o.d"
+  "/home/jackson/BaconEngine/extern/box2d/src/wheel_joint.c" "extern/box2d/src/CMakeFiles/box2d.dir/wheel_joint.c.o" "gcc" "extern/box2d/src/CMakeFiles/box2d.dir/wheel_joint.c.o.d"
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+  )
+
+# Fortran module output directory.
+set(CMAKE_Fortran_TARGET_MODULE_DIR "")

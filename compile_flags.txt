@@ -1,0 +1,8 @@
+-xc++
+-std=c++17
+-Isrc/
+-Iinclude/
+-Iextern/
+-Iextern/raylib/src
+-Iextern/imgui
+-Iextern/rlimgui
