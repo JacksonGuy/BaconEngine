@@ -6,3 +6,8 @@
 -Iextern/raylib/src
 -Iextern/imgui
 -Iextern/rlimgui
+-Iextern/box2d/include
+-Iextern/json
+-Iextern/nfd/src/include
+-Iextern/lua/lua-5.4.7/include
+-Iextern/sol2/include

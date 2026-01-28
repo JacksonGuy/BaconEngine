@@ -38,6 +38,7 @@
 # Other
 .vscode
 bin
+build
 Projects
 testing
 Test.cpp

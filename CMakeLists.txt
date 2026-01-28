@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_subdirectory(extern/raylib)
 add_subdirectory(extern/box2d)
 add_subdirectory(extern/nfd)
+add_subdirectory(extern/lua)
 
 # Main project files
 set(SOURCE_FILES
@@ -21,6 +22,13 @@ set(SOURCE_FILES
     extern/imgui/imgui_tables.cpp
     extern/imgui/imgui_widgets.cpp
     extern/imgui/
+
+    src/core/game_object.cpp
+    src/core/entity.cpp
+    src/core/game_manager.cpp
+    src/engine/engine.cpp
+    src/file/file.cpp
+
     src/main.cpp
 )
 add_executable(main ${SOURCE_FILES})
@@ -47,11 +55,15 @@ target_link_libraries(main
         raylib
         box2d
         nfd
+        lua_static
 )
 target_include_directories(main
     PRIVATE
         extern/imgui
         extern/rlimgui
+        extern/json
+        extern/lua
+        extern/sol2/include
         src
         include
 )

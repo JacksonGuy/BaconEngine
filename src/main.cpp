@@ -4,12 +4,18 @@
 #include "rlImGui.h"
 #include "raylib.h"
 
+#include "core/util.h"
+
 int main(int argc, char** argv) {
+    using namespace bacon;
+    debug_log("Starting BaconEngine...");
+
     bool test_menu = true;
 
     InitWindow(800, 600, "Test");
     SetTargetFPS(512);
     rlImGuiSetup(true);
+    debug_log("Engine startup successful.");
 
     while (!WindowShouldClose())
     {
