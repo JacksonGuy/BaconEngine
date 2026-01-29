@@ -13,7 +13,7 @@ namespace bacon {
 
         this->m_uid = uid;
         this->m_layer = 0;
-        this->m_parent = nullptr;
+        this->parent = nullptr;
     }
 
     GameObject::GameObject(uint8_t* bytes) {

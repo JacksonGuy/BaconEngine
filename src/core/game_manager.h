@@ -6,6 +6,7 @@
 
 #include "raylib.h"
 #include "sol/sol.hpp"
+#include "box2d/box2d.h"
 
 #include "game_object.h"
 #include "entity.h"
@@ -22,10 +23,14 @@ namespace bacon {
             GameManager& operator=(GameManager&& manager) = delete;
             ~GameManager();
 
-            Entity* instantiate_entity();
+            Entity* instantiate_entity(body_t type);
             Entity* copy_entity(Entity* entity);
             void deinstantiate_entity(Entity* entity);
             void deinstantiate_entity(uid_t uid);
+
+            void create_physics_bodies();
+            void simulation_step();
+            void draw_entities() const;
 
         private:
             uid_t m_uid_count;
@@ -36,6 +41,12 @@ namespace bacon {
 
             Camera2D* m_camera;
 
+            b2WorldId m_world;
+            float m_length_units_per_meter;
+            float m_gravity;
+
             sol::state m_lua_state;
+
+            uid_t acquire_uid();
     };
 }

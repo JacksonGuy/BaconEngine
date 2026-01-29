@@ -14,6 +14,9 @@ namespace bacon {
 
             Font engine_font;
 
+            GameManager manager;
+            Camera2D* camera;
+
             Engine();
             ~Engine();
 
@@ -26,8 +29,5 @@ namespace bacon {
         private:
             ImGuiTextBuffer m_ConsoleBuffer;
             std::vector<std::string> m_ConsoleMessages;
-
-            GameManager m_manager;
-            Camera2D* m_camera;
     };
 }

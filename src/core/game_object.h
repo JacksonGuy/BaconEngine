@@ -33,8 +33,8 @@ namespace bacon {
             GameObject& operator=(GameObject&& obj) = delete;
             ~GameObject() = default;
 
-            GameObject* m_parent;
-            std::vector<GameObject*> m_children;
+            GameObject* parent;
+            std::vector<GameObject*> children;
 
         private:
             uid_t m_uid;
