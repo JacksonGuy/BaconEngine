@@ -26,6 +26,8 @@ set(SOURCE_FILES
     src/core/game_object.cpp
     src/core/entity.cpp
     src/core/game_manager.cpp
+    src/core/text_object.cpp
+    src/core/camera_object.cpp
     src/engine/engine.cpp
     src/file/file.cpp
 
