@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "core/entity.h"
 #include "imgui.h"
 #include "rlImGui.h"
 #include "raylib.h"
@@ -13,6 +14,7 @@ int main(int argc, char** argv) {
 
     // Setup
     Engine engine;
+    engine.framerate_limit = 165;
 
     // Create window
     InitWindow(800, 600, "Test");
@@ -20,12 +22,17 @@ int main(int argc, char** argv) {
     rlImGuiSetup(true);
 
     // TESTING
-    Entity* platform = engine.manager.instantiate_entity(body_t::STATIC);
-    platform->position = {400.f, 500.f};
-    platform->size = {400.f, 32.f};
+    Entity* platform_1 = engine.manager.instantiate_entity(body_t::STATIC);
+    platform_1->position = {200.f, 400.f};
+    platform_1->size = {300.f, 32.f};
+    platform_1->rotation = 30.f;
+
+    Entity* platform_2 = engine.manager.instantiate_entity(body_t::STATIC);
+    platform_2->position = {450.f, 500.f};
+    platform_2->size = {300.f, 32.f};
 
     Entity* box = engine.manager.instantiate_entity(body_t::DYNAMIC);
-    box->position = {400.f, 30.f};
+    box->position = {250.f, 30.f};
     box->size = {32.f, 32.f};
 
     debug_log("Engine startup successful.");
@@ -34,6 +41,16 @@ int main(int argc, char** argv) {
 
     while (!WindowShouldClose())
     {
+        if (IsKeyPressed(KEY_SPACE)) {
+            engine.manager.deinstantiate_entity(box);
+            box = nullptr;
+
+            box = engine.manager.instantiate_entity(body_t::DYNAMIC);
+            box->position = {200.f, 30.f};
+            box->size = {32.f, 32.f};
+            engine.manager.entity_create_body(box);
+        }
+
         engine.manager.simulation_step();
 
         BeginDrawing();

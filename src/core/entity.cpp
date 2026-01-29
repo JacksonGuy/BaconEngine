@@ -20,11 +20,12 @@ namespace bacon {
     }
 
     void Entity::draw(b2WorldId world_id) const {
-        b2Vec2 extent = {
-            -this->size.x * 0.5f,
-            -this->size.y * 0.5f
-        };
-        b2Vec2 b_pos = b2Body_GetWorldPoint(this->physics_body, extent);
+        // b2Vec2 extent = {
+        //     -(this->size.x * 0.5f),
+        //     -(this->size.y * 0.5f)
+        // };
+        // b2Vec2 b_pos = b2Body_GetWorldPoint(this->physics_body, extent);
+        b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
         b2Rot b_rot = b2Body_GetRotation(this->physics_body);
         float b_radians = b2Rot_GetAngle(b_rot);
 
@@ -40,7 +41,7 @@ namespace bacon {
 
         DrawRectanglePro(
             {b_pos.x, b_pos.y, this->size.x, this->size.y},
-            {this->size.x/2, this->size.y/2},
+            {this->size.x * 0.5f, this->size.y * 0.5f},
             RAD2DEG * b_radians,
             RED
         );
@@ -48,6 +49,7 @@ namespace bacon {
 
     void Entity::create_body(b2WorldId world_id) {
         b2BodyDef body_def = b2DefaultBodyDef();
+        body_def.rotation = b2MakeRot(this->rotation * DEG2RAD);
         body_def.position = (b2Vec2){
             this->position.x + (this->size.x / 2),
             this->position.y + (this->size.y / 2)
@@ -55,6 +57,12 @@ namespace bacon {
         b2Polygon box = b2MakeBox(this->size.x/2, this->size.y/2);
 
         switch (this->body_type) {
+            case STATIC:
+            {
+                body_def.type = b2_staticBody;
+                break;
+            }
+
             case DYNAMIC:
             {
                 body_def.type = b2_dynamicBody;
@@ -67,7 +75,6 @@ namespace bacon {
                 break;
             }
 
-            case STATIC:
             case NONE:
             default:
             {

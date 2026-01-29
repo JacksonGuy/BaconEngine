@@ -25,6 +25,7 @@ namespace bacon {
 
             Entity* instantiate_entity(body_t type);
             Entity* copy_entity(Entity* entity);
+            void entity_create_body(Entity* entity);
             void deinstantiate_entity(Entity* entity);
             void deinstantiate_entity(uid_t uid);
 

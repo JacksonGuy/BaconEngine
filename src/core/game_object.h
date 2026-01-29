@@ -18,6 +18,8 @@ namespace bacon {
             float rotation;
             bool is_visible;
 
+            uid_t get_uid();
+
             virtual void save_to_json() const;
             virtual void load_from_json();
             virtual size_t calculate_size() const;
@@ -31,7 +33,7 @@ namespace bacon {
             GameObject(GameObject&& obj) = delete;
             GameObject& operator=(const GameObject& obj) = delete;
             GameObject& operator=(GameObject&& obj) = delete;
-            ~GameObject() = default;
+            virtual ~GameObject() = default;
 
             GameObject* parent;
             std::vector<GameObject*> children;

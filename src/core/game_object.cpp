@@ -20,6 +20,10 @@ namespace bacon {
         this->deserialize(bytes);
     }
 
+    uid_t GameObject::get_uid() {
+        return this->m_uid;
+    }
+
     void GameObject::save_to_json() const {
         debug_error("default save_to_json has not been implemented yet.");
     }
