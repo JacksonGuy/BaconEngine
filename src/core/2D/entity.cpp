@@ -5,7 +5,7 @@
 #include "box2d/types.h"
 #include "raylib.h"
 
-#include "util.h"
+#include "core/util.h"
 
 namespace bacon {
     Entity::Entity(uid_t uid) : GameObject(uid) {
@@ -19,12 +19,7 @@ namespace bacon {
         debug_error("This function has not been implemented yet.");
     }
 
-    void Entity::draw(b2WorldId world_id) const {
-        // b2Vec2 extent = {
-        //     -(this->size.x * 0.5f),
-        //     -(this->size.y * 0.5f)
-        // };
-        // b2Vec2 b_pos = b2Body_GetWorldPoint(this->physics_body, extent);
+    void Entity::draw() const {
         b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
         b2Rot b_rot = b2Body_GetRotation(this->physics_body);
         float b_radians = b2Rot_GetAngle(b_rot);

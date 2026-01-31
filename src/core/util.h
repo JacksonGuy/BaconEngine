@@ -2,7 +2,7 @@
 
 #include <cstdarg>
 #include <cstdio>
-#include <utility>
+#include <cmath>
 
 namespace bacon {
     inline void _debug_log_impl(
@@ -20,6 +20,10 @@ namespace bacon {
         va_end(args);
 
         std::fprintf(stderr, "\n");
+    }
+
+    inline bool close_enough(float x, float y, float eps = 1) {
+        return std::abs(x - y) <= eps;
     }
 
     #ifdef DEBUG_BUILD

@@ -1,4 +1,4 @@
-#include "game_manager.h"
+#include "core/2D/game_manager.h"
 
 #include "box2d/box2d.h"
 #include "box2d/id.h"
@@ -12,6 +12,7 @@ namespace bacon {
     GameManager::GameManager() {
         this->m_uid_count = 0;
         this->m_camera = nullptr;
+        this->m_renderer = nullptr;
 
         this->m_length_units_per_meter = 128.0f;
         this->m_gravity = 9.8f * this->m_length_units_per_meter;
@@ -43,6 +44,8 @@ namespace bacon {
 
         this->m_objects.push_back(entity);
         this->m_entities.push_back(entity);
+
+        this->m_renderer->add_to_layer(entity, entity->layer);
 
         return entity;
     }
@@ -82,6 +85,9 @@ namespace bacon {
         b2DestroyBody(entity->physics_body);
         entity->physics_body = b2_nullBodyId;
 
+        // Remove from layer
+        this->m_renderer->remove_from_layer(entity);
+
         // Reclaim uid
         this->m_unused_uids.push_back(entity->get_uid());
 
@@ -89,10 +95,38 @@ namespace bacon {
         delete(entity);
     }
 
+    CameraObject* GameManager::instantiate_camera() {
+        uid_t uid = this->acquire_uid();
+        CameraObject* camera = new CameraObject(uid);
+
+        this->m_objects.push_back(camera);
+
+        this->m_renderer->add_to_layer(camera, camera->layer);
+
+        return camera;
+    }
+
+    void GameManager::set_object_layer(GameObject* object, size_t layer) {
+        this->m_renderer->remove_from_layer(object);
+        this->m_renderer->add_to_layer(object, layer);
+    }
+
+    void GameManager::set_active_camera(CameraObject* camera) {
+        this->m_camera = camera;
+    }
+
     void GameManager::create_physics_bodies() {
         for (Entity* entity : this->m_entities) {
             entity->create_body(this->m_world);
         }
+    }
+
+    void GameManager::initialize_renderer(uint32_t width, uint32_t height) {
+        this->m_renderer = new Renderer(width, height);
+    }
+
+    Renderer* GameManager::get_renderer() {
+        return this->m_renderer;
     }
 
     void GameManager::simulation_step() {
@@ -110,10 +144,18 @@ namespace bacon {
         }
     }
 
-    void GameManager::draw_entities() const {
-        for (const Entity* entity : this->m_entities) {
-            entity->draw(this->m_world);
+    void GameManager::draw_entities(Camera2D* camera) const {
+        if (camera != nullptr) {
+            this->m_renderer->draw(camera);
+            return;
         }
+
+        if (this->m_camera == nullptr) {
+            debug_error("Scene does not have a camera.");
+            return;
+        }
+
+        this->m_renderer->draw(&this->m_camera->camera);
     }
 
     uid_t GameManager::acquire_uid() {

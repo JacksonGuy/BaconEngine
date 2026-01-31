@@ -1,6 +1,6 @@
 #include "game_object.h"
 
-#include "util.h"
+#include "core/util.h"
 
 namespace bacon {
     GameObject::GameObject(uid_t uid) {
@@ -10,9 +10,9 @@ namespace bacon {
         this->size = {1.f, 1.f};
         this->rotation = 0.f;
         this->is_visible = true;
+        this->layer = 0;
 
         this->m_uid = uid;
-        this->m_layer = 0;
         this->parent = nullptr;
     }
 

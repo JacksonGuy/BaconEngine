@@ -23,12 +23,14 @@ set(SOURCE_FILES
     extern/imgui/imgui_widgets.cpp
     extern/imgui/
 
-    src/core/game_object.cpp
-    src/core/entity.cpp
-    src/core/game_manager.cpp
-    src/core/text_object.cpp
-    src/core/camera_object.cpp
-    src/engine/engine.cpp
+    src/core/2D/game_object.cpp
+    src/core/2D/entity.cpp
+    src/core/2D/game_manager.cpp
+    src/core/2D/text_object.cpp
+    src/core/2D/camera_object.cpp
+    src/editor/editor.cpp
+    src/editor/ui/editor_ui.cpp
+    src/rendering/2D/renderer.cpp
     src/file/file.cpp
 
     src/main.cpp

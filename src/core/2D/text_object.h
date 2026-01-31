@@ -2,7 +2,7 @@
 
 #include "raylib.h"
 
-#include "core/game_object.h"
+#include "core/2D/game_object.h"
 
 namespace bacon {
     class TextObject : GameObject {
@@ -11,6 +11,7 @@ namespace bacon {
             void set_font(const std::string& font_path);
             void set_font_size(uint32_t size);
 
+            void draw() const override;
             void save_to_json() const override;
             void load_from_json() override;
             size_t calculate_size() const override;

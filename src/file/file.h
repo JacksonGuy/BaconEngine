@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "core/game_manager.h"
+#include "core/2D/game_manager.h"
 
 namespace bacon {
     namespace file {

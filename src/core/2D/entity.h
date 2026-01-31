@@ -20,8 +20,8 @@ namespace bacon {
             friend class GameManager;
 
             void set_texture(const char* path);
-            void draw(b2WorldId world_id) const;
 
+            void draw() const override;
             void save_to_json() const override;
             void load_from_json() override;
             size_t calculate_size() const override;

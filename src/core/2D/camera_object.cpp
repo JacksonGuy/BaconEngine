@@ -1,30 +1,34 @@
 #include "camera_object.h"
 
-#include "util.h"
+#include "core/util.h"
 
 namespace bacon {
     CameraObject::CameraObject(uid_t uid) : GameObject(uid) {
-        this->m_camera = {0};
-        this->m_is_active = false;
-        this->m_zoom = 1.0f;
+        this->camera = {0};
+        this->is_active = false;
+        this->zoom = 1.0f;
     }
 
     void CameraObject::move_camera(Vector2 delta) {
         this->position.x += delta.x;
         this->position.y += delta.y;
-        this->m_camera.target = this->position;
+        this->camera.target = this->position;
     }
 
     void CameraObject::set_position(Vector2 position) {
         this->position = position;
-        this->m_camera.target = position;
+        this->camera.target = position;
     }
 
     void CameraObject::calculate_size(Vector2 window_size) {
         this->size = {
-            window_size.x * this->m_camera.zoom,
-            window_size.y * this->m_camera.zoom
+            window_size.x * this->camera.zoom,
+            window_size.y * this->camera.zoom
         };
+    }
+
+    void CameraObject::draw() const {
+
     }
 
     void CameraObject::save_to_json() const {

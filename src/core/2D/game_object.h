@@ -11,6 +11,9 @@ namespace bacon {
     class GameObject
     {
         public:
+            friend class GameManager;
+            friend class Renderer;
+
             std::string name;
             std::string tag;
             Vector2 position;
@@ -20,6 +23,7 @@ namespace bacon {
 
             uid_t get_uid();
 
+            virtual void draw() const = 0;
             virtual void save_to_json() const;
             virtual void load_from_json();
             virtual size_t calculate_size() const;
@@ -37,9 +41,9 @@ namespace bacon {
 
             GameObject* parent;
             std::vector<GameObject*> children;
+            size_t layer;
 
         private:
             uid_t m_uid;
-            uint8_t m_layer;
     };
 }

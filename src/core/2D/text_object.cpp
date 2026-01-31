@@ -55,6 +55,19 @@ namespace bacon {
         return "";
     }
 
+    void TextObject::draw() const {
+        DrawTextPro(
+            this->m_font,
+            this->m_text.c_str(),
+            this->position,
+            {0,0},
+            this->rotation,
+            this->m_font_size,
+            this->m_char_spacing,
+            this->m_color
+        );
+    }
+
     void TextObject::save_to_json() const {
         debug_error("This function has not been implemented yet.");
     }
