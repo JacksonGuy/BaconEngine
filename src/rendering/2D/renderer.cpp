@@ -60,7 +60,6 @@ namespace bacon {
     void Renderer::draw(Camera2D* camera) const {
         BeginTextureMode(this->frame);
             ClearBackground(DARKGRAY);
-            DrawFPS(10, 10);
 
             BeginMode2D(*camera);
                 for (const RenderLayer& layer : this->m_layers) {
@@ -69,6 +68,7 @@ namespace bacon {
                     }
                 }
             EndMode2D();
+
         EndTextureMode();
     }
 

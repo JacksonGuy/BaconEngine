@@ -1,11 +1,15 @@
 #include "text_object.h"
 
 #include "raylib.h"
+#include "imgui.h"
 
 #include "core/util.h"
+#include "editor/ui/editor_ui.h"
+#include "editor/ui/imgui_extras.h"
 
 namespace bacon {
     TextObject::TextObject(uid_t uid) : GameObject(uid) {
+        this->name = "Text (" + std::to_string(uid) + ")";
         this->m_text = "";
         this->m_font = {0};
         this->m_font_size = 0;
@@ -66,6 +70,20 @@ namespace bacon {
             this->m_char_spacing,
             this->m_color
         );
+    }
+
+    void TextObject::draw_properties_editor() {
+        // ID
+        std::string id_text = "ID: " + std::to_string(this->get_uid());
+        ImGui::Text("%s", id_text.c_str());
+
+        // Name
+        char name_buf[ui::_BUF_SIZE];
+        strcpy(name_buf, this->name.c_str());
+        ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+        if (ImGui::InputText("##Name", name_buf, ui::_BUF_SIZE)) {
+            this->name = std::string(name_buf);
+        }
     }
 
     void TextObject::save_to_json() const {

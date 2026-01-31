@@ -2,6 +2,7 @@
 
 #include <ctime>
 
+#include "raylib.h"
 #include "rlImGui.h"
 #include "imgui.h"
 
@@ -22,8 +23,6 @@ namespace bacon {
         };
         this->camera.rotation = 0.0f;
         this->camera.zoom = 1.f;
-
-        this->inspect_object = nullptr;
 
         // Create window
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -88,25 +87,12 @@ namespace bacon {
         ImGui::DockSpaceOverViewport();
 
         ui::draw_top_bar();
-        ui::draw_object_tree(this->inspect_object);
+        ui::draw_object_properties();
+        ui::draw_object_tree(&this->manager);
         ui::draw_scene_display(this->manager.get_renderer());
         ui::draw_engine_console();
         ui::draw_settings();
         ui::draw_general_info_display();
-
-        if (ui::show_test == true)
-        {
-            ImGui::Begin("Test Menu", &ui::show_test, ImGuiWindowFlags_MenuBar);
-                if (ImGui::BeginMenuBar())
-                {
-                    if (ImGui::BeginMenu("File"))
-                    {
-                        ImGui::EndMenu();
-                    }
-                    ImGui::EndMenuBar();
-                }
-            ImGui::End();
-        }
 
         rlImGuiEnd();
     }

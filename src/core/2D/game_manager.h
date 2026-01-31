@@ -32,8 +32,9 @@ namespace bacon {
             CameraObject* instantiate_camera();
             void deinstantiate_camera(CameraObject* camera);
 
-            void set_object_layer(GameObject* object, size_t layer);
+            std::vector<GameObject*>& get_objects();
 
+            void set_object_layer(GameObject* object, size_t layer);
             void set_active_camera(CameraObject* camera);
 
             void create_physics_bodies();

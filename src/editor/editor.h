@@ -16,7 +16,6 @@ namespace bacon {
 
             GameManager manager;
             Camera2D camera;
-            GameObject* inspect_object;
 
             Editor();
             ~Editor() = default;

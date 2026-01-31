@@ -1,5 +1,6 @@
 #include "editor_ui.h"
 
+#include "core/globals.h"
 #include "raylib.h"
 #include "rlImGui.h"
 #include "imgui.h"
@@ -54,12 +55,38 @@ namespace bacon {
             ImGui::EndMainMenuBar();
         }
 
-        void draw_object_tree(GameObject *object) {
-            // debug_error("This function has not been implemented yet.");
+        void draw_object_properties() {
+            ImGui::Begin("Properties", &show_object_properties);
+                if (view_properties_object != nullptr)
+                {
+                    view_properties_object->draw_properties_editor();
+                }
+            ImGui::End();
+        }
+
+        void draw_object_tree(GameManager* manager) {
+            auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+                                | ImGuiTreeNodeFlags_DefaultOpen;
+
+            ImGui::Begin("Objects", &show_object_tree);
+                ImGui::SetNextItemOpen(true);
+
+                if (ImGui::TreeNodeEx("Scene", parentFlags))
+                {
+                    for (GameObject* obj : manager->get_objects()) {
+                        if (obj->get_parent() == nullptr) {
+                            game_object_tree_recurse(obj);
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+
+            ImGui::End();
         }
 
         void draw_scene_display(Renderer* renderer) {
-            ImGui::Begin("Scene");
+            ImGui::Begin("Scene", &show_scene_display);
                 ImVec2 window_size = ImGui::GetContentRegionAvail();
 
                 // Resize frame to correct window size
@@ -82,7 +109,50 @@ namespace bacon {
         }
 
         void draw_general_info_display() {
-            // debug_error("This function has not been implemented yet.");
+            ImGui::Begin("Info", &show_general_info);
+                int fps = GetFPS();
+                std::string title = "Bacon Engine " + engine_version;
+                ImGui::Text("%s", title.c_str());
+                ImGui::Text("FPS: %i", fps);
+            ImGui::End();
+        }
+
+        void game_object_tree_recurse(GameObject* object) {
+            ImGui::PushID(object->get_uid());
+
+            auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+                                | ImGuiTreeNodeFlags_DefaultOpen;
+
+            bool is_open = true;
+            const std::vector<GameObject*>& children = object->get_children();
+
+            // Create tree node for parent
+            if (children.size() == 0) {
+                ImGui::TreeNodeEx(object->name.c_str(), normalFlags);
+            }
+            else {
+                is_open = ImGui::TreeNodeEx(object->name.c_str(), parentFlags);
+            }
+
+            // View object properties if right clicked
+            if (ImGui::IsItemClicked(1)) {
+                view_properties_object = object;
+            }
+
+            // Display children if open
+            if (children.size() > 0 && is_open) {
+                ImGui::Indent(4);
+
+                for (GameObject* child : children) {
+                    game_object_tree_recurse(child);
+                }
+
+                ImGui::TreePop();
+                ImGui::Unindent(4);
+            }
+
+            ImGui::PopID();
         }
 
         void SetImGuiStyle() {

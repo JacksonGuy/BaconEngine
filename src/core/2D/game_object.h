@@ -21,9 +21,12 @@ namespace bacon {
             float rotation;
             bool is_visible;
 
-            uid_t get_uid();
+            uid_t get_uid() const;
+            GameObject* get_parent() const;
+            const std::vector<GameObject*>& get_children() const;
 
             virtual void draw() const = 0;
+            virtual void draw_properties_editor() = 0;
             virtual void save_to_json() const;
             virtual void load_from_json();
             virtual size_t calculate_size() const;
@@ -31,6 +34,10 @@ namespace bacon {
             virtual void deserialize(uint8_t* bytes);
 
         protected:
+            GameObject* parent;
+            std::vector<GameObject*> children;
+            size_t layer;
+
             GameObject(uid_t uid);
             GameObject(uint8_t* bytes);
             GameObject(const GameObject& obj) = delete;
@@ -38,10 +45,6 @@ namespace bacon {
             GameObject& operator=(const GameObject& obj) = delete;
             GameObject& operator=(GameObject&& obj) = delete;
             virtual ~GameObject() = default;
-
-            GameObject* parent;
-            std::vector<GameObject*> children;
-            size_t layer;
 
         private:
             uid_t m_uid;

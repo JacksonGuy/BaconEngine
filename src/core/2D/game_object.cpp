@@ -4,7 +4,7 @@
 
 namespace bacon {
     GameObject::GameObject(uid_t uid) {
-        this->name = "Object";
+        this->name = "Object (" + std::to_string(uid) + ")";
         this->tag = "Default";
         this->position = {0.f, 0.f};
         this->size = {1.f, 1.f};
@@ -20,8 +20,16 @@ namespace bacon {
         this->deserialize(bytes);
     }
 
-    uid_t GameObject::get_uid() {
+    uid_t GameObject::get_uid() const {
         return this->m_uid;
+    }
+
+    GameObject* GameObject::get_parent() const {
+        return this->parent;
+    }
+
+    const std::vector<GameObject*>& GameObject::get_children() const {
+        return this->children;
     }
 
     void GameObject::save_to_json() const {

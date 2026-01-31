@@ -22,6 +22,7 @@ namespace bacon {
             void set_texture(const char* path);
 
             void draw() const override;
+            void draw_properties_editor() override;
             void save_to_json() const override;
             void load_from_json() override;
             size_t calculate_size() const override;

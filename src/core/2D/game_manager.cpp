@@ -106,6 +106,14 @@ namespace bacon {
         return camera;
     }
 
+    void GameManager::deinstantiate_camera(CameraObject* camera) {
+        debug_error("This function has not been implemented yet.");
+    }
+
+    std::vector<GameObject*>& GameManager::get_objects() {
+        return this->m_objects;
+    }
+
     void GameManager::set_object_layer(GameObject* object, size_t layer) {
         this->m_renderer->remove_from_layer(object);
         this->m_renderer->add_to_layer(object, layer);

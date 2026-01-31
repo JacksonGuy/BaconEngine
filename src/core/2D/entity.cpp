@@ -4,11 +4,15 @@
 #include "box2d/collision.h"
 #include "box2d/types.h"
 #include "raylib.h"
+#include "imgui.h"
 
 #include "core/util.h"
+#include "editor/ui/editor_ui.h"
+#include "editor/ui/imgui_extras.h"
 
 namespace bacon {
     Entity::Entity(uid_t uid) : GameObject(uid) {
+        this->name = "Entity (" + std::to_string(uid) + ")";
         this->m_texture = {0};
         this->m_texture_path = "";
         this->physics_body = {0};
@@ -17,29 +21,6 @@ namespace bacon {
 
     void Entity::set_texture(const char* path) {
         debug_error("This function has not been implemented yet.");
-    }
-
-    void Entity::draw() const {
-        b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
-        b2Rot b_rot = b2Body_GetRotation(this->physics_body);
-        float b_radians = b2Rot_GetAngle(b_rot);
-
-        // Vector2 pos = {b_pos.x, b_pos.y};
-
-        // DrawTextureEx(
-        //     this->m_texture,
-        //     pos,
-        //     RAD2DEG * b_radians,
-        //     1.f,
-        //     WHITE
-        // );
-
-        DrawRectanglePro(
-            {b_pos.x, b_pos.y, this->size.x, this->size.y},
-            {this->size.x * 0.5f, this->size.y * 0.5f},
-            RAD2DEG * b_radians,
-            RED
-        );
     }
 
     void Entity::create_body(b2WorldId world_id) {
@@ -80,6 +61,43 @@ namespace bacon {
         this->physics_body = b2CreateBody(world_id, &body_def);
         b2ShapeDef shape = b2DefaultShapeDef();
         b2CreatePolygonShape(this->physics_body, &shape, &box);
+    }
+
+    void Entity::draw() const {
+        b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
+        b2Rot b_rot = b2Body_GetRotation(this->physics_body);
+        float b_radians = b2Rot_GetAngle(b_rot);
+
+        // Vector2 pos = {b_pos.x, b_pos.y};
+
+        // DrawTextureEx(
+        //     this->m_texture,
+        //     pos,
+        //     RAD2DEG * b_radians,
+        //     1.f,
+        //     WHITE
+        // );
+
+        DrawRectanglePro(
+            {b_pos.x, b_pos.y, this->size.x, this->size.y},
+            {this->size.x * 0.5f, this->size.y * 0.5f},
+            RAD2DEG * b_radians,
+            RED
+        );
+    }
+
+    void Entity::draw_properties_editor() {
+        // ID
+        std::string id_text = "ID: " + std::to_string(this->get_uid());
+        ImGui::Text("%s", id_text.c_str());
+
+        // Name
+        char name_buf[ui::_BUF_SIZE];
+        strcpy(name_buf, this->name.c_str());
+        ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+        if (ImGui::InputText("##Name", name_buf, ui::_BUF_SIZE)) {
+            this->name = std::string(name_buf);
+        }
     }
 
     void Entity::save_to_json() const {

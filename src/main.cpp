@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "core/2D/entity.h"
+#include "core/globals.h"
 #include "imgui.h"
 #include "rlImGui.h"
 #include "raylib.h"
@@ -12,6 +13,8 @@
 int main(int argc, char** argv) {
     using namespace bacon;
     debug_log("Starting BaconEngine...");
+
+    engine_version = "v0.1";
 
     // Disable RayLib logging
     SetTraceLogLevel(LOG_WARNING);
