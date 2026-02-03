@@ -72,6 +72,12 @@ namespace bacon {
         EndTextureMode();
     }
 
+    void Renderer::reset() {
+        for (RenderLayer& layer : this->m_layers) {
+            layer.objects.clear();
+        }
+    }
+
     uint32_t Renderer::get_width() const {
         return this->m_frame_width;
     }

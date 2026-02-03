@@ -8,8 +8,8 @@
 #include "game_object.h"
 
 namespace bacon {
-    enum body_t {
-        NONE,
+    enum body_t : uint8_t {
+        NONE = 0,
         STATIC,
         DYNAMIC,
         KINEMATIC
@@ -20,11 +20,12 @@ namespace bacon {
             friend class GameManager;
 
             void set_texture(const char* path);
+            void set_size(float width, float height);
 
             void draw() const override;
             void draw_properties_editor() override;
-            void save_to_json() const override;
-            void load_from_json() override;
+            void save_to_json(nlohmann::json& data) const override;
+            void load_from_json(nlohmann::json& data) override;
             size_t calculate_size() const override;
             uint8_t* serialize() const override;
             void deserialize(uint8_t* bytes) override;

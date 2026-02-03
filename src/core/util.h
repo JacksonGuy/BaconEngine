@@ -26,6 +26,14 @@ namespace bacon {
         return std::abs(x - y) <= eps;
     }
 
+    inline double b_fmod(double x, double y) {
+        double result = std::fmod(x, y);
+        if (result < 0) {
+            result += std::abs(y);
+        }
+        return result;
+    }
+
     #ifdef DEBUG_BUILD
         #define debug_log(text, ...) \
             _debug_log_impl("INFO", __FILE__, __LINE__, text, ##__VA_ARGS__)

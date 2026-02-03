@@ -23,7 +23,6 @@ set(SOURCE_FILES
     extern/imgui/imgui_widgets.cpp
     extern/imgui/
 
-    src/core/globals.cpp
     src/core/2D/game_object.cpp
     src/core/2D/entity.cpp
     src/core/2D/game_manager.cpp

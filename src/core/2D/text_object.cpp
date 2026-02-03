@@ -9,6 +9,7 @@
 
 namespace bacon {
     TextObject::TextObject(uid_t uid) : GameObject(uid) {
+        this->class_type = object_t::TEXT;
         this->name = "Text (" + std::to_string(uid) + ")";
         this->m_text = "";
         this->m_font = {0};
@@ -73,24 +74,14 @@ namespace bacon {
     }
 
     void TextObject::draw_properties_editor() {
-        // ID
-        std::string id_text = "ID: " + std::to_string(this->get_uid());
-        ImGui::Text("%s", id_text.c_str());
-
-        // Name
-        char name_buf[ui::_BUF_SIZE];
-        strcpy(name_buf, this->name.c_str());
-        ImGui::ItemLabel("Name", ItemLabelFlag::Left);
-        if (ImGui::InputText("##Name", name_buf, ui::_BUF_SIZE)) {
-            this->name = std::string(name_buf);
-        }
+        GameObject::draw_properties_editor();
     }
 
-    void TextObject::save_to_json() const {
+    void TextObject::save_to_json(nlohmann::json& data) const {
         debug_error("This function has not been implemented yet.");
     }
 
-    void TextObject::load_from_json() {
+    void TextObject::load_from_json(nlohmann::json& data) {
         debug_error("This function has not been implemented yet.");
     }
 

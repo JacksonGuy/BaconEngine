@@ -12,6 +12,8 @@ namespace bacon {
             uint32_t screen_height;
             uint32_t framerate_limit;
 
+            bool is_playing = false;
+
             Font editor_font;
 
             GameManager manager;
@@ -27,6 +29,9 @@ namespace bacon {
             void clear_console();
 
             void draw_ui();
+
+            void start_game();
+            void end_game();
 
         private:
             ImGuiTextBuffer m_ConsoleBuffer;

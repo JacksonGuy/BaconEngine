@@ -1,11 +1,12 @@
 #include <iostream>
 
-#include "core/2D/entity.h"
-#include "core/globals.h"
 #include "imgui.h"
+#include "nfd.h"
 #include "rlImGui.h"
 #include "raylib.h"
 
+#include "core/2D/entity.h"
+#include "core/globals.h"
 #include "core/util.h"
 #include "editor/editor.h"
 #include "editor/ui/editor_ui.h"
@@ -14,10 +15,13 @@ int main(int argc, char** argv) {
     using namespace bacon;
     debug_log("Starting BaconEngine...");
 
-    engine_version = "v0.1";
+    globals::engine_version = "v0.1";
 
     // Disable RayLib logging
     SetTraceLogLevel(LOG_WARNING);
+
+    // NativeFileDialog
+    NFD_Init();
 
     // Setup
     Editor editor;
@@ -60,7 +64,11 @@ int main(int argc, char** argv) {
             editor.manager.entity_create_body(box);
         }
 
-        editor.manager.simulation_step();
+        if (editor.is_playing)
+        {
+            // Do physics step
+            editor.manager.simulation_step();
+        }
 
         BeginDrawing();
             ClearBackground(LIGHTGRAY);

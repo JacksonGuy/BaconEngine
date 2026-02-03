@@ -1,11 +1,13 @@
 #include "editor_ui.h"
 
-#include "core/globals.h"
 #include "raylib.h"
 #include "rlImGui.h"
 #include "imgui.h"
 
+#include "core/globals.h"
 #include "core/util.h"
+#include "file/file.h"
+#include "editor/ui/imgui_extras.h"
 
 namespace bacon {
     namespace ui {
@@ -17,28 +19,46 @@ namespace bacon {
             SetImGuiStyle();
         }
 
-        void draw_top_bar() {
+        void draw_top_bar(GameManager& manager) {
             ImGui::BeginMainMenuBar();
                 if (ImGui::BeginMenu("File"))
                 {
                     if (ImGui::MenuItem("New Project", "Ctrl-Shift-N"))
                     {
-                        debug_error("This function has not been implemented yet.");
+                        globals::has_changes_made = true;
+                        if (globals::has_changes_made)
+                        {
+                            ui::show_save_confirm_popup = true;
+                            ui::last_action = LastEditorAction::PROJECT_NEW;
+                        }
+                        else
+                        {
+                            file::create_new_project(manager);
+                        }
                     }
 
                     if (ImGui::MenuItem("Save Project", "Ctrl-S"))
                     {
-                        debug_error("This function has not been implemented yet.");
+                        file::save_project(manager);
                     }
 
                     if (ImGui::MenuItem("Save Project As...", "Ctrl-Shift-S"))
                     {
-                        debug_error("This function has not been implemented yet.");
+                        globals::is_project_loaded = false;
+                        file::save_project(manager);
                     }
 
                     if (ImGui::MenuItem("Open Project", "Ctrl-O"))
                     {
-                        debug_error("This function has not been implemented yet.");
+                        if (globals::has_changes_made)
+                        {
+                            ui::show_save_confirm_popup = true;
+                            ui::last_action = LastEditorAction::PROJECT_OPEN;
+                        }
+                        else
+                        {
+                            file::load_project(manager);
+                        }
                     }
 
                     ImGui::EndMenu();
@@ -52,7 +72,71 @@ namespace bacon {
 
                     ImGui::EndMenu();
                 }
+
+                if (ImGui::BeginMenu("Testing"))
+                {
+                    if (ImGui::MenuItem("Testing"))
+                    {
+                        ui::show_save_confirm_popup = true;
+                    }
+
+                    ImGui::EndMenu();
+                }
             ImGui::EndMainMenuBar();
+
+            if (ui::show_save_confirm_popup)
+            {
+                bool button_pressed = false;
+                ImGui::OpenPopup("Save Project?");
+
+                if (ImGui::BeginPopupModal("Save Project?", &ui::show_save_confirm_popup, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::Text("You have unsaved edits. Do you want to save?");
+
+                    if (ImGui::Button("Save")) {
+                        file::save_project(manager);
+                        ui::show_save_confirm_popup = false;
+                        button_pressed = true;
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("Discard")) {
+                        manager.reset();
+                        ui::show_save_confirm_popup = false;
+                        button_pressed = true;
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("Cancel")) {
+                        ui::show_save_confirm_popup = false;
+                        button_pressed = true;
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    ImGui::EndPopup();
+                }
+
+                if (button_pressed) {
+                    switch (ui::last_action) {
+                        case LastEditorAction::PROJECT_NEW:
+                        {
+                            file::create_new_project(manager);
+                            break;
+                        }
+
+                        case LastEditorAction::PROJECT_OPEN:
+                        {
+                            file::load_project(manager);
+                            break;
+                        }
+
+                        default:
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         void draw_object_properties() {
@@ -64,7 +148,7 @@ namespace bacon {
             ImGui::End();
         }
 
-        void draw_object_tree(GameManager* manager) {
+        void draw_object_tree(GameManager& manager) {
             auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
                                 | ImGuiTreeNodeFlags_DefaultOpen;
 
@@ -73,7 +157,7 @@ namespace bacon {
 
                 if (ImGui::TreeNodeEx("Scene", parentFlags))
                 {
-                    for (GameObject* obj : manager->get_objects()) {
+                    for (GameObject* obj : manager.get_objects()) {
                         if (obj->get_parent() == nullptr) {
                             game_object_tree_recurse(obj);
                         }
@@ -108,13 +192,51 @@ namespace bacon {
             // debug_error("This function has not been implemented yet.");
         }
 
-        void draw_general_info_display() {
+        void draw_general_info_display(Editor* editor) {
             ImGui::Begin("Info", &show_general_info);
                 int fps = GetFPS();
-                std::string title = "Bacon Engine " + engine_version;
+                std::string title = "Bacon Engine " + globals::engine_version;
                 ImGui::Text("%s", title.c_str());
                 ImGui::Text("FPS: %i", fps);
+
+                ImGui::Separator();
+
+                if (editor->is_playing)
+                {
+                    if (ImGui::Button("Stop Game")) {
+                        editor->end_game();
+                    }
+                }
+                else
+                {
+                    if (ImGui::Button("Play Game")) {
+                        editor->start_game();
+                    }
+                }
+
             ImGui::End();
+        }
+
+        void draw_entity_create(GameManager& manager) {
+            static char name_buffer[256];
+            static char texture_path_buffer[256];
+            static float position_buffer[] = {0.f, 0.f};
+            static float size_buffer[] = {32.f, 32.f};
+
+            if (!show_entity_create) return;
+
+            ImGui::Begin("Create Entity", &ui::show_entity_create);
+                ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+                ImGui::InputText("##name", name_buffer, 256);
+            ImGui::End();
+        }
+
+        void draw_text_create(GameManager& manager) {
+            // debug_error("This function has not been implemented yet.");
+        }
+
+        void draw_camera_create(GameManager& manager) {
+            // debug_error("This function has not been implemented yet.");
         }
 
         void game_object_tree_recurse(GameObject* object) {

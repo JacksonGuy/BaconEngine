@@ -1,5 +1,7 @@
 #include "core/2D/game_manager.h"
 
+#include <memory>
+
 #include "box2d/box2d.h"
 #include "box2d/id.h"
 #include "box2d/math_functions.h"
@@ -23,6 +25,8 @@ namespace bacon {
         world_def.enableSleep = false;
 
         this->m_world = b2CreateWorld(&world_def);
+
+        this->m_lua_state = std::make_unique<sol::state>();
     }
 
     /*
@@ -41,6 +45,7 @@ namespace bacon {
         Entity* entity = new Entity(uid);
 
         entity->body_type = type;
+        entity->manager = this;
 
         this->m_objects.push_back(entity);
         this->m_entities.push_back(entity);
@@ -110,7 +115,7 @@ namespace bacon {
         debug_error("This function has not been implemented yet.");
     }
 
-    std::vector<GameObject*>& GameManager::get_objects() {
+    const std::vector<GameObject*>& GameManager::get_objects() const {
         return this->m_objects;
     }
 
@@ -164,6 +169,38 @@ namespace bacon {
         }
 
         this->m_renderer->draw(&this->m_camera->camera);
+    }
+
+    float GameManager::get_gravity() const {
+        return this->m_gravity / this->m_length_units_per_meter;
+    }
+
+    void GameManager::set_gravity(float gravity) {
+        debug_error("This function has not been implemented yet.");
+    }
+
+    void GameManager::reset() {
+        // Clear UID count
+        this->m_uid_count = 0;
+        this->m_unused_uids.clear();
+
+        // Clear renderer
+        this->m_renderer->reset();
+
+        // Clear objects
+        for (GameObject* object : this->m_objects) {
+            delete(object);
+        }
+        this->m_objects.clear();
+        this->m_entities.clear();
+
+        this->m_camera = nullptr;
+
+        // Delete physics world
+        b2DestroyWorld(m_world);
+
+        // Reset Lua
+        m_lua_state.reset();
     }
 
     uid_t GameManager::acquire_uid() {

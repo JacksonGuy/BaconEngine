@@ -32,7 +32,7 @@ namespace bacon {
             CameraObject* instantiate_camera();
             void deinstantiate_camera(CameraObject* camera);
 
-            std::vector<GameObject*>& get_objects();
+            const std::vector<GameObject*>& get_objects() const;
 
             void set_object_layer(GameObject* object, size_t layer);
             void set_active_camera(CameraObject* camera);
@@ -43,6 +43,10 @@ namespace bacon {
 
             void simulation_step();
             void draw_entities(Camera2D* camera = nullptr) const;
+            float get_gravity() const;
+            void set_gravity(float gravity);
+
+            void reset();
 
         private:
             uid_t m_uid_count;
@@ -58,7 +62,7 @@ namespace bacon {
             float m_length_units_per_meter;
             float m_gravity;
 
-            sol::state m_lua_state;
+            std::unique_ptr<sol::state> m_lua_state;
 
             uid_t acquire_uid();
     };

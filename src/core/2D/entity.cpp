@@ -9,9 +9,11 @@
 #include "core/util.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
+#include <functional>
 
 namespace bacon {
     Entity::Entity(uid_t uid) : GameObject(uid) {
+        this->class_type = object_t::ENTITY;
         this->name = "Entity (" + std::to_string(uid) + ")";
         this->m_texture = {0};
         this->m_texture_path = "";
@@ -21,6 +23,12 @@ namespace bacon {
 
     void Entity::set_texture(const char* path) {
         debug_error("This function has not been implemented yet.");
+    }
+
+    void Entity::set_size(float width, float height) {
+        this->size = (Vector2){width, height};
+
+        this->set_texture(this->m_texture_path.c_str());
     }
 
     void Entity::create_body(b2WorldId world_id) {
@@ -64,12 +72,13 @@ namespace bacon {
     }
 
     void Entity::draw() const {
+        if (!this->is_visible) return;
+
         b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
         b2Rot b_rot = b2Body_GetRotation(this->physics_body);
         float b_radians = b2Rot_GetAngle(b_rot);
 
         // Vector2 pos = {b_pos.x, b_pos.y};
-
         // DrawTextureEx(
         //     this->m_texture,
         //     pos,
@@ -87,24 +96,33 @@ namespace bacon {
     }
 
     void Entity::draw_properties_editor() {
-        // ID
-        std::string id_text = "ID: " + std::to_string(this->get_uid());
-        ImGui::Text("%s", id_text.c_str());
+        GameObject::draw_properties_editor();
 
-        // Name
-        char name_buf[ui::_BUF_SIZE];
-        strcpy(name_buf, this->name.c_str());
-        ImGui::ItemLabel("Name", ItemLabelFlag::Left);
-        if (ImGui::InputText("##Name", name_buf, ui::_BUF_SIZE)) {
-            this->name = std::string(name_buf);
+        // Size
+        float size[] = {this->size.x, this->size.y};
+        ImGui::ItemLabel("Size", ItemLabelFlag::Left);
+        if (ImGui::InputFloat2("##size", size)) {
+            this->set_size(size[0], size[1]);
         }
+
+        // Rotation
+        ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
+        if (ImGui::InputFloat("##rotation", &this->rotation)) {
+            this->rotation = b_fmod(this->rotation, 360);
+        }
+
+        // Visibility
+        ImGui::ItemLabel("Visible", ItemLabelFlag::Left);
+        ImGui::Checkbox("##visible", &this->is_visible);
+
+        ImGui::Separator();
     }
 
-    void Entity::save_to_json() const {
+    void Entity::save_to_json(nlohmann::json& data) const {
         debug_error("This function has not been implemented yet.");
     }
 
-    void Entity::load_from_json() {
+    void Entity::load_from_json(nlohmann::json& data) {
         debug_error("This function has not been implemented yet.");
     }
 

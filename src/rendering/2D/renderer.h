@@ -29,6 +29,8 @@ namespace bacon {
             void remove_from_layer(GameObject* object);
             void draw(Camera2D* camera) const;
 
+            void reset();
+
             uint32_t get_width() const;
             uint32_t get_height() const;
 

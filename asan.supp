@@ -1,0 +1,11 @@
+# GTK / GLib
+leak:libgtk-3.so
+leak:libgobject-2.0.so
+leak:libglib-2.0.so
+leak:libgio-2.0.so
+leak:libX11.so
+
+# NFD may pull these in
+leak:libpango-1.0.so
+leak:libcairo.so
+leak:libdbus-1.so

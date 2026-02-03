@@ -6,14 +6,26 @@
 #include <string>
 
 #include "raylib.h"
+#include "json.hpp"
 
 namespace bacon {
+    // Forward declaration to avoid circular dependency
+    class GameManager;
+
+    enum object_t : uint8_t {
+        OBJECT = 0,
+        ENTITY,
+        TEXT,
+        CAMERA,
+    };
+
     class GameObject
     {
         public:
             friend class GameManager;
             friend class Renderer;
 
+            object_t class_type;
             std::string name;
             std::string tag;
             Vector2 position;
@@ -26,9 +38,9 @@ namespace bacon {
             const std::vector<GameObject*>& get_children() const;
 
             virtual void draw() const = 0;
-            virtual void draw_properties_editor() = 0;
-            virtual void save_to_json() const;
-            virtual void load_from_json();
+            virtual void draw_properties_editor();
+            virtual void save_to_json(nlohmann::json& data) const;
+            virtual void load_from_json(nlohmann::json& data);
             virtual size_t calculate_size() const;
             virtual uint8_t* serialize() const;
             virtual void deserialize(uint8_t* bytes);
@@ -37,6 +49,7 @@ namespace bacon {
             GameObject* parent;
             std::vector<GameObject*> children;
             size_t layer;
+            GameManager* manager;
 
             GameObject(uid_t uid);
             GameObject(uint8_t* bytes);

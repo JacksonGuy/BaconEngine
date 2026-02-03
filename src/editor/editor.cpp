@@ -2,11 +2,13 @@
 
 #include <ctime>
 
+#include "core/globals.h"
 #include "raylib.h"
 #include "rlImGui.h"
 #include "imgui.h"
 
 #include "ui/editor_ui.h"
+#include "file/file.h"
 
 namespace bacon {
     Editor::Editor() {
@@ -14,6 +16,8 @@ namespace bacon {
         this->screen_height = 720;
         this->framerate_limit = 60;
         this->editor_font = {0};
+
+        this->is_playing = false;
 
         // Editor camera for viewing level
         this->camera = {0};
@@ -86,14 +90,30 @@ namespace bacon {
         rlImGuiBegin();
         ImGui::DockSpaceOverViewport();
 
-        ui::draw_top_bar();
+        ui::draw_top_bar(this->manager);
         ui::draw_object_properties();
-        ui::draw_object_tree(&this->manager);
+        ui::draw_object_tree(this->manager);
         ui::draw_scene_display(this->manager.get_renderer());
         ui::draw_engine_console();
         ui::draw_settings();
-        ui::draw_general_info_display();
+        ui::draw_general_info_display(this);
+
+        ui::draw_entity_create(this->manager);
+        ui::draw_text_create(this->manager);
+        ui::draw_camera_create(this->manager);
 
         rlImGuiEnd();
+    }
+
+    void Editor::start_game() {
+        this->is_playing = true;
+
+        file::save_project(this->manager);
+    }
+
+    void Editor::end_game() {
+        this->is_playing = false;
+
+        file::load_project(this->manager);
     }
 }
