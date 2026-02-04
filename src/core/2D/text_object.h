@@ -7,6 +7,8 @@
 namespace bacon {
     class TextObject : GameObject {
         public:
+            friend class GameManager;
+
             void set_text(const std::string& text);
             void set_font(const std::string& font_path);
             void set_font_size(uint32_t size);
@@ -19,20 +21,22 @@ namespace bacon {
             uint8_t* serialize() const override;
             void deserialize(uint8_t* bytes) override;
 
-        private:
-            std::string m_text;
-            Font m_font;
-            int32_t m_font_size;
-            int32_t m_char_spacing;
-            int32_t m_max_text_width;
-            Color m_color;
-
-            TextObject(uid_t uid);
+        protected:
+            TextObject();
             TextObject(const TextObject& text_object) = delete;
             TextObject& operator=(const TextObject& text_object) = delete;
             TextObject(TextObject&& text_object) = delete;
             TextObject& operator=(TextObject&& text_object) = delete;
             ~TextObject() = default;
+
+        private:
+            std::string m_text;
+            Font m_font;
+            std::string m_font_path;
+            int32_t m_font_size;
+            int32_t m_char_spacing;
+            int32_t m_max_text_width;
+            Color m_color;
 
             void update_text(const std::string& text);
             float calculate_text_width(const std::string& text);

@@ -7,9 +7,9 @@
 #include "editor/ui/imgui_extras.h"
 
 namespace bacon {
-    CameraObject::CameraObject(uid_t uid) : GameObject(uid) {
-        this->class_type = object_t::CAMERA;
-        this->name = "Camera (" + std::to_string(uid) + ")";
+    CameraObject::CameraObject() : GameObject() {
+        this->class_type = ObjectType::CAMERA;
+        this->name = "Camera";
         this->camera = {0};
         this->is_active = false;
         this->zoom = 1.0f;
@@ -42,11 +42,37 @@ namespace bacon {
     }
 
     void CameraObject::save_to_json(nlohmann::json& data) const {
-        debug_error("This function has not been implemented yet.");
+        GameObject::save_to_json(data);
+
+        data["is_active"] = this->is_active;
+        data["zoom"] = this->zoom;
     }
 
     void CameraObject::load_from_json(nlohmann::json& data) {
-        debug_error("This function has not been implemented yet.");
+        GameObject::load_from_json(data);
+
+        for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
+        {
+            std::string key = it.key();
+            auto value = *it;
+
+            if (key == "is_active")
+            {
+                this->is_active = value;
+            }
+            else if (key == "zoom")
+            {
+                this->zoom = value;
+                this->camera.zoom = value;
+            }
+        }
+
+        if (this->is_active)
+        {
+            this->manager->set_active_camera(this);
+        }
+        this->camera.target = this->position;
+        this->camera.rotation = this->rotation;
     }
 
     size_t CameraObject::calculate_size() const {

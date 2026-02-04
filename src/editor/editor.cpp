@@ -108,12 +108,18 @@ namespace bacon {
     void Editor::start_game() {
         this->is_playing = true;
 
-        file::save_project(this->manager);
+        if (globals::has_changes_made)
+        {
+            file::save_project(this->manager);
+        }
     }
 
     void Editor::end_game() {
         this->is_playing = false;
 
-        file::load_project(this->manager);
+        if (globals::is_project_loaded)
+        {
+            file::load_project(this->manager);
+        }
     }
 }

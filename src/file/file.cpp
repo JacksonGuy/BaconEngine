@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/2D/game_object.h"
 #include "json.hpp"
 #include "nfd.h"
 #include "nfd.hpp"
@@ -12,16 +13,20 @@
 
 namespace bacon {
     namespace file {
-        bool save_project(const GameManager& manager) {
+        nfdresult_t save_project(const GameManager& manager) {
             namespace fs = std::filesystem;
             using json = nlohmann::json;
 
             if (!globals::is_project_loaded)
             {
-                bool result = create_new_project(manager);
-                if (!result) {
+                nfdresult_t result = create_new_project(manager);
+                if (result == NFD_ERROR) {
                     debug_error("Failed to create new project.");
-                    return false;
+                    return result;
+                }
+                else if (result == NFD_CANCEL)
+                {
+                    return result;
                 }
             }
 
@@ -39,10 +44,10 @@ namespace bacon {
 
             outfile << std::setw(4) << project_data;
 
-            return true;
+            return NFD_OKAY;
         }
 
-        bool load_project(GameManager& manager) {
+        nfdresult_t load_project(GameManager& manager) {
             namespace fs = std::filesystem;
             using json = nlohmann::json;
 
@@ -55,19 +60,26 @@ namespace bacon {
             args.filterList = filters;
             nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
 
-            if (result != NFD_OKAY)
+            if (result == NFD_ERROR)
             {
                 free(path);
                 debug_error("Failed to load project.");
-                return false;
+                return result;
             }
+            else if (result == NFD_CANCEL)
+            {
+                free(path);
+                return result;
+            }
+
+            debug_log("Loading project...");
 
             // Open project file
             std::ifstream infile(path);
             if (!infile.is_open())
             {
                 debug_error("Failed to load project: file doesn't exist");
-                return false;
+                return NFD_ERROR;
             }
 
             // Save path globals
@@ -78,47 +90,46 @@ namespace bacon {
 
             // Load JSON data and parse
             json file_data = json::parse(infile);
-            for (auto it = file_data.begin(); it != file_data.end(); it++)
+
+            globals::engine_version = file_data["settings"]["version"];
+            float gravity = file_data["settings"]["gravity"];
+            manager.set_gravity(gravity);
+
+            for (auto& object : file_data["objects"])
             {
-                std::string key = it.key();
-                auto value = *it;
-
-                if (key == "version")
+                debug_log("Iterating over object list");
+                if (object.is_null())
                 {
-                    globals::engine_version = value;
+                    debug_log("Null object encountered.");
+                    continue;
                 }
-                else if (key == "objects")
-                {
-                    for (auto& object : file_data["objects"])
-                    {
-                        if (object.is_null())
-                        {
-                            continue;
-                        }
 
-                        if (object["type"] == "entity")
-                        {
-                            body_t body_type(object["physics_body_type"]);
-                            Entity* entity = manager.instantiate_entity(body_type);
-                            entity->load_from_json(object);
-                        }
-                        else if (object["type"] == "text")
-                        {
-                            debug_error("This has not been implemented yet");
-                        }
-                        else if (object["type"] == "camera")
-                        {
-                            debug_error("This has not been implemented yet.");
-                        }
-                    }
+                if (object["type"] == ObjectType::ENTITY)
+                {
+                    BodyType body_type(object["body_type"]);
+                    Entity* entity = manager.instantiate_entity(body_type);
+                    entity->load_from_json(object);
+                }
+                else if (object["type"] == ObjectType::TEXT)
+                {
+                    TextObject* text = manager.instantiate_text();
+                    text->load_from_json(object);
+                }
+                else if (object["type"] == ObjectType::CAMERA)
+                {
+                    CameraObject* camera = manager.instantiate_camera();
+                    camera->load_from_json(object);
                 }
             }
 
+            // Create physics bodies for entities
+            manager.create_physics_bodies();
+
             free(path);
-            return true;
+            return NFD_OKAY;
         }
 
-        bool create_new_project(const GameManager& manager) {
+        nfdresult_t create_new_project(const GameManager& manager) {
             using json = nlohmann::json;
             namespace fs = std::filesystem;
 
@@ -126,11 +137,16 @@ namespace bacon {
             nfdpickfolderu8args_t args = {0};
             nfdresult_t result = NFD_PickFolderU8_With(&outpath, &args);
 
-            if (result != NFD_OKAY)
+            if (result == NFD_ERROR)
             {
                 free(outpath);
                 debug_error("Failed to create new project.");
-                return false;
+                return result;
+            }
+            else if (result == NFD_CANCEL)
+            {
+                free(outpath);
+                return result;
             }
 
             // Set globals
@@ -154,7 +170,7 @@ namespace bacon {
             fs::create_directory(outpath + std::string("/sounds"));
 
             free(outpath);
-            return true;
+            return NFD_OKAY;
         }
 
         std::string abs_path_to_relative(std::string abs_path) {

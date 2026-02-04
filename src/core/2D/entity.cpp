@@ -12,13 +12,13 @@
 #include <functional>
 
 namespace bacon {
-    Entity::Entity(uid_t uid) : GameObject(uid) {
-        this->class_type = object_t::ENTITY;
-        this->name = "Entity (" + std::to_string(uid) + ")";
+    Entity::Entity() : GameObject() {
+        this->class_type = ObjectType::ENTITY;
+        this->name = "Entity";
         this->m_texture = {0};
         this->m_texture_path = "";
         this->physics_body = {0};
-        this->body_type = body_t::NONE;
+        this->body_type = BodyType::NONE;
     }
 
     void Entity::set_texture(const char* path) {
@@ -119,11 +119,32 @@ namespace bacon {
     }
 
     void Entity::save_to_json(nlohmann::json& data) const {
-        debug_error("This function has not been implemented yet.");
+        GameObject::save_to_json(data);
+
+        data["body_type"] = body_type;
+        data["texture_path"] = m_texture_path;
     }
 
     void Entity::load_from_json(nlohmann::json& data) {
-        debug_error("This function has not been implemented yet.");
+        GameObject::load_from_json(data);
+
+        for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
+        {
+            std::string key = it.key();
+            auto value = *it;
+
+            if (key == "body_type")
+            {
+                this->body_type = BodyType(value);
+            }
+            else if (key == "texture_path")
+            {
+                this->m_texture_path = value;
+
+                // This calls set_texture() with m_texture_path
+                this->set_size(this->size.x, this->size.y);
+            }
+        }
     }
 
     size_t Entity::calculate_size() const {

@@ -8,7 +8,7 @@
 #include "game_object.h"
 
 namespace bacon {
-    enum body_t : uint8_t {
+    enum BodyType : uint8_t {
         NONE = 0,
         STATIC,
         DYNAMIC,
@@ -32,9 +32,9 @@ namespace bacon {
 
         protected:
             b2BodyId physics_body;
-            body_t body_type;
+            BodyType body_type;
 
-            Entity(uid_t uid);
+            Entity();
             Entity(const Entity& entity) = delete;
             Entity& operator=(const Entity& entity) = delete;
             Entity(Entity&& entity) = delete;

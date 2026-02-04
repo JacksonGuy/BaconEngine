@@ -8,11 +8,13 @@
 #include "raylib.h"
 #include "json.hpp"
 
+#include "core/uuid.h"
+
 namespace bacon {
     // Forward declaration to avoid circular dependency
     class GameManager;
 
-    enum object_t : uint8_t {
+    enum ObjectType : uint8_t {
         OBJECT = 0,
         ENTITY,
         TEXT,
@@ -25,7 +27,8 @@ namespace bacon {
             friend class GameManager;
             friend class Renderer;
 
-            object_t class_type;
+            ObjectType class_type;
+            UUID uuid;
             std::string name;
             std::string tag;
             Vector2 position;
@@ -33,8 +36,7 @@ namespace bacon {
             float rotation;
             bool is_visible;
 
-            uid_t get_uid() const;
-            GameObject* get_parent() const;
+            const GameObject* get_parent() const;
             const std::vector<GameObject*>& get_children() const;
 
             virtual void draw() const = 0;
@@ -46,20 +48,17 @@ namespace bacon {
             virtual void deserialize(uint8_t* bytes);
 
         protected:
-            GameObject* parent;
+            const GameObject* parent;
             std::vector<GameObject*> children;
             size_t layer;
             GameManager* manager;
 
-            GameObject(uid_t uid);
+            GameObject();
             GameObject(uint8_t* bytes);
             GameObject(const GameObject& obj) = delete;
             GameObject(GameObject&& obj) = delete;
             GameObject& operator=(const GameObject& obj) = delete;
             GameObject& operator=(GameObject&& obj) = delete;
             virtual ~GameObject() = default;
-
-        private:
-            uid_t m_uid;
     };
 }

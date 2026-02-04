@@ -8,9 +8,9 @@
 #include "editor/ui/imgui_extras.h"
 
 namespace bacon {
-    TextObject::TextObject(uid_t uid) : GameObject(uid) {
-        this->class_type = object_t::TEXT;
-        this->name = "Text (" + std::to_string(uid) + ")";
+    TextObject::TextObject() : GameObject() {
+        this->class_type = ObjectType::TEXT;
+        this->name = "Text";
         this->m_text = "";
         this->m_font = {0};
         this->m_font_size = 0;
@@ -25,6 +25,9 @@ namespace bacon {
 
     void TextObject::set_font(const std::string& font_path) {
         debug_error("This function has not been implemented yet.");
+        return;
+
+        this->m_font_path = font_path;
     }
 
     void TextObject::set_font_size(uint32_t size) {
@@ -32,6 +35,7 @@ namespace bacon {
         this->update_text(this->m_text);
     }
 
+    // TODO
     void TextObject::update_text(const std::string& text) {
         float text_width = this->calculate_text_width(text);
 
@@ -78,11 +82,62 @@ namespace bacon {
     }
 
     void TextObject::save_to_json(nlohmann::json& data) const {
-        debug_error("This function has not been implemented yet.");
+        GameObject::save_to_json(data);
+
+        data["text"] = m_text;
+        data["font_path"] = m_font_path;
+        data["font_size"] = m_font_size;
+        data["char_spacing"] = m_char_spacing;
+        data["max_text_width"] = m_max_text_width;
+        data["color"] = {
+            m_color.r,
+            m_color.g,
+            m_color.b,
+            m_color.a
+        };
     }
 
     void TextObject::load_from_json(nlohmann::json& data) {
-        debug_error("This function has not been implemented yet.");
+        GameObject::load_from_json(data);
+
+        for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
+        {
+            std::string key = it.key();
+            auto value = *it;
+
+            if (key == "text")
+            {
+                // set_text(value);
+                this->m_text = value;
+            }
+            else if (key == "font_path")
+            {
+                set_font(value);
+            }
+            else if (key == "font_size")
+            {
+                set_font_size(value);
+            }
+            else if (key == "char_spacing")
+            {
+                this->m_char_spacing = value;
+            }
+            else if (key == "max_text_width")
+            {
+                this->m_max_text_width = value;
+            }
+            else if (key == "color")
+            {
+                this->m_color = (Color){
+                    .r = value[0],
+                    .g = value[1],
+                    .b = value[2],
+                    .a = value[3]
+                };
+            }
+        }
+
+        this->set_text(m_text);
     }
 
     size_t TextObject::calculate_size() const {

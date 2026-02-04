@@ -24,7 +24,7 @@ namespace bacon {
             void deserialize(uint8_t* bytes) override;
 
         protected:
-            CameraObject(uid_t uid);
+            CameraObject();
             CameraObject(const CameraObject& camera) = delete;
             CameraObject& operator=(const CameraObject& camera) = delete;
             CameraObject(CameraObject&& camera) = delete;

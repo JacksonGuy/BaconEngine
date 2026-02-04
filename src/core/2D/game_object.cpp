@@ -7,9 +7,9 @@
 #include "editor/ui/imgui_extras.h"
 
 namespace bacon {
-    GameObject::GameObject(uid_t uid) {
-        this->class_type = object_t::OBJECT;
-        this->name = "Object (" + std::to_string(uid) + ")";
+    GameObject::GameObject() {
+        this->class_type = ObjectType::OBJECT;
+        this->name = "Object";
         this->tag = "Default";
         this->position = {0.f, 0.f};
         this->size = {1.f, 1.f};
@@ -17,7 +17,6 @@ namespace bacon {
         this->is_visible = true;
         this->layer = 0;
 
-        this->m_uid = uid;
         this->parent = nullptr;
     }
 
@@ -25,11 +24,7 @@ namespace bacon {
         this->deserialize(bytes);
     }
 
-    uid_t GameObject::get_uid() const {
-        return this->m_uid;
-    }
-
-    GameObject* GameObject::get_parent() const {
+    const GameObject* GameObject::get_parent() const {
         return this->parent;
     }
 
@@ -39,8 +34,8 @@ namespace bacon {
 
     void GameObject::draw_properties_editor() {
         // ID
-        std::string id_text = "ID: " + std::to_string(this->get_uid());
-        ImGui::Text("%s", id_text.c_str());
+        // std::string id_text = "ID: " + this->uuid.get_uuid();
+        // ImGui::Text("%s", id_text.c_str());
 
         // Name
         char name_buf[ui::_BUF_SIZE];
@@ -78,11 +73,81 @@ namespace bacon {
     }
 
     void GameObject::save_to_json(nlohmann::json& data) const {
-        debug_error("default save_to_json has not been implemented yet.");
+        data["uuid"] = uuid.get_uuid();
+        data["type"] = class_type;
+        data["name"] = name;
+        data["tag"] = tag;
+        data["position"] = {position.x, position.y};
+        data["size"] = {size.x, size.y};
+        data["rotation"] = rotation;
+        data["is_visible"] = is_visible;
+        data["layer"] = layer;
+
+        if (parent != nullptr)
+        {
+            data["parent"] = parent->uuid.get_uuid();
+        }
+        else
+        {
+            data["parent"] = "null";
+        }
     }
 
     void GameObject::load_from_json(nlohmann::json& data) {
-        debug_error("default load_from_json has not been implemented yet.");
+        for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
+        {
+            std::string key = it.key();
+            auto value = *it;
+
+            if (key == "uuid")
+            {
+                this->uuid = UUID(value);
+            }
+            else if (key == "type")
+            {
+                this->class_type = ObjectType(value);
+            }
+            else if (key == "name")
+            {
+                this->name = value;
+            }
+            else if (key == "tag")
+            {
+                this->tag = value;
+            }
+            else if (key == "position")
+            {
+                this->position = (Vector2){value[0], value[1]};
+            }
+            else if (key == "size")
+            {
+                this->size = (Vector2){value[0], value[1]};
+            }
+            else if (key == "rotation")
+            {
+                this->rotation = value;
+            }
+            else if (key == "is_visible")
+            {
+                this->is_visible = value;
+            }
+            else if (key == "layer")
+            {
+                this->layer = value;
+                this->manager->set_object_layer(this, this->layer);
+            }
+            else if (key == "parent")
+            {
+                if (value == "null")
+                {
+                    this->parent = nullptr;
+                }
+                else
+                {
+                    this->parent = this->manager->find_object_by_uuid(value);
+                }
+            }
+        }
     }
 
     size_t GameObject::calculate_size() const {

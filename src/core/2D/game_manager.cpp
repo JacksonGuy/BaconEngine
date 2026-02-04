@@ -12,7 +12,6 @@
 
 namespace bacon {
     GameManager::GameManager() {
-        this->m_uid_count = 0;
         this->m_camera = nullptr;
         this->m_renderer = nullptr;
 
@@ -40,9 +39,8 @@ namespace bacon {
         debug_warn("Destructor for GameManager has not been implemented yet.");
     }
 
-    Entity* GameManager::instantiate_entity(body_t type) {
-        uid_t uid = this->acquire_uid();
-        Entity* entity = new Entity(uid);
+    Entity* GameManager::instantiate_entity(BodyType type) {
+        Entity* entity = new Entity();
 
         entity->body_type = type;
         entity->manager = this;
@@ -93,30 +91,100 @@ namespace bacon {
         // Remove from layer
         this->m_renderer->remove_from_layer(entity);
 
-        // Reclaim uid
-        this->m_unused_uids.push_back(entity->get_uid());
-
         // Delete
         delete(entity);
     }
 
+    TextObject* GameManager::instantiate_text() {
+        TextObject* text = new TextObject();
+
+        text->manager = this;
+
+        this->m_objects.push_back(text);
+        this->m_renderer->add_to_layer(text, text->layer);
+
+        return text;
+    }
+
+    void GameManager::deinstantiate_text(TextObject* text) {
+        // Erase from objects list
+        bool found_object = false;
+        for (auto it = m_objects.begin(); it != m_objects.end(); it++) {
+            if (*it == text) {
+                m_objects.erase(it);
+                found_object = true;
+                break;
+            }
+        }
+        if (!found_object) {
+            debug_error("Failed to remove entity from objects list.");
+        }
+
+        // Remove from layer
+        this->m_renderer->remove_from_layer(text);
+
+        delete(text);
+    }
+
     CameraObject* GameManager::instantiate_camera() {
-        uid_t uid = this->acquire_uid();
-        CameraObject* camera = new CameraObject(uid);
+        CameraObject* camera = new CameraObject();
+
+        camera->manager = this;
 
         this->m_objects.push_back(camera);
-
-        this->m_renderer->add_to_layer(camera, camera->layer);
 
         return camera;
     }
 
     void GameManager::deinstantiate_camera(CameraObject* camera) {
-        debug_error("This function has not been implemented yet.");
+        // Erase from objects list
+        bool found_object = false;
+        for (auto it = m_objects.begin(); it != m_objects.end(); it++) {
+            if (*it == camera) {
+                m_objects.erase(it);
+                found_object = true;
+                break;
+            }
+        }
+        if (!found_object) {
+            debug_error("Failed to remove entity from objects list.");
+        }
+
+        delete(camera);
     }
 
     const std::vector<GameObject*>& GameManager::get_objects() const {
         return this->m_objects;
+    }
+
+    const GameObject* GameManager::find_object_by_uuid(std::string uuid) const {
+        const GameObject* object = nullptr;
+
+        for (const GameObject* obj : this->m_objects)
+        {
+            if (obj->uuid.get_uuid() == uuid)
+            {
+                object = obj;
+                break;
+            }
+        }
+
+        return object;
+    }
+
+    const GameObject* GameManager::find_object_by_uuid(UUID uuid) const {
+        const GameObject* object = nullptr;
+
+        for (const GameObject* obj : this->m_objects)
+        {
+            if (obj->uuid == uuid)
+            {
+                object = obj;
+                break;
+            }
+        }
+
+        return object;
     }
 
     void GameManager::set_object_layer(GameObject* object, size_t layer) {
@@ -176,14 +244,10 @@ namespace bacon {
     }
 
     void GameManager::set_gravity(float gravity) {
-        debug_error("This function has not been implemented yet.");
+        this->m_gravity = gravity * this->m_length_units_per_meter;
     }
 
     void GameManager::reset() {
-        // Clear UID count
-        this->m_uid_count = 0;
-        this->m_unused_uids.clear();
-
         // Clear renderer
         this->m_renderer->reset();
 
@@ -201,15 +265,5 @@ namespace bacon {
 
         // Reset Lua
         m_lua_state.reset();
-    }
-
-    uid_t GameManager::acquire_uid() {
-        if (!this->m_unused_uids.empty()) {
-            uid_t uid = this->m_unused_uids.back();
-            this->m_unused_uids.pop_back();
-            return uid;
-        }
-
-        return this->m_uid_count++;
     }
 }

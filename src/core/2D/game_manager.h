@@ -10,11 +10,10 @@
 
 #include "core/2D/game_object.h"
 #include "core/2D/entity.h"
+#include "core/2D/text_object.h"
 #include "rendering/2D/renderer.h"
 
 namespace bacon {
-    typedef uid_t uint64_t;
-
     class GameManager {
         public:
             GameManager();
@@ -24,15 +23,20 @@ namespace bacon {
             GameManager& operator=(GameManager&& manager) = delete;
             ~GameManager();
 
-            Entity* instantiate_entity(body_t type);
+            Entity* instantiate_entity(BodyType type);
             Entity* copy_entity(Entity* entity);
             void entity_create_body(Entity* entity);
             void deinstantiate_entity(Entity* entity);
+
+            TextObject* instantiate_text();
+            void deinstantiate_text(TextObject* text);
 
             CameraObject* instantiate_camera();
             void deinstantiate_camera(CameraObject* camera);
 
             const std::vector<GameObject*>& get_objects() const;
+            const GameObject* find_object_by_uuid(std::string uuid) const;
+            const GameObject* find_object_by_uuid(UUID uuid) const;
 
             void set_object_layer(GameObject* object, size_t layer);
             void set_active_camera(CameraObject* camera);
@@ -49,9 +53,6 @@ namespace bacon {
             void reset();
 
         private:
-            uid_t m_uid_count;
-            std::vector<uid_t> m_unused_uids;
-
             std::vector<GameObject*> m_objects;
             std::vector<Entity*> m_entities;
 
@@ -63,7 +64,5 @@ namespace bacon {
             float m_gravity;
 
             std::unique_ptr<sol::state> m_lua_state;
-
-            uid_t acquire_uid();
     };
 }

@@ -25,7 +25,6 @@ namespace bacon {
                 {
                     if (ImGui::MenuItem("New Project", "Ctrl-Shift-N"))
                     {
-                        globals::has_changes_made = true;
                         if (globals::has_changes_made)
                         {
                             ui::show_save_confirm_popup = true;
@@ -240,7 +239,8 @@ namespace bacon {
         }
 
         void game_object_tree_recurse(GameObject* object) {
-            ImGui::PushID(object->get_uid());
+            // TODO FIX THIS!!!
+            ImGui::PushID(object->uuid.get_left());
 
             auto normalFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             auto parentFlags =  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
