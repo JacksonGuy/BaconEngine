@@ -36,7 +36,11 @@ namespace bacon {
      * be optional anyways...
      */
     GameManager::~GameManager() {
-        debug_warn("Destructor for GameManager has not been implemented yet.");
+        delete(m_renderer);
+        for (GameObject* object : m_objects) {
+            delete(object);
+        }
+        b2DestroyWorld(m_world);
     }
 
     Entity* GameManager::instantiate_entity(BodyType type) {
@@ -157,10 +161,10 @@ namespace bacon {
         return this->m_objects;
     }
 
-    const GameObject* GameManager::find_object_by_uuid(std::string uuid) const {
-        const GameObject* object = nullptr;
+    GameObject* GameManager::find_object_by_uuid(std::string uuid) const {
+        GameObject* object = nullptr;
 
-        for (const GameObject* obj : this->m_objects)
+        for (GameObject* obj : this->m_objects)
         {
             if (obj->uuid.get_uuid() == uuid)
             {
@@ -172,10 +176,10 @@ namespace bacon {
         return object;
     }
 
-    const GameObject* GameManager::find_object_by_uuid(UUID uuid) const {
-        const GameObject* object = nullptr;
+    GameObject* GameManager::find_object_by_uuid(UUID uuid) const {
+        GameObject* object = nullptr;
 
-        for (const GameObject* obj : this->m_objects)
+        for (GameObject* obj : this->m_objects)
         {
             if (obj->uuid == uuid)
             {
@@ -197,6 +201,7 @@ namespace bacon {
     }
 
     void GameManager::create_physics_bodies() {
+        debug_log("Creating physics bodies");
         for (Entity* entity : this->m_entities) {
             entity->create_body(this->m_world);
         }
@@ -261,9 +266,22 @@ namespace bacon {
         this->m_camera = nullptr;
 
         // Delete physics world
-        b2DestroyWorld(m_world);
+        this->create_physics_world();
 
         // Reset Lua
         m_lua_state.reset();
+    }
+
+    void GameManager::create_physics_world() {
+        if (b2World_IsValid(m_world)) {
+            b2DestroyWorld(m_world);
+        }
+
+        b2WorldDef world_def = b2DefaultWorldDef();
+
+        world_def.gravity = (b2Vec2){0.0f, this->m_gravity};
+        world_def.enableSleep = false;
+
+        this->m_world = b2CreateWorld(&world_def);
     }
 }

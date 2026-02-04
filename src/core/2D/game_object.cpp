@@ -8,7 +8,7 @@
 
 namespace bacon {
     GameObject::GameObject() {
-        this->class_type = ObjectType::OBJECT;
+        this->object_type = ObjectType::OBJECT;
         this->name = "Object";
         this->tag = "Default";
         this->position = {0.f, 0.f};
@@ -30,6 +30,10 @@ namespace bacon {
 
     const std::vector<GameObject*>& GameObject::get_children() const {
         return this->children;
+    }
+
+    const size_t GameObject::get_layer() const {
+        return this->layer;
     }
 
     void GameObject::draw_properties_editor() {
@@ -63,18 +67,11 @@ namespace bacon {
 
             this->manager->set_object_layer(this, render_layer);
         }
-
-        // Position
-        float position[] = {this->position.x, this->position.y};
-        ImGui::ItemLabel("Position", ItemLabelFlag::Left);
-        if (ImGui::InputFloat2("##position", position)) {
-            this->position = (Vector2){position[0], position[1]};
-        }
     }
 
     void GameObject::save_to_json(nlohmann::json& data) const {
         data["uuid"] = uuid.get_uuid();
-        data["type"] = class_type;
+        data["type"] = object_type;
         data["name"] = name;
         data["tag"] = tag;
         data["position"] = {position.x, position.y};
@@ -105,7 +102,7 @@ namespace bacon {
             }
             else if (key == "type")
             {
-                this->class_type = ObjectType(value);
+                this->object_type = ObjectType(value);
             }
             else if (key == "name")
             {
@@ -134,7 +131,7 @@ namespace bacon {
             else if (key == "layer")
             {
                 this->layer = value;
-                this->manager->set_object_layer(this, this->layer);
+                // this->manager->set_object_layer(this, this->layer);
             }
             else if (key == "parent")
             {

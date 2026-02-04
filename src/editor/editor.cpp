@@ -108,6 +108,8 @@ namespace bacon {
     void Editor::start_game() {
         this->is_playing = true;
 
+        this->manager.create_physics_bodies();
+
         if (globals::has_changes_made)
         {
             file::save_project(this->manager);
@@ -117,9 +119,21 @@ namespace bacon {
     void Editor::end_game() {
         this->is_playing = false;
 
+        std::string inspect_uuid = "";
+        if (ui::view_properties_object != nullptr) {
+            inspect_uuid = ui::view_properties_object->uuid.get_uuid();
+        }
+        ui::view_properties_object = nullptr;
+
+        this->manager.reset();
         if (globals::is_project_loaded)
         {
-            file::load_project(this->manager);
+            file::load_project(this->manager, false);
+        }
+
+        if (inspect_uuid.length() > 0) {
+            GameObject* inspect_object = manager.find_object_by_uuid(inspect_uuid);
+            ui::view_properties_object = inspect_object;
         }
     }
 }

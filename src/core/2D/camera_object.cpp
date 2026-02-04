@@ -8,7 +8,7 @@
 
 namespace bacon {
     CameraObject::CameraObject() : GameObject() {
-        this->class_type = ObjectType::CAMERA;
+        this->object_type = ObjectType::CAMERA;
         this->name = "Camera";
         this->camera = {0};
         this->is_active = false;

@@ -9,7 +9,7 @@
 
 namespace bacon {
     TextObject::TextObject() : GameObject() {
-        this->class_type = ObjectType::TEXT;
+        this->object_type = ObjectType::TEXT;
         this->name = "Text";
         this->m_text = "";
         this->m_font = {0};

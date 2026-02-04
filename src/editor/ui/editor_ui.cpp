@@ -56,7 +56,7 @@ namespace bacon {
                         }
                         else
                         {
-                            file::load_project(manager);
+                            file::load_project(manager, true);
                         }
                     }
 
@@ -125,7 +125,7 @@ namespace bacon {
 
                         case LastEditorAction::PROJECT_OPEN:
                         {
-                            file::load_project(manager);
+                            file::load_project(manager, true);
                             break;
                         }
 

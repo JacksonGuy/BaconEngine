@@ -9,11 +9,10 @@
 #include "core/util.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
-#include <functional>
 
 namespace bacon {
     Entity::Entity() : GameObject() {
-        this->class_type = ObjectType::ENTITY;
+        this->object_type = ObjectType::ENTITY;
         this->name = "Entity";
         this->m_texture = {0};
         this->m_texture_path = "";
@@ -34,9 +33,13 @@ namespace bacon {
     void Entity::create_body(b2WorldId world_id) {
         b2BodyDef body_def = b2DefaultBodyDef();
         body_def.rotation = b2MakeRot(this->rotation * DEG2RAD);
+        // body_def.position = (b2Vec2){
+        //     this->position.x + (this->size.x / 2),
+        //     this->position.y + (this->size.y / 2)
+        // };
         body_def.position = (b2Vec2){
-            this->position.x + (this->size.x / 2),
-            this->position.y + (this->size.y / 2)
+            this->position.x,
+            this->position.y
         };
         b2Polygon box = b2MakeBox(this->size.x/2, this->size.y/2);
 
@@ -74,9 +77,10 @@ namespace bacon {
     void Entity::draw() const {
         if (!this->is_visible) return;
 
-        b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
-        b2Rot b_rot = b2Body_GetRotation(this->physics_body);
-        float b_radians = b2Rot_GetAngle(b_rot);
+        // if (!b2Body_IsValid(this->physics_body)) return;
+        // b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
+        // b2Rot b_rot = b2Body_GetRotation(this->physics_body);
+        // float b_radians = b2Rot_GetAngle(b_rot);
 
         // Vector2 pos = {b_pos.x, b_pos.y};
         // DrawTextureEx(
@@ -88,15 +92,22 @@ namespace bacon {
         // );
 
         DrawRectanglePro(
-            {b_pos.x, b_pos.y, this->size.x, this->size.y},
+            {this->position.x, this->position.y, this->size.x, this->size.y},
             {this->size.x * 0.5f, this->size.y * 0.5f},
-            RAD2DEG * b_radians,
+            this->rotation,
             RED
         );
     }
 
     void Entity::draw_properties_editor() {
         GameObject::draw_properties_editor();
+
+        // Position
+        float position[] = {this->position.x, this->position.y};
+        ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+        if (ImGui::InputFloat2("##position", position)) {
+            this->position = (Vector2){position[0], position[1]};
+        }
 
         // Size
         float size[] = {this->size.x, this->size.y};
@@ -116,6 +127,24 @@ namespace bacon {
         ImGui::Checkbox("##visible", &this->is_visible);
 
         ImGui::Separator();
+
+        // Texture
+        char texture_path_buf[ui::_BUF_SIZE];
+        strcpy(texture_path_buf, this->m_texture_path.c_str());
+        if (ImGui::InputText("Texture", texture_path_buf, ui::_BUF_SIZE)) {
+            this->m_texture_path = texture_path_buf;
+            this->set_texture(m_texture_path.c_str());
+        }
+
+        ImGui::Separator();
+
+        // Physics
+        const char* body_options[] = {"None", "Static", "Dynamic", "Kinematic"};
+        int current_body_option = this->body_type;
+        ImGui::Combo("Physics Body", &current_body_option, body_options, 4);
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            this->body_type = BodyType(current_body_option);
+        }
     }
 
     void Entity::save_to_json(nlohmann::json& data) const {
@@ -142,7 +171,9 @@ namespace bacon {
                 this->m_texture_path = value;
 
                 // This calls set_texture() with m_texture_path
-                this->set_size(this->size.x, this->size.y);
+                if (this->m_texture_path.length() > 0) {
+                    this->set_size(this->size.x, this->size.y);
+                }
             }
         }
     }

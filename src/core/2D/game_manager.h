@@ -35,8 +35,8 @@ namespace bacon {
             void deinstantiate_camera(CameraObject* camera);
 
             const std::vector<GameObject*>& get_objects() const;
-            const GameObject* find_object_by_uuid(std::string uuid) const;
-            const GameObject* find_object_by_uuid(UUID uuid) const;
+            GameObject* find_object_by_uuid(std::string uuid) const;
+            GameObject* find_object_by_uuid(UUID uuid) const;
 
             void set_object_layer(GameObject* object, size_t layer);
             void set_active_camera(CameraObject* camera);
@@ -51,6 +51,7 @@ namespace bacon {
             void set_gravity(float gravity);
 
             void reset();
+            void create_physics_world();
 
         private:
             std::vector<GameObject*> m_objects;

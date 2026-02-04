@@ -27,7 +27,7 @@ namespace bacon {
             friend class GameManager;
             friend class Renderer;
 
-            ObjectType class_type;
+            ObjectType object_type;
             UUID uuid;
             std::string name;
             std::string tag;
@@ -38,6 +38,7 @@ namespace bacon {
 
             const GameObject* get_parent() const;
             const std::vector<GameObject*>& get_children() const;
+            const size_t get_layer() const;
 
             virtual void draw() const = 0;
             virtual void draw_properties_editor();

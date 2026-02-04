@@ -47,35 +47,44 @@ namespace bacon {
             return NFD_OKAY;
         }
 
-        nfdresult_t load_project(GameManager& manager) {
+        nfdresult_t load_project(GameManager& manager, bool show_dialog) {
             namespace fs = std::filesystem;
             using json = nlohmann::json;
 
-            nfdu8char_t* path = NULL;
-            nfdu8filteritem_t filters[1] = {
-                {"Project File", "json"}
-            };
-            nfdopendialogu8args_t args = {0};
-            args.filterCount = 1;
-            args.filterList = filters;
-            nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
-
-            if (result == NFD_ERROR)
-            {
-                free(path);
-                debug_error("Failed to load project.");
-                return result;
-            }
-            else if (result == NFD_CANCEL)
-            {
-                free(path);
-                return result;
-            }
-
             debug_log("Loading project...");
+            std::string file_path = globals::project_file;
+
+            if (show_dialog)
+            {
+                nfdu8char_t* path = NULL;
+                nfdu8filteritem_t filters[1] = {
+                    {"Project File", "json"}
+                };
+                nfdopendialogu8args_t args = {0};
+                args.filterCount = 1;
+                args.filterList = filters;
+                nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+
+                if (result == NFD_ERROR)
+                {
+                    free(path);
+                    debug_error("Failed to load project.");
+                    return result;
+                }
+                else if (result == NFD_CANCEL)
+                {
+                    free(path);
+                    return result;
+                }
+                else
+                {
+                    file_path = std::string(path);
+                    free(path);
+                }
+            }
 
             // Open project file
-            std::ifstream infile(path);
+            std::ifstream infile(file_path);
             if (!infile.is_open())
             {
                 debug_error("Failed to load project: file doesn't exist");
@@ -83,8 +92,8 @@ namespace bacon {
             }
 
             // Save path globals
-            fs::path entry_path = fs::path(path);
-            globals::project_file = path;
+            fs::path entry_path = fs::path(file_path);
+            globals::project_file = file_path;
             globals::project_directory = entry_path.parent_path().generic_string();
             globals::is_project_loaded = true;
 
@@ -97,7 +106,6 @@ namespace bacon {
 
             for (auto& object : file_data["objects"])
             {
-                debug_log("Iterating over object list");
                 if (object.is_null())
                 {
                     debug_log("Null object encountered.");
@@ -122,10 +130,14 @@ namespace bacon {
                 }
             }
 
-            // Create physics bodies for entities
-            manager.create_physics_bodies();
+            // Add objects to correct render layers
+            const std::vector<GameObject*>& objects = manager.get_objects();
+            for (GameObject* object : objects) {
+                if (object->object_type != ObjectType::ENTITY) continue;
 
-            free(path);
+                manager.set_object_layer(object, object->get_layer());
+            }
+
             return NFD_OKAY;
         }
 
