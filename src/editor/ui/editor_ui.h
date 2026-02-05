@@ -39,7 +39,7 @@ namespace bacon {
         void draw_object_properties();
         void draw_object_tree(GameManager& manager);
         void draw_scene_display(Renderer* renderer);
-        void draw_engine_console();
+        void draw_engine_console(Editor* editor);
         void draw_settings();
         void draw_general_info_display(Editor* editor);
 

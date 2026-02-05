@@ -214,18 +214,18 @@ namespace bacon {
 
         // Color
         float color[] = {
-            (float)m_color.r,
-            (float)m_color.g,
-            (float)m_color.b,
-            (float)m_color.a
+            (float)m_color.r / 255.f,
+            (float)m_color.g / 255.f,
+            (float)m_color.b / 255.f,
+            (float)m_color.a / 255.f
         };
         ImGui::ItemLabel("Color", ItemLabelFlag::Left);
         if (ImGui::ColorEdit4("##color", color)) {
             m_color = (Color){
-                .r = (unsigned char)color[0],
-                .g = (unsigned char)color[1],
-                .b = (unsigned char)color[2],
-                .a = (unsigned char)color[3]
+                .r = (unsigned char)(color[0] * 255.f),
+                .g = (unsigned char)(color[1] * 255.f),
+                .b = (unsigned char)(color[2] * 255.f),
+                .a = (unsigned char)(color[3] * 255.f)
             };
         }
     }

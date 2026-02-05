@@ -32,9 +32,11 @@ namespace bacon {
         this->camera.zoom = 1.f;
 
         // Create window
+        debug_log("Initializing Raylib...");
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(this->screen_width, this->screen_height, "Test");
         SetTargetFPS(this->framerate_limit);
+        debug_log("Raylib initialized.");
 
         // Load config
         this->load_config_file();
@@ -95,29 +97,29 @@ namespace bacon {
         this->manager.load_default_font(globals::editor_default_font_path.c_str());
     }
 
-    void Editor::ConsoleLog(const char* text) {
+    void Editor::console_log(const char* text) {
         // Get time
         time_t now = time(0);
         char* current_time = ctime(&now);
         std::string time_str = std::string(current_time);
         time_str.pop_back();
 
-        std::string message = "[ENGINE] (" + time_str + "): " + text + "\n";
-        this->m_ConsoleMessages.push_back(message);
+        std::string message = "[LOG] (" + time_str + "): " + text + "\n";
+        this->m_console_messages.push_back({MessageType::LOG, message});
     }
 
-    void Editor::ConsoleWarn(const char* text) {
+    void Editor::console_warn(const char* text) {
         // Get time
         time_t now = time(0);
         char* current_time = ctime(&now);
         std::string time_str = std::string(current_time);
         time_str.pop_back();
 
-        std::string message = "[WARN] (" + time_str + "): " + text + "\n";
-        this->m_ConsoleMessages.push_back(message);
+        std::string message = "[WARNING] (" + time_str + "): " + text + "\n";
+        this->m_console_messages.push_back({MessageType::WARNING, message});
     }
 
-    void Editor::ConsoleError(const char* text) {
+    void Editor::console_error(const char* text) {
         // Get time
         time_t now = time(0);
         char* current_time = ctime(&now);
@@ -125,22 +127,12 @@ namespace bacon {
         time_str.pop_back();
 
         std::string message = "[ERROR] (" + time_str + "): " + text + "\n";
-        this->m_ConsoleMessages.push_back(message);
+        this->m_console_messages.push_back({MessageType::ERROR, message});
     }
 
-    void Editor::ConsoleGameMessage(const char* text) {
-        // Get time
-        time_t now = time(0);
-        char* current_time = ctime(&now);
-        std::string time_str = std::string(current_time);
-        time_str.pop_back();
-
-        std::string message = std::string(text) + "\n";
-        this->m_ConsoleMessages.push_back(message);
-    }
-
-    void Editor::clear_console() {
-        this->m_ConsoleMessages.clear();
+    const std::vector<ConsoleMessage>& Editor::get_console_messages()
+    {
+        return this->m_console_messages;
     }
 
     void Editor::draw_ui() {
@@ -151,7 +143,7 @@ namespace bacon {
         ui::draw_object_properties();
         ui::draw_object_tree(this->manager);
         ui::draw_scene_display(this->manager.get_renderer());
-        ui::draw_engine_console();
+        ui::draw_engine_console(this);
         ui::draw_settings();
         ui::draw_general_info_display(this);
 
@@ -160,6 +152,27 @@ namespace bacon {
         ui::draw_camera_create(this->manager);
 
         rlImGuiEnd();
+    }
+
+    void Editor::editor_input()
+    {
+        Vector2 mouse_position = GetMousePosition();
+        Vector2 mouse_delta = GetMouseDelta();
+        float mouse_wheel_move = GetMouseWheelMove();
+
+        if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+        {
+            this->camera.target.x -= (mouse_delta.x * this->camera_move_speed);
+            this->camera.target.y -= (mouse_delta.y * this->camera_move_speed);
+        }
+
+        if (IsKeyDown(KEY_LEFT_CONTROL))
+        {
+            if (mouse_wheel_move != 0)
+            {
+                this->camera.zoom += (mouse_wheel_move * this->camera_zoom_speed);
+            }
+        }
     }
 
     void Editor::start_game() {

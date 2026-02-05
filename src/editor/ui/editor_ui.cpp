@@ -1,6 +1,7 @@
 #include "editor_ui.h"
 
 #include "core/2D/text_object.h"
+#include "editor/editor.h"
 #include "raylib.h"
 #include "rlImGui.h"
 #include "imgui.h"
@@ -184,8 +185,55 @@ namespace bacon {
             ImGui::End();
         }
 
-        void draw_engine_console() {
-            // debug_error("This function has not been implemented yet.");
+        void draw_engine_console(Editor* editor)
+        {
+            static bool console_show_errors = true;
+            static bool console_show_warnings = true;
+            static bool console_show_logs = true;
+
+            const ImVec4 warning_color = {255, 165, 0, 1.f};
+            const ImVec4 error_color = {255, 0, 0, 1.f};
+
+            const std::vector<ConsoleMessage>& messages = editor->get_console_messages();
+
+            ImGui::Begin("Console");
+                ImGui::Checkbox("Logs", &console_show_logs);
+                ImGui::SameLine();
+                ImGui::Checkbox("Warnings", &console_show_warnings);
+                ImGui::SameLine();
+                ImGui::Checkbox("Errors", &console_show_errors);
+
+                ImGui::Separator();
+
+                ImGui::BeginChild("scrollRegion");
+                    for (const ConsoleMessage& message : messages)
+                    {
+                        if (message.type == MessageType::LOG && console_show_logs)
+                        {
+                            ImGui::TextUnformatted(message.message.c_str());
+                        }
+                        else if (message.type == MessageType::WARNING && console_show_warnings)
+                        {
+                            ImGui::PushStyleColor(ImGuiCol_Text, warning_color);
+                                ImGui::TextUnformatted(message.message.c_str());
+                            ImGui::PopStyleColor();
+                        }
+                        else if (message.type == MessageType::ERROR && console_show_errors)
+                        {
+                            ImGui::PushStyleColor(ImGuiCol_Text, error_color);
+                                ImGui::TextUnformatted(message.message.c_str());
+                            ImGui::PopStyleColor();
+                        }
+                    }
+
+                    // Auto scroll to bottom
+                    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+                    {
+                        ImGui::SetScrollHereY(1.f);
+                    }
+                ImGui::EndChild();
+
+            ImGui::End();
         }
 
         void draw_settings() {
@@ -214,6 +262,11 @@ namespace bacon {
                     }
                 }
 
+                ImGui::ItemLabel("Camera Move Speed", ItemLabelFlag::Left);
+                ImGui::InputFloat("##cameraspeed", &editor->camera_move_speed);
+
+                ImGui::ItemLabel("Camera Zoom Speed", ItemLabelFlag::Left);
+                ImGui::InputFloat("##camerazoom", &editor->camera_zoom_speed);
             ImGui::End();
         }
 
