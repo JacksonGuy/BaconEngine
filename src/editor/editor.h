@@ -14,13 +14,16 @@ namespace bacon {
 
             bool is_playing = false;
 
-            Font editor_font;
+            std::string editor_font_path;
 
             GameManager manager;
             Camera2D camera;
 
             Editor();
             ~Editor() = default;
+
+            void create_config_file();
+            void load_config_file();
 
             void ConsoleLog(const char* text);
             void ConsoleWarn(const char* text);

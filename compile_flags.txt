@@ -5,6 +5,7 @@
 -Iextern/
 -Iextern/raylib/src
 -Iextern/imgui
+-Iextern/imgui/misc/cpp
 -Iextern/rlimgui
 -Iextern/box2d/include
 -Iextern/json

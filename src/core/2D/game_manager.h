@@ -4,6 +4,7 @@
 
 #include <vector>
 
+#include "file/resource_manager.h"
 #include "raylib.h"
 #include "sol/sol.hpp"
 #include "box2d/box2d.h"
@@ -16,6 +17,8 @@
 namespace bacon {
     class GameManager {
         public:
+            ResourceManager resources;
+
             GameManager();
             GameManager(const GameManager& manager) = delete;
             GameManager& operator=(const GameManager& manager) = delete;
@@ -30,6 +33,7 @@ namespace bacon {
 
             TextObject* instantiate_text();
             void deinstantiate_text(TextObject* text);
+            void load_default_font(const char* path);
 
             CameraObject* instantiate_camera();
             void deinstantiate_camera(CameraObject* camera);
@@ -39,7 +43,10 @@ namespace bacon {
             GameObject* find_object_by_uuid(UUID uuid) const;
 
             void set_object_layer(GameObject* object, size_t layer);
+
+            const std::vector<CameraObject*>& get_cameras() const;
             void set_active_camera(CameraObject* camera);
+            CameraObject* get_active_camera() const;
 
             void create_physics_bodies();
             void initialize_renderer(uint32_t width, uint32_t height);
@@ -47,6 +54,7 @@ namespace bacon {
 
             void simulation_step();
             void draw_entities(Camera2D* camera = nullptr) const;
+
             float get_gravity() const;
             void set_gravity(float gravity);
 
@@ -56,9 +64,12 @@ namespace bacon {
         private:
             std::vector<GameObject*> m_objects;
             std::vector<Entity*> m_entities;
+            std::vector<CameraObject*> m_cameras;
 
             Renderer* m_renderer = nullptr;
             CameraObject* m_camera;
+            std::string m_default_font_path;
+            std::shared_ptr<Font> m_default_font;
 
             b2WorldId m_world;
             float m_length_units_per_meter;

@@ -37,10 +37,6 @@ namespace bacon {
     }
 
     void GameObject::draw_properties_editor() {
-        // ID
-        // std::string id_text = "ID: " + this->uuid.get_uuid();
-        // ImGui::Text("%s", id_text.c_str());
-
         // Name
         char name_buf[ui::_BUF_SIZE];
         strcpy(name_buf, this->name.c_str());

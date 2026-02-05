@@ -44,7 +44,7 @@ namespace bacon {
             void create_body(b2WorldId world_id);
 
         private:
-            Texture2D m_texture;
+            std::shared_ptr<Texture2D> m_texture;
             std::string m_texture_path;
     };
 }

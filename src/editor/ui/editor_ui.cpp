@@ -1,5 +1,6 @@
 #include "editor_ui.h"
 
+#include "core/2D/text_object.h"
 #include "raylib.h"
 #include "rlImGui.h"
 #include "imgui.h"
@@ -222,7 +223,7 @@ namespace bacon {
             static float position_buffer[] = {0.f, 0.f};
             static float size_buffer[] = {32.f, 32.f};
 
-            if (!show_entity_create) return;
+            if (!ui::show_entity_create) return;
 
             ImGui::Begin("Create Entity", &ui::show_entity_create);
                 ImGui::ItemLabel("Name", ItemLabelFlag::Left);
@@ -231,7 +232,30 @@ namespace bacon {
         }
 
         void draw_text_create(GameManager& manager) {
-            // debug_error("This function has not been implemented yet.");
+            static char name_buffer[256];
+            static float position_buffer[] = {0.f, 0.f};
+
+            if (!ui::show_text_create) return;
+
+            ImGui::Begin("Create Text", &ui::show_text_create);
+                ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+                ImGui::InputText("##name", name_buffer, 256);
+
+                ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+                ImGui::InputFloat2("##position", position_buffer);
+
+                if (ImGui::Button("Create"))
+                {
+                    TextObject* text = manager.instantiate_text();
+                    text->name = name_buffer;
+                    text->position = (Vector2){position_buffer[0], position_buffer[1]};
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel"))
+                {
+                    ui::show_text_create = false;
+                }
+            ImGui::End();
         }
 
         void draw_camera_create(GameManager& manager) {
@@ -313,8 +337,9 @@ namespace bacon {
             io.Fonts->Clear();
 
             float fontSize = 18.f;
-            io.Fonts->AddFontFromFileTTF("Roboto-Regular.ttf", fontSize);
-            io.FontDefault = io.Fonts->AddFontFromFileTTF("Roboto-Regular.ttf", fontSize);
+            std::string font_path = globals::editor_default_font_path;
+            io.Fonts->AddFontFromFileTTF(font_path.c_str(), fontSize);
+            io.FontDefault = io.Fonts->AddFontFromFileTTF(font_path.c_str(), fontSize);
         }
     }
 }

@@ -21,7 +21,7 @@ set(SOURCE_FILES
     extern/imgui/imgui_draw.cpp
     extern/imgui/imgui_tables.cpp
     extern/imgui/imgui_widgets.cpp
-    extern/imgui/
+    extern/imgui/misc/cpp/imgui_stdlib.cpp
 
     src/core/uuid.cpp
     src/core/2D/game_object.cpp
@@ -34,6 +34,7 @@ set(SOURCE_FILES
     src/rendering/2D/renderer.cpp
     src/file/file.cpp
     src/editor/ui/imgui_extras.cpp
+    src/file/resource_manager.cpp
 
     src/main.cpp
 )
@@ -44,7 +45,7 @@ target_compile_options(main PRIVATE
     $<$<CONFIG:Release>:-O3>
     $<$<CONFIG:Debug>:
         -O0 -g3 -pg -Wall
-        -fsanitize=address -fno-omit-frame-pointer
+        -fsanitize=address,undefined -fno-omit-frame-pointer
         -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=
     >
 )
@@ -52,7 +53,7 @@ target_compile_definitions(main PRIVATE
     $<$<CONFIG:Debug>:DEBUG_BUILD>
 )
 target_link_options(main PRIVATE
-    $<$<CONFIG:Debug>: -fsanitize=address>
+    $<$<CONFIG:Debug>: -fsanitize=address,undefined>
 )
 
 # Link
@@ -66,6 +67,7 @@ target_link_libraries(main
 target_include_directories(main
     PRIVATE
         extern/imgui
+        extern/imgui/misc/cpp
         extern/rlimgui
         extern/json
         extern/lua

@@ -14,6 +14,7 @@ namespace bacon {
     GameManager::GameManager() {
         this->m_camera = nullptr;
         this->m_renderer = nullptr;
+        this->m_default_font = {0};
 
         this->m_length_units_per_meter = 128.0f;
         this->m_gravity = 9.8f * this->m_length_units_per_meter;
@@ -101,8 +102,9 @@ namespace bacon {
 
     TextObject* GameManager::instantiate_text() {
         TextObject* text = new TextObject();
-
         text->manager = this;
+
+        text->set_font(this->m_default_font_path);
 
         this->m_objects.push_back(text);
         this->m_renderer->add_to_layer(text, text->layer);
@@ -130,12 +132,26 @@ namespace bacon {
         delete(text);
     }
 
+    void GameManager::load_default_font(const char* path) {
+        this->m_default_font = this->resources.load_font(path);
+
+        // Check if font loaded correctly
+        if (this->m_default_font->baseSize <= 0) {
+            debug_error("Failed to load default font!");
+        }
+        else {
+            this->m_default_font_path = path;
+            debug_log("Set default font path: %s", m_default_font_path.c_str());
+        }
+    }
+
     CameraObject* GameManager::instantiate_camera() {
         CameraObject* camera = new CameraObject();
 
         camera->manager = this;
 
         this->m_objects.push_back(camera);
+        this->m_cameras.push_back(camera);
 
         return camera;
     }
@@ -151,7 +167,20 @@ namespace bacon {
             }
         }
         if (!found_object) {
-            debug_error("Failed to remove entity from objects list.");
+            debug_error("Failed to remove camera from objects list.");
+        }
+
+        // Erase from cameras list
+        bool found_camera = false;
+        for (auto it = m_cameras.begin(); it != m_cameras.end(); it++) {
+            if (*it == camera) {
+                m_cameras.erase(it);
+                found_camera = true;
+                break;
+            }
+        }
+        if (!found_camera) {
+            debug_error("Failed to remove camera from cameras list.");
         }
 
         delete(camera);
@@ -196,8 +225,21 @@ namespace bacon {
         this->m_renderer->add_to_layer(object, layer);
     }
 
+    const std::vector<CameraObject*>& GameManager::get_cameras() const {
+        return this->m_cameras;
+    }
+
     void GameManager::set_active_camera(CameraObject* camera) {
+        if (this->m_camera != nullptr && this->m_camera != camera)
+        {
+            this->m_camera->is_active = false;
+        }
+
         this->m_camera = camera;
+    }
+
+    CameraObject* GameManager::get_active_camera() const {
+        return this->m_camera;
     }
 
     void GameManager::create_physics_bodies() {

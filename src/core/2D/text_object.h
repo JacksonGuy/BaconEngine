@@ -5,13 +5,13 @@
 #include "core/2D/game_object.h"
 
 namespace bacon {
-    class TextObject : GameObject {
+    class TextObject : public GameObject {
         public:
             friend class GameManager;
 
             void set_text(const std::string& text);
             void set_font(const std::string& font_path);
-            void set_font_size(uint32_t size);
+            void set_font_size(int32_t size);
 
             void draw() const override;
             void draw_properties_editor() override;
@@ -31,7 +31,7 @@ namespace bacon {
 
         private:
             std::string m_text;
-            Font m_font;
+            std::shared_ptr<Font> m_font;
             std::string m_font_path;
             int32_t m_font_size;
             int32_t m_char_spacing;

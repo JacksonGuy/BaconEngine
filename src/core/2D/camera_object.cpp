@@ -39,6 +39,43 @@ namespace bacon {
 
     void CameraObject::draw_properties_editor() {
         GameObject::draw_properties_editor();
+
+        // Position
+        float position[] = {this->position.x, this->position.y};
+        ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+        if (ImGui::InputFloat2("##position", position)) {
+            this->position = (Vector2){position[0], position[1]};
+            this->camera.target = this->position;
+        }
+
+        // Size
+        float size[] = {this->size.x, this->size.y};
+        ImGui::ItemLabel("Size", ItemLabelFlag::Left);
+        if (ImGui::InputFloat2("##size", size)) {
+            this->size = (Vector2){size[0], size[1]};
+        }
+
+        // Rotation
+        ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
+        if (ImGui::InputFloat("##rotation", &this->rotation)) {
+            this->rotation = b_fmod(this->rotation, 360);
+        }
+
+        ImGui::Separator();
+
+        ImGui::ItemLabel("Active", ItemLabelFlag::Left);
+        if (ImGui::Checkbox("##is_active", &this->is_active)) {
+            if (this->is_active)
+            {
+                this->is_active = true;
+                this->manager->set_active_camera(this);
+            }
+        }
+
+        ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
+        if (ImGui::InputFloat("##zoom", &this->zoom)) {
+            camera.zoom = this->zoom;
+        }
     }
 
     void CameraObject::save_to_json(nlohmann::json& data) const {

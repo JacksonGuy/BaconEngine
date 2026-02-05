@@ -21,7 +21,8 @@ namespace bacon {
     }
 
     void Entity::set_texture(const char* path) {
-        debug_error("This function has not been implemented yet.");
+        this->m_texture = this->manager->resources.load_texture(path);
+        m_texture_path = path;
     }
 
     void Entity::set_size(float width, float height) {
