@@ -3,8 +3,8 @@
 #include "file/file.h"
 #include "imgui.h"
 #include "nfd.h"
-#include "rlImGui.h"
 #include "raylib.h"
+#include "rlImGui.h"
 
 #include "core/2D/entity.h"
 #include "core/globals.h"
@@ -12,7 +12,8 @@
 #include "editor/editor.h"
 #include "editor/ui/editor_ui.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     using namespace bacon;
     debug_log("Starting BaconEngine...");
 
@@ -31,7 +32,8 @@ int main(int argc, char** argv) {
     editor.is_playing = false;
 
     globals::project_directory = "/home/jackson/BaconEngine/projects/test2";
-    globals::project_file = "/home/jackson/BaconEngine/projects/test2/game.json";
+    globals::project_file =
+        "/home/jackson/BaconEngine/projects/test2/game.json";
     file::load_project(editor.manager, false);
 
     debug_log("Engine startup successful.");
@@ -56,19 +58,21 @@ int main(int argc, char** argv) {
         }
 
         BeginDrawing();
-            ClearBackground(LIGHTGRAY);
+        ClearBackground(LIGHTGRAY);
 
-            Camera2D* drawing_camera = nullptr;
-            if (editor.is_playing) {
-                drawing_camera = &editor.manager.get_active_camera()->camera;
-            }
-            else {
-                drawing_camera = &editor.camera;
-            }
-            editor.manager.draw_entities(drawing_camera);
+        Camera2D* drawing_camera = nullptr;
+        if (editor.is_playing)
+        {
+            drawing_camera = &editor.manager.get_active_camera()->camera;
+        }
+        else
+        {
+            drawing_camera = &editor.camera;
+        }
+        editor.manager.draw_entities(drawing_camera);
 
-            editor.draw_ui();
-            editor.update();
+        editor.draw_ui();
+        editor.update();
         EndDrawing();
     }
 
