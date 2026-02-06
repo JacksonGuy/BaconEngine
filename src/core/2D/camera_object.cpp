@@ -46,6 +46,8 @@ namespace bacon {
         if (ImGui::InputFloat2("##position", position)) {
             this->position = (Vector2){position[0], position[1]};
             this->camera.target = this->position;
+
+            ui::project_was_modified = true;
         }
 
         // Size
@@ -53,12 +55,16 @@ namespace bacon {
         ImGui::ItemLabel("Size", ItemLabelFlag::Left);
         if (ImGui::InputFloat2("##size", size)) {
             this->size = (Vector2){size[0], size[1]};
+
+            ui::project_was_modified = true;
         }
 
         // Rotation
         ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
         if (ImGui::InputFloat("##rotation", &this->rotation)) {
             this->rotation = b_fmod(this->rotation, 360);
+
+            ui::project_was_modified = true;
         }
 
         ImGui::Separator();
@@ -67,14 +73,17 @@ namespace bacon {
         if (ImGui::Checkbox("##is_active", &this->is_active)) {
             if (this->is_active)
             {
-                this->is_active = true;
                 this->manager->set_active_camera(this);
             }
+
+            ui::project_was_modified = true;
         }
 
         ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
         if (ImGui::InputFloat("##zoom", &this->zoom)) {
             camera.zoom = this->zoom;
+
+            ui::project_was_modified = true;
         }
     }
 

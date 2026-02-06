@@ -57,7 +57,6 @@ int main(int argc, char** argv) {
 
         BeginDrawing();
             ClearBackground(LIGHTGRAY);
-            DrawText("TESTING", 10, 10, 14, BLACK);
 
             Camera2D* drawing_camera = nullptr;
             if (editor.is_playing) {
@@ -69,6 +68,7 @@ int main(int argc, char** argv) {
             editor.manager.draw_entities(drawing_camera);
 
             editor.draw_ui();
+            editor.update();
         EndDrawing();
     }
 

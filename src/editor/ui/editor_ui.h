@@ -16,6 +16,8 @@ namespace bacon {
 
         const size_t _BUF_SIZE = 64;
 
+        inline bool project_was_modified = false;
+
         inline bool show_test = true;
         inline bool show_object_properties = true;
         inline bool show_object_tree = true;

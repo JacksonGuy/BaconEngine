@@ -164,6 +164,8 @@ namespace bacon {
         ImGui::ItemLabel("Position", ItemLabelFlag::Left);
         if (ImGui::InputFloat2("##position", position)) {
             this->position = (Vector2){position[0], position[1]};
+
+            ui::project_was_modified = true;
         }
 
         // Size
@@ -176,16 +178,22 @@ namespace bacon {
 
         // Rotation
         ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
-        if (ImGui::InputFloat("##rotation", &this->rotation)) {
+        if (ImGui::InputFloat("##rotation", &this->rotation))
+        {
             this->rotation = b_fmod(this->rotation, 360);
+
+            ui::project_was_modified = true;
         }
 
         ImGui::Separator();
 
         // Text
         ImGui::ItemLabel("Text", ItemLabelFlag::Left);
-        if (ImGui::InputTextMultiline("##text", &m_text)) {
+        if (ImGui::InputTextMultiline("##text", &m_text))
+        {
             this->set_text(m_text);
+
+            ui::project_was_modified = true;
         }
 
         // Font
@@ -197,19 +205,28 @@ namespace bacon {
         // Font size
         int32_t font_size = this->m_font_size;
         ImGui::ItemLabel("Font Size", ItemLabelFlag::Left);
-        if (ImGui::InputInt("##fontsize", &font_size)) {
+        if (ImGui::InputInt("##fontsize", &font_size))
+        {
             this->set_font_size(font_size);
+
+            ui::project_was_modified = true;
         }
 
         // Character spacing
         ImGui::ItemLabel("Character Spacing", ItemLabelFlag::Left);
-        ImGui::InputInt("##charspacing", &m_char_spacing);
+        if (ImGui::InputInt("##charspacing", &m_char_spacing))
+        {
+            ui::project_was_modified = true;
+        }
 
         // Text Width
         ImGui::ItemLabel("Max text width", ItemLabelFlag::Left);
-        if (ImGui::InputInt("##textwidth", &m_max_text_width)) {
+        if (ImGui::InputInt("##textwidth", &m_max_text_width))
+        {
             m_text.erase(std::remove(m_text.begin(), m_text.end(), '\n'), m_text.end());
             this->update_text(m_text);
+
+            ui::project_was_modified = true;
         }
 
         // Color
@@ -227,6 +244,8 @@ namespace bacon {
                 .b = (unsigned char)(color[2] * 255.f),
                 .a = (unsigned char)(color[3] * 255.f)
             };
+
+            ui::project_was_modified = true;
         }
     }
 

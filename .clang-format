@@ -1,0 +1,7 @@
+Language: Cpp
+Standard: Cpp17
+IndentWidth: 4
+BreakBeforeBraces: Allman
+PointerAlignment: Left
+DerivePointerAlignment: false
+AccessModifierOffset: 1

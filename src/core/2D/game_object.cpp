@@ -43,6 +43,8 @@ namespace bacon {
         ImGui::ItemLabel("Name", ItemLabelFlag::Left);
         if (ImGui::InputText("##Name", name_buf, ui::_BUF_SIZE)) {
             this->name = std::string(name_buf);
+
+            ui::project_was_modified = true;
         }
 
         // Tag
@@ -51,6 +53,8 @@ namespace bacon {
         ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
         if (ImGui::InputText("##Tag", tag_buf, ui::_BUF_SIZE)) {
             this->tag = std::string(tag_buf);
+
+            ui::project_was_modified = true;
         }
 
         // Rendering layer
@@ -62,6 +66,8 @@ namespace bacon {
             }
 
             this->manager->set_object_layer(this, render_layer);
+
+            ui::project_was_modified = true;
         }
     }
 

@@ -78,11 +78,6 @@ namespace bacon {
     void Entity::draw() const {
         if (!this->is_visible) return;
 
-        // if (!b2Body_IsValid(this->physics_body)) return;
-        // b2Vec2 b_pos = b2Body_GetPosition(this->physics_body);
-        // b2Rot b_rot = b2Body_GetRotation(this->physics_body);
-        // float b_radians = b2Rot_GetAngle(b_rot);
-
         // Vector2 pos = {b_pos.x, b_pos.y};
         // DrawTextureEx(
         //     this->m_texture,
@@ -100,32 +95,45 @@ namespace bacon {
         );
     }
 
-    void Entity::draw_properties_editor() {
+    void Entity::draw_properties_editor()
+    {
         GameObject::draw_properties_editor();
 
         // Position
         float position[] = {this->position.x, this->position.y};
         ImGui::ItemLabel("Position", ItemLabelFlag::Left);
-        if (ImGui::InputFloat2("##position", position)) {
+        if (ImGui::InputFloat2("##position", position))
+        {
             this->position = (Vector2){position[0], position[1]};
+
+            ui::project_was_modified = true;
         }
 
         // Size
         float size[] = {this->size.x, this->size.y};
         ImGui::ItemLabel("Size", ItemLabelFlag::Left);
-        if (ImGui::InputFloat2("##size", size)) {
+        if (ImGui::InputFloat2("##size", size))
+        {
             this->set_size(size[0], size[1]);
+
+            ui::project_was_modified = true;
         }
 
         // Rotation
         ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
-        if (ImGui::InputFloat("##rotation", &this->rotation)) {
+        if (ImGui::InputFloat("##rotation", &this->rotation))
+        {
             this->rotation = b_fmod(this->rotation, 360);
+
+            ui::project_was_modified = true;
         }
 
         // Visibility
         ImGui::ItemLabel("Visible", ItemLabelFlag::Left);
-        ImGui::Checkbox("##visible", &this->is_visible);
+        if (ImGui::Checkbox("##visible", &this->is_visible))
+        {
+            ui::project_was_modified = true;
+        }
 
         ImGui::Separator();
 
@@ -135,6 +143,8 @@ namespace bacon {
         if (ImGui::InputText("Texture", texture_path_buf, ui::_BUF_SIZE)) {
             this->m_texture_path = texture_path_buf;
             this->set_texture(m_texture_path.c_str());
+
+            ui::project_was_modified = true;
         }
 
         ImGui::Separator();
@@ -145,6 +155,8 @@ namespace bacon {
         ImGui::Combo("Physics Body", &current_body_option, body_options, 4);
         if (ImGui::IsItemDeactivatedAfterEdit()) {
             this->body_type = BodyType(current_body_option);
+
+            ui::project_was_modified = true;
         }
     }
 

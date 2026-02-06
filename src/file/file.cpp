@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "core/2D/game_object.h"
+#include "editor/ui/editor_ui.h"
 #include "json.hpp"
 #include "nfd.h"
 #include "nfd.hpp"
@@ -43,6 +44,8 @@ namespace bacon {
             }
 
             outfile << std::setw(4) << project_data;
+
+            ui::project_was_modified = false;
 
             return NFD_OKAY;
         }
@@ -138,6 +141,8 @@ namespace bacon {
                 manager.set_object_layer(object, object->get_layer());
             }
 
+            ui::project_was_modified = false;
+
             return NFD_OKAY;
         }
 
@@ -180,6 +185,8 @@ namespace bacon {
             fs::create_directory(outpath + std::string("/fonts"));
             fs::create_directory(outpath + std::string("/prefabs"));
             fs::create_directory(outpath + std::string("/sounds"));
+
+            ui::project_was_modified = false;
 
             free(outpath);
             return NFD_OKAY;

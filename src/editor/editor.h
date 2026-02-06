@@ -27,6 +27,8 @@ namespace bacon {
             uint32_t screen_height;
             uint32_t framerate_limit;
 
+            std::string project_title = "Bacon - Untitled Project";
+
             bool is_playing = false;
             float camera_move_speed = 1.0f;
             float camera_zoom_speed = 0.1f;
@@ -49,6 +51,7 @@ namespace bacon {
 
             void draw_ui();
             void editor_input();
+            void update();
 
             void start_game();
             void end_game();

@@ -36,6 +36,7 @@ namespace bacon {
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(this->screen_width, this->screen_height, "Test");
         SetTargetFPS(this->framerate_limit);
+        SetWindowTitle(project_title.c_str());
         debug_log("Raylib initialized.");
 
         // Load config
@@ -172,6 +173,20 @@ namespace bacon {
             {
                 this->camera.zoom += (mouse_wheel_move * this->camera_zoom_speed);
             }
+
+            if (IsKeyDown(KEY_S))
+            {
+                file::save_project(this->manager);
+            }
+        }
+    }
+
+    void Editor::update()
+    {
+        if (ui::project_was_modified)
+        {
+            std::string window_title = this->project_title + " (*)";
+            SetWindowTitle(window_title.c_str());
         }
     }
 
