@@ -11,5 +11,5 @@ enum ItemLabelFlag
 
 namespace ImGui
 {
-void ItemLabel(std::string_view title, ItemLabelFlag flags);
+    void ItemLabel(std::string_view title, ItemLabelFlag flags);
 }

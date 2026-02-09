@@ -15,223 +15,256 @@
 
 namespace bacon
 {
-Editor::Editor()
-{
-    this->screen_width = 1280;
-    this->screen_height = 720;
-    this->framerate_limit = 60;
-    this->editor_font_path = "";
+	Editor::Editor()
+	{
+		this->screen_width = 1280;
+		this->screen_height = 720;
+		this->framerate_limit = 60;
+		this->editor_font_path = "";
 
-    this->is_playing = false;
+		this->is_playing = false;
 
-    // Editor camera for viewing level
-    this->camera = {0};
-    this->camera.target = {0, 0};
-    this->camera.rotation = 0.0f;
-    this->camera.zoom = 1.f;
+		// Editor camera for viewing level
+		this->camera = {0};
+		this->camera.target = {0, 0};
+		this->camera.rotation = 0.0f;
+		this->camera.zoom = 1.f;
 
-    // Create window
-    debug_log("Initializing Raylib...");
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(this->screen_width, this->screen_height, "Test");
-    SetTargetFPS(this->framerate_limit);
-    SetWindowTitle(project_title.c_str());
-    debug_log("Raylib initialized.");
+		// Create window
+		debug_log("Initializing Raylib...");
 
-    // Load config
-    this->load_config_file();
+		SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+		InitWindow(this->screen_width, this->screen_height, "Test");
+		SetTargetFPS(this->framerate_limit);
+		globals::update_window_title();
+		SetExitKey(KEY_NULL); // Remove ESC as exit key
 
-    // Initialize UI elements
-    ui::init(800, 600);
+		debug_log("Raylib initialized.");
 
-    // TODO change default
-    this->manager.initialize_renderer(800, 600);
-}
+		// Load config
+		this->load_config_file();
 
-void Editor::create_config_file()
-{
-    using json = nlohmann::json;
-    namespace fs = std::filesystem;
+		// Initialize UI elements
+		ui::init(800, 600);
 
-    std::string current_directory = fs::current_path().generic_string();
-    std::string path =
-        file::relative_path_to_abs(current_directory) + "/config.json";
-    std::ofstream outfile(path);
-    json data;
+		// TODO change default
+		this->manager.initialize_renderer(800, 600);
+	}
 
-    data["engine_version"] = globals::engine_version;
-    data["default_font_path"] = "./Roboto-Regular.ttf";
+	void Editor::create_config_file()
+	{
+		using json = nlohmann::json;
+		namespace fs = std::filesystem;
 
-    outfile << std::setw(4) << data;
-}
+		std::string current_directory = fs::current_path().generic_string();
+		std::string path =
+			file::relative_path_to_abs(current_directory) + "/config.json";
+		std::ofstream outfile(path);
+		json data;
 
-void Editor::load_config_file()
-{
-    using json = nlohmann::json;
-    namespace fs = std::filesystem;
+		data["engine_version"] = globals::engine_version;
+		data["default_font_path"] = "./Roboto-Regular.ttf";
 
-    std::string current_directory = fs::current_path().generic_string();
-    std::string path =
-        file::relative_path_to_abs(current_directory) + "/config.json";
-    std::ifstream infile(path);
+		outfile << std::setw(4) << data;
+	}
 
-    if (!infile)
-    {
-        create_config_file();
-        infile = std::ifstream(path);
-    }
+	void Editor::load_config_file()
+	{
+		using json = nlohmann::json;
+		namespace fs = std::filesystem;
 
-    json data = json::parse(infile);
-    for (json::iterator it = data.begin(); it != data.end(); it++)
-    {
-        std::string key = it.key();
-        auto value = *it;
+		std::string current_directory = fs::current_path().generic_string();
+		std::string path =
+			file::relative_path_to_abs(current_directory) + "/config.json";
+		std::ifstream infile(path);
 
-        if (key == "engine_version")
-        {
-            globals::engine_version = value;
-        }
-        else if (key == "default_font_path")
-        {
-            globals::editor_default_font_path = value;
-        }
-    }
+		if (!infile)
+		{
+			create_config_file();
+			infile = std::ifstream(path);
+		}
 
-    // Load default font for game manager
-    debug_log("Config - Default Font: %s",
-              globals::editor_default_font_path.c_str());
-    this->manager.load_default_font(globals::editor_default_font_path.c_str());
-}
+		json data = json::parse(infile);
+		for (json::iterator it = data.begin(); it != data.end(); it++)
+		{
+			std::string key = it.key();
+			auto value = *it;
 
-void Editor::console_log(const char* text)
-{
-    // Get time
-    time_t now = time(0);
-    char* current_time = ctime(&now);
-    std::string time_str = std::string(current_time);
-    time_str.pop_back();
+			if (key == "engine_version")
+			{
+				globals::engine_version = value;
+			}
+			else if (key == "default_font_path")
+			{
+				globals::editor_default_font_path = value;
+			}
+		}
 
-    std::string message = "[LOG] (" + time_str + "): " + text + "\n";
-    this->m_console_messages.push_back({MessageType::LOG, message});
-}
+		// Load default font for game manager
+		debug_log("Config - Default Font: %s",
+				  globals::editor_default_font_path.c_str());
+		this->manager.load_default_font(
+			globals::editor_default_font_path.c_str());
+	}
 
-void Editor::console_warn(const char* text)
-{
-    // Get time
-    time_t now = time(0);
-    char* current_time = ctime(&now);
-    std::string time_str = std::string(current_time);
-    time_str.pop_back();
+	void Editor::console_log(const char* text)
+	{
+		// Get time
+		time_t now = time(0);
+		char* current_time = ctime(&now);
+		std::string time_str = std::string(current_time);
+		time_str.pop_back();
 
-    std::string message = "[WARNING] (" + time_str + "): " + text + "\n";
-    this->m_console_messages.push_back({MessageType::WARNING, message});
-}
+		std::string message = "[LOG] (" + time_str + "): " + text + "\n";
+		this->m_console_messages.push_back({MessageType::LOG, message});
+	}
 
-void Editor::console_error(const char* text)
-{
-    // Get time
-    time_t now = time(0);
-    char* current_time = ctime(&now);
-    std::string time_str = std::string(current_time);
-    time_str.pop_back();
+	void Editor::console_warn(const char* text)
+	{
+		// Get time
+		time_t now = time(0);
+		char* current_time = ctime(&now);
+		std::string time_str = std::string(current_time);
+		time_str.pop_back();
 
-    std::string message = "[ERROR] (" + time_str + "): " + text + "\n";
-    this->m_console_messages.push_back({MessageType::ERROR, message});
-}
+		std::string message = "[WARNING] (" + time_str + "): " + text + "\n";
+		this->m_console_messages.push_back({MessageType::WARNING, message});
+	}
 
-const std::vector<ConsoleMessage>& Editor::get_console_messages()
-{
-    return this->m_console_messages;
-}
+	void Editor::console_error(const char* text)
+	{
+		// Get time
+		time_t now = time(0);
+		char* current_time = ctime(&now);
+		std::string time_str = std::string(current_time);
+		time_str.pop_back();
 
-void Editor::draw_ui()
-{
-    rlImGuiBegin();
-    ImGui::DockSpaceOverViewport();
+		std::string message = "[ERROR] (" + time_str + "): " + text + "\n";
+		this->m_console_messages.push_back({MessageType::ERROR, message});
+	}
 
-    ui::draw_top_bar(this->manager);
-    ui::draw_object_properties();
-    ui::draw_object_tree(this->manager);
-    ui::draw_scene_display(this->manager.get_renderer());
-    ui::draw_engine_console(this);
-    ui::draw_settings();
-    ui::draw_general_info_display(this);
+	void Editor::console_clear()
+	{
+		this->m_console_messages.clear();
+	}
 
-    ui::draw_entity_create(this->manager);
-    ui::draw_text_create(this->manager);
-    ui::draw_camera_create(this->manager);
+	const std::vector<ConsoleMessage>& Editor::get_console_messages()
+	{
+		return this->m_console_messages;
+	}
 
-    rlImGuiEnd();
-}
+	void Editor::draw_ui()
+	{
+		rlImGuiBegin();
+		ImGui::DockSpaceOverViewport();
 
-void Editor::editor_input()
-{
-    Vector2 mouse_position = GetMousePosition();
-    Vector2 mouse_delta = GetMouseDelta();
-    float mouse_wheel_move = GetMouseWheelMove();
+		ui::draw_top_bar(this);
+		ui::draw_object_properties();
+		ui::draw_object_tree(this->manager);
+		ui::draw_scene_display(this->manager.get_renderer());
+		ui::draw_engine_console(this);
+		ui::draw_settings();
+		ui::draw_general_info_display(this);
 
-    if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
-    {
-        this->camera.target.x -= (mouse_delta.x * this->camera_move_speed);
-        this->camera.target.y -= (mouse_delta.y * this->camera_move_speed);
-    }
+		ui::draw_entity_create(this->manager);
+		ui::draw_text_create(this->manager);
+		ui::draw_camera_create(this->manager);
 
-    if (IsKeyDown(KEY_LEFT_CONTROL))
-    {
-        if (mouse_wheel_move != 0)
-        {
-            this->camera.zoom += (mouse_wheel_move * this->camera_zoom_speed);
-        }
+		ui::draw_save_confirm_popup(this);
+		ui::draw_save_as_popup(this);
+		ui::draw_create_project_popup(this);
 
-        if (IsKeyDown(KEY_S))
-        {
-            file::save_project(this->manager);
-        }
-    }
-}
+		globals::update_window_title();
 
-void Editor::update()
-{
-    if (ui::project_was_modified)
-    {
-        std::string window_title = this->project_title + " (*)";
-        SetWindowTitle(window_title.c_str());
-    }
-}
+		rlImGuiEnd();
+	}
 
-void Editor::start_game()
-{
-    this->is_playing = true;
+	void Editor::editor_input()
+	{
+		Vector2 mouse_position = GetMousePosition();
+		Vector2 mouse_delta = GetMouseDelta();
+		float mouse_wheel_move = GetMouseWheelMove();
 
-    this->manager.create_physics_bodies();
+		if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+		{
+			this->camera.target.x -= (mouse_delta.x * this->camera_move_speed);
+			this->camera.target.y -= (mouse_delta.y * this->camera_move_speed);
+		}
 
-    if (globals::has_changes_made)
-    {
-        file::save_project(this->manager);
-    }
-}
+		if (IsKeyDown(KEY_LEFT_CONTROL))
+		{
+			// Camera zoom
+			if (mouse_wheel_move != 0)
+			{
+				this->camera.zoom +=
+					(mouse_wheel_move * this->camera_zoom_speed);
+			}
 
-void Editor::end_game()
-{
-    this->is_playing = false;
+			// Project save
+			if (IsKeyPressed(KEY_S))
+			{
+				// Save as
+				if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+				{
+					ui::editor_save_project_as();
+				}
 
-    std::string inspect_uuid = "";
-    if (ui::view_properties_object != nullptr)
-    {
-        inspect_uuid = ui::view_properties_object->uuid.get_uuid();
-    }
-    ui::view_properties_object = nullptr;
+				// Normal save
+				else
+				{
+					ui::editor_save_project(this);
+				}
+			}
 
-    this->manager.reset();
-    if (globals::is_project_loaded)
-    {
-        file::load_project(this->manager, false);
-    }
+			// Open new project
+			if (IsKeyPressed(KEY_O))
+			{
+				ui::editor_open_project(this);
+			}
 
-    if (inspect_uuid.length() > 0)
-    {
-        GameObject* inspect_object = manager.find_object_by_uuid(inspect_uuid);
-        ui::view_properties_object = inspect_object;
-    }
-}
+			// Create new project
+			if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
+				IsKeyPressed(KEY_N))
+			{
+				ui::editor_new_project();
+			}
+		}
+	}
+
+	void Editor::start_game()
+	{
+		this->is_playing = true;
+
+		this->manager.create_physics_bodies();
+
+		if (globals::has_unsaved_changes)
+		{
+			file::save_project(this->manager);
+		}
+	}
+
+	void Editor::end_game()
+	{
+		this->is_playing = false;
+
+		std::string inspect_uuid = "";
+		if (ui::view_properties_object != nullptr)
+		{
+			inspect_uuid = ui::view_properties_object->uuid.get_uuid();
+		}
+		ui::view_properties_object = nullptr;
+
+		this->manager.reset();
+		if (globals::is_project_loaded)
+		{
+			file::load_project(this->manager, false);
+		}
+
+		if (inspect_uuid.length() > 0)
+		{
+			GameObject* inspect_object =
+				manager.find_object_by_uuid(inspect_uuid);
+			ui::view_properties_object = inspect_object;
+		}
+	}
 } // namespace bacon

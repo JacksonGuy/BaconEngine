@@ -38,13 +38,6 @@ int main(int argc, char** argv)
 
     debug_log("Engine startup successful.");
 
-    for (int i = 0; i < 25; i++)
-    {
-        editor.console_log("This is a test log.");
-        editor.console_warn("This is a test warning.");
-        editor.console_error("This is a test error.");
-    }
-
     while (!WindowShouldClose())
     {
         if (editor.is_playing)
@@ -72,7 +65,6 @@ int main(int argc, char** argv)
         editor.manager.draw_entities(drawing_camera);
 
         editor.draw_ui();
-        editor.update();
         EndDrawing();
     }
 
