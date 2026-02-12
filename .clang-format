@@ -11,3 +11,4 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Inline
 NamespaceIndentation: All
 IndentCaseLabels: true
+AlwaysBreakTemplateDeclarations: Yes

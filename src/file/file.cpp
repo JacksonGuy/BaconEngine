@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <fstream>
 
-#include "core/2D/game_manager.h"
 #include "core/2D/game_object.h"
+#include "core/game_state.h"
 #include "editor/ui/editor_ui.h"
 #include "json.hpp"
 #include "nfd.h"
@@ -17,7 +17,7 @@ namespace bacon
 {
 	namespace file
 	{
-		nfdresult_t save_project(const GameManager& manager)
+		nfdresult_t save_project()
 		{
 			namespace fs = std::filesystem;
 			using json = nlohmann::json;
@@ -26,10 +26,12 @@ namespace bacon
 			json project_data;
 
 			project_data["settings"]["version"] = globals::engine_version;
-			project_data["settings"]["gravity"] = manager.get_gravity();
+			project_data["settings"]["gravity"] =
+				GameState::scene.get_gravity();
 			project_data["settings"]["title"] = globals::project_title;
 
-			const std::vector<GameObject*>& objects = manager.get_objects();
+			const std::vector<GameObject*>& objects =
+				GameState::scene.get_objects();
 			for (size_t i = 0; i < objects.size(); i++)
 			{
 				GameObject* object = objects[i];
@@ -46,7 +48,7 @@ namespace bacon
 			return NFD_OKAY;
 		}
 
-		void parse_project_settings(GameManager& manager, nlohmann::json json)
+		void parse_project_settings(nlohmann::json json)
 		{
 			for (auto it = json.begin(); it != json.end(); it++)
 			{
@@ -60,7 +62,7 @@ namespace bacon
 				else if (key == "gravity")
 				{
 					float gravity = value;
-					manager.set_gravity(gravity);
+					GameState::scene.set_gravity(gravity);
 				}
 				else if (key == "title")
 				{
@@ -69,7 +71,7 @@ namespace bacon
 			}
 		}
 
-		void parse_project_objects(GameManager& manager, nlohmann::json json)
+		void parse_project_objects(nlohmann::json json)
 		{
 			for (auto& object : json)
 			{
@@ -81,34 +83,38 @@ namespace bacon
 
 				if (object["type"] == ObjectType::ENTITY)
 				{
-					BodyType body_type(object["body_type"]);
-					Entity* entity = manager.instantiate_entity(body_type);
+					Entity* entity = new Entity();
+					GameState::scene.add_entity(entity);
+
 					entity->load_from_json(object);
 				}
 				else if (object["type"] == ObjectType::TEXT)
 				{
-					TextObject* text = manager.instantiate_text();
+					TextObject* text = new TextObject();
+					GameState::scene.add_text_object(text);
+
 					text->load_from_json(object);
 				}
 				else if (object["type"] == ObjectType::CAMERA)
 				{
-					CameraObject* camera = manager.instantiate_camera();
+					CameraObject* camera = new CameraObject();
+					GameState::scene.add_camera(camera);
+
 					camera->load_from_json(object);
 				}
 			}
 
 			// Add objects to correct render layers
-			const std::vector<GameObject*>& objects = manager.get_objects();
-			for (GameObject* object : objects)
+			for (GameObject* object : GameState::scene.get_objects())
 			{
 				if (object->object_type != ObjectType::ENTITY)
 					continue;
 
-				manager.set_object_layer(object, object->get_layer());
+				object->set_layer(object->get_layer());
 			}
 		}
 
-		nfdresult_t load_project(GameManager& manager, bool show_dialog)
+		nfdresult_t load_project(bool show_dialog)
 		{
 			namespace fs = std::filesystem;
 			using json = nlohmann::json;
@@ -158,8 +164,8 @@ namespace bacon
 				entry_path.parent_path().generic_string();
 			globals::is_project_loaded = true;
 
-			// Clear manager
-			manager.reset();
+			// Recreate scene
+			GameState::scene.reset();
 
 			// Load JSON data and parse
 			json file_data = json::parse(infile);
@@ -170,11 +176,11 @@ namespace bacon
 
 				if (key == "settings")
 				{
-					parse_project_settings(manager, file_data["settings"]);
+					parse_project_settings(file_data["settings"]);
 				}
 				else if (key == "objects")
 				{
-					parse_project_objects(manager, file_data["objects"]);
+					parse_project_objects(file_data["objects"]);
 				}
 			}
 
@@ -184,7 +190,7 @@ namespace bacon
 			return NFD_OKAY;
 		}
 
-		nfdresult_t create_new_project(const GameManager& manager)
+		nfdresult_t create_new_project()
 		{
 			using json = nlohmann::json;
 			namespace fs = std::filesystem;
@@ -193,7 +199,7 @@ namespace bacon
 			json data;
 
 			// Write basic data to project file
-			data["settings"]["gravity"] = manager.get_gravity();
+			data["settings"]["gravity"] = GameState::scene.get_gravity();
 			data["settings"]["version"] = globals::engine_version;
 			data["settings"]["title"] = globals::project_title;
 			outfile << std::setw(4) << data;
@@ -213,7 +219,6 @@ namespace bacon
 			globals::has_unsaved_changes = false;
 			globals::update_window_title();
 
-			// free(outpath);
 			return NFD_OKAY;
 		}
 

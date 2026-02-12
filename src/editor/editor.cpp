@@ -48,7 +48,7 @@ namespace bacon
 		ui::init(800, 600);
 
 		// TODO change default
-		this->manager.initialize_renderer(800, 600);
+		GameState::initialize_renderer(800, 600);
 	}
 
 	void Editor::create_config_file()
@@ -103,8 +103,7 @@ namespace bacon
 		// Load default font for game manager
 		debug_log("Config - Default Font: %s",
 				  globals::editor_default_font_path.c_str());
-		this->manager.load_default_font(
-			globals::editor_default_font_path.c_str());
+		GameState::load_default_font(globals::editor_default_font_path);
 	}
 
 	void Editor::console_log(const char* text)
@@ -160,15 +159,15 @@ namespace bacon
 
 		ui::draw_top_bar(this);
 		ui::draw_object_properties();
-		ui::draw_object_tree(this->manager);
-		ui::draw_scene_display(this->manager.get_renderer());
+		ui::draw_object_tree();
+		ui::draw_scene_display();
 		ui::draw_engine_console(this);
 		ui::draw_settings();
 		ui::draw_general_info_display(this);
 
-		ui::draw_entity_create(this->manager);
-		ui::draw_text_create(this->manager);
-		ui::draw_camera_create(this->manager);
+		ui::draw_entity_create();
+		ui::draw_text_create();
+		ui::draw_camera_create();
 
 		ui::draw_save_confirm_popup(this);
 		ui::draw_save_as_popup(this);
@@ -233,14 +232,17 @@ namespace bacon
 
 	void Editor::start_game()
 	{
-		this->is_playing = true;
-
-		this->manager.create_physics_bodies();
-
+		// TODO handle properly
 		if (globals::has_unsaved_changes)
 		{
-			file::save_project(this->manager);
+			// file::save_project();
+			ui::show_save_confirm_popup = true;
+			return;
 		}
+
+		this->is_playing = true;
+
+		GameState::scene.create_physics_bodies();
 	}
 
 	void Editor::end_game()
@@ -254,16 +256,15 @@ namespace bacon
 		}
 		ui::view_properties_object = nullptr;
 
-		this->manager.reset();
 		if (globals::is_project_loaded)
 		{
-			file::load_project(this->manager, false);
+			file::load_project(false);
 		}
 
 		if (inspect_uuid.length() > 0)
 		{
 			GameObject* inspect_object =
-				manager.find_object_by_uuid(inspect_uuid);
+				GameState::scene.find_object_by_uuid(inspect_uuid);
 			ui::view_properties_object = inspect_object;
 		}
 	}

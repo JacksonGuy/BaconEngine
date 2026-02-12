@@ -14,62 +14,63 @@
 
 int main(int argc, char** argv)
 {
-    using namespace bacon;
-    debug_log("Starting BaconEngine...");
+	using namespace bacon;
+	debug_log("Starting BaconEngine...");
 
-    globals::engine_version = "v0.1";
+	globals::engine_version = "v0.1";
 
-    // Disable RayLib logging
-    SetTraceLogLevel(LOG_WARNING);
+	// Disable RayLib logging
+	SetTraceLogLevel(LOG_WARNING);
 
-    // NativeFileDialog
-    NFD_Init();
-    debug_log("NativeFileDialog initialized.");
+	// NativeFileDialog
+	NFD_Init();
+	debug_log("NativeFileDialog initialized.");
 
-    // Setup
-    Editor editor;
-    editor.framerate_limit = 165;
-    editor.is_playing = false;
+	// Setup
+	Editor editor;
+	editor.framerate_limit = 165;
+	editor.is_playing = false;
 
-    globals::project_directory = "/home/jackson/BaconEngine/projects/test2";
-    globals::project_file =
-        "/home/jackson/BaconEngine/projects/test2/game.json";
-    file::load_project(editor.manager, false);
+	// Debug for quick startup
+	globals::project_directory = "/home/jackson/BaconEngine/projects/test2";
+	globals::project_file =
+		"/home/jackson/BaconEngine/projects/test2/game.json";
+	file::load_project(false);
 
-    debug_log("Engine startup successful.");
+	debug_log("Engine startup successful.");
 
-    while (!WindowShouldClose())
-    {
-        if (editor.is_playing)
-        {
-            // Do physics step
-            editor.manager.simulation_step();
-        }
-        else
-        {
-            editor.editor_input();
-        }
+	while (!WindowShouldClose())
+	{
+		if (editor.is_playing)
+		{
+			// Do physics step
+			GameState::scene.simulation_step();
+		}
+		else
+		{
+			editor.editor_input();
+		}
 
-        BeginDrawing();
-        ClearBackground(LIGHTGRAY);
+		BeginDrawing();
+		ClearBackground(LIGHTGRAY);
 
-        Camera2D* drawing_camera = nullptr;
-        if (editor.is_playing)
-        {
-            drawing_camera = &editor.manager.get_active_camera()->camera;
-        }
-        else
-        {
-            drawing_camera = &editor.camera;
-        }
-        editor.manager.draw_entities(drawing_camera);
+		Camera2D* drawing_camera = nullptr;
+		if (editor.is_playing)
+		{
+			drawing_camera = &GameState::scene.get_active_camera()->camera;
+		}
+		else
+		{
+			drawing_camera = &editor.camera;
+		}
+		GameState::scene.draw_entities(drawing_camera);
 
-        editor.draw_ui();
-        EndDrawing();
-    }
+		editor.draw_ui();
+		EndDrawing();
+	}
 
-    rlImGuiShutdown();
-    CloseWindow();
+	rlImGuiShutdown();
+	CloseWindow();
 
-    return 0;
+	return 0;
 }

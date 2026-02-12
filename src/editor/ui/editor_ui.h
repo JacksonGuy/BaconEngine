@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/2D/game_manager.h"
 #include "core/2D/game_object.h"
 #include "core/2D/text_object.h"
+#include "core/game_state.h"
 #include "editor/editor.h"
 
 namespace bacon
@@ -43,15 +43,15 @@ namespace bacon
 
 		void draw_top_bar(Editor* editor);
 		void draw_object_properties();
-		void draw_object_tree(GameManager& manager);
-		void draw_scene_display(Renderer* renderer);
+		void draw_object_tree();
+		void draw_scene_display();
 		void draw_engine_console(Editor* editor);
 		void draw_settings();
 		void draw_general_info_display(Editor* editor);
 
-		void draw_entity_create(GameManager& manager);
-		void draw_text_create(GameManager& manager);
-		void draw_camera_create(GameManager& manager);
+		void draw_entity_create();
+		void draw_text_create();
+		void draw_camera_create();
 
 		void draw_save_confirm_popup(Editor* editor);
 		void draw_save_as_popup(Editor* editor);
