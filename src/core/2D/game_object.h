@@ -37,8 +37,8 @@ namespace bacon
 		GameObject();
 		GameObject(uint8_t* bytes);
 		GameObject(const GameObject& obj);
+		GameObject& operator=(const GameObject& obj);
 		GameObject(GameObject&& obj) = delete;
-		GameObject& operator=(const GameObject& obj) = delete;
 		GameObject& operator=(GameObject&& obj) = delete;
 		virtual ~GameObject() = default;
 

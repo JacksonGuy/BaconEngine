@@ -5,14 +5,15 @@
 
 namespace bacon
 {
-	template <typename T> class RingBuffer
+	template <typename T>
+	class RingBuffer
 	{
 	public:
 		size_t count;
 		size_t capacity;
 
-		RingBuffer<T>(size_t max);
-		~RingBuffer<T>();
+		RingBuffer(size_t max);
+		~RingBuffer();
 
 		void insert(const T& item);
 		T& front() const;

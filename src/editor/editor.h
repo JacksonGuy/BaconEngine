@@ -39,7 +39,7 @@ namespace bacon
 		Camera2D camera;
 
 		Editor();
-		~Editor() = default;
+		~Editor();
 
 		void create_config_file();
 		void load_config_file();

@@ -197,11 +197,50 @@ namespace bacon
 
 	GameObject* Scene2D::find_object_by_uuid(std::string uuid) const
 	{
-		for (GameObject* object : m_objects)
+		// for (GameObject* object : m_objects)
+		// {
+		// 	if (object->uuid.get_uuid() == uuid)
+		// 	{
+		// 		return object;
+		// 	}
+		// }
+
+		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
-			if (object->uuid.get_uuid() == uuid)
-			{
-				return object;
+		    for (size_t i = 0; i < it->size; i++)
+		    {
+				Entity* entity = it->get(i);
+
+				if (entity->uuid.get_uuid() == uuid)
+				{
+				    return entity;
+				}
+			}
+		}
+
+		for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
+		{
+		    for (size_t i = 0; i < it->size; i++)
+		    {
+				TextObject* text = it->get(i);
+
+				if (text->uuid.get_uuid() == uuid)
+				{
+				    return text;
+				}
+			}
+		}
+
+		for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
+		{
+		    for (size_t i = 0; i < it->size; i++)
+		    {
+				CameraObject* camera = it->get(i);
+
+				if (camera->uuid.get_uuid() == uuid)
+				{
+				    return camera;
+				}
 			}
 		}
 
@@ -210,11 +249,50 @@ namespace bacon
 
 	GameObject* Scene2D::find_object_by_uuid(UUID uuid) const
 	{
-		for (GameObject* object : m_objects)
+		// for (GameObject* object : m_objects)
+		// {
+		// 	if (object->uuid == uuid)
+		// 	{
+		// 		return object;
+		// 	}
+		// }
+
+		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
-			if (object->uuid == uuid)
-			{
-				return object;
+		    for (size_t i = 0; i < it->size; i++)
+		    {
+				Entity* entity = it->get(i);
+
+				if (entity->uuid == uuid)
+				{
+				    return entity;
+				}
+			}
+		}
+
+		for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
+		{
+		    for (size_t i = 0; i < it->size; i++)
+		    {
+				TextObject* text = it->get(i);
+
+				if (text->uuid == uuid)
+				{
+				    return text;
+				}
+			}
+		}
+
+		for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
+		{
+		    for (size_t i = 0; i < it->size; i++)
+		    {
+				CameraObject* camera = it->get(i);
+
+				if (camera->uuid == uuid)
+				{
+				    return camera;
+				}
 			}
 		}
 
@@ -319,39 +397,6 @@ namespace bacon
 		m_camera = nullptr;
 		this->create_physics_world();
 		m_lua_state.reset();
-
-		for (GameObject* object : m_objects)
-		{
-			switch (object->object_type)
-			{
-				case ObjectType::ENTITY:
-				{
-					Entity* entity = (Entity*)object;
-					delete entity;
-					break;
-				}
-
-				case ObjectType::TEXT:
-				{
-					TextObject* text = (TextObject*)object;
-					delete text;
-					break;
-				}
-
-				case ObjectType::CAMERA:
-				{
-					CameraObject* camera = (CameraObject*)object;
-					delete camera;
-					break;
-				}
-
-				default:
-				{
-					// GameObject is abstract, so this should never be called
-					break;
-				}
-			}
-		}
 
 		m_objects.clear();
 		m_entities.clear();

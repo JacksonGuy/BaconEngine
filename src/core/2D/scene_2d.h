@@ -9,6 +9,11 @@
 
 namespace bacon
 {
+    typedef struct ObjectIterator
+    {
+
+    } ObjectIterator;
+
 	class Scene2D
 	{
 	public:
@@ -23,6 +28,7 @@ namespace bacon
 		const std::vector<Entity*>& get_entities() const;
 		const std::vector<TextObject*>& get_text_objects() const;
 		const std::vector<CameraObject*>& get_cameras() const;
+		ObjectIterator get_iterator() const;
 
 		void add_entity(Entity* entity);
 		void remove_entity(Entity* entity);

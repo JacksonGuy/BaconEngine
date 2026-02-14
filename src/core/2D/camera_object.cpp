@@ -12,7 +12,7 @@
 
 namespace bacon
 {
-	PoolAllocator CameraObject::_allocator{globals::allocator_block_size};
+	Arena<CameraObject> CameraObject::_allocator(globals::allocator_block_size);
 
 	CameraObject::CameraObject() : GameObject()
 	{
@@ -35,14 +35,15 @@ namespace bacon
 		this->zoom = camera.zoom;
 	}
 
-	void* CameraObject::operator new(size_t size)
+	CameraObject& CameraObject::operator=(const CameraObject& camera)
 	{
-		return _allocator.allocate(size);
-	}
+	    GameObject::operator=(camera);
 
-	void CameraObject::operator delete(void* ptr, size_t size)
-	{
-		_allocator.deallocate(ptr, size);
+		this->camera = camera.camera;
+		this->is_active = false;
+		this->zoom = camera.zoom;
+
+	    return *this;
 	}
 
 	void CameraObject::move_camera(Vector2 delta)

@@ -27,7 +27,8 @@ namespace bacon
 		extern std::stack<EditorEvent> undo_stack;
 
 		void push_event(EventType type, GameObject* object);
-		EditorEvent undo_event();
-		EditorEvent redo_event();
+		void undo_event();
+		void redo_event();
+		void event_cleanup();
 	} // namespace event
 } // namespace bacon

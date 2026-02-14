@@ -17,7 +17,7 @@
 
 namespace bacon
 {
-	PoolAllocator TextObject::_allocator{globals::allocator_block_size};
+	Arena<TextObject> TextObject::_allocator(globals::allocator_block_size);
 
 	TextObject::TextObject() : GameObject()
 	{
@@ -46,45 +46,49 @@ namespace bacon
 		this->m_color = text_object.m_color;
 	}
 
-	void* TextObject::operator new(size_t size)
+	TextObject& TextObject::operator=(const TextObject& text_object)
 	{
-		return _allocator.allocate(size);
-	}
+	    GameObject::operator=(text_object);
 
-	void TextObject::operator delete(void* ptr, size_t size)
-	{
-		_allocator.deallocate(ptr, size);
+		this->object_type = ObjectType::TEXT;
+		this->m_text = text_object.m_text;
+		this->set_font(text_object.m_font_path);
+		this->m_font_size = text_object.m_font_size;
+		this->m_char_spacing = text_object.m_char_spacing;
+		this->m_color = text_object.m_color;
+
+	    return *this;
 	}
 
 	void TextObject::set_text(const std::string& text)
 	{
-		this->update_text(text);
+	    m_text = text;
+		this->update_render_text();
 	}
 
 	void TextObject::set_font(const std::string& font_path)
 	{
-		this->m_font = GameState::resources.load_font(font_path.c_str());
+		this->m_font = GameState::assets.load_font(font_path.c_str());
 		this->m_font_path = font_path;
 	}
 
 	void TextObject::set_font_size(int32_t size)
 	{
 		this->m_font_size = size;
-		this->update_text(this->m_text);
+		this->update_render_text();
 	}
 
-	void TextObject::update_text(const std::string& text)
+	void TextObject::update_render_text()
 	{
-		float text_width = this->calculate_text_width(text);
+		float text_width = this->calculate_text_width(m_text);
 
 		if (text_width > this->size.x)
 		{
-			std::string new_text = this->get_wrapped_text(text);
-			this->m_text = new_text;
+			m_render_text = this->get_wrapped_text(m_text);
 		}
 		else
 		{
-			this->m_text = text;
+			m_render_text = m_text;
 		}
 	}
 
@@ -182,9 +186,16 @@ namespace bacon
 
 	void TextObject::draw() const
 	{
-		DrawTextPro(*this->m_font, this->m_text.c_str(), this->position, {0, 0},
-					this->rotation, this->m_font_size, this->m_char_spacing,
-					this->m_color);
+		DrawTextPro(
+		    *this->m_font,
+			this->m_render_text.c_str(),
+			this->position,
+			{0, 0},  // Origin
+			this->rotation,
+			this->m_font_size,
+			this->m_char_spacing,
+			this->m_color
+		);
 	}
 
 	void TextObject::draw_properties_editor()
@@ -210,6 +221,7 @@ namespace bacon
 		if (ImGui::InputFloat2("##size", size))
 		{
 			this->size = (Vector2){size[0], size[1]};
+			this->update_render_text();
 
 			globals::has_unsaved_changes = true;
 			change_made = true;
@@ -220,6 +232,7 @@ namespace bacon
 		if (ImGui::InputFloat("##rotation", &this->rotation))
 		{
 			this->rotation = b_fmod(this->rotation, 360);
+			this->update_render_text();
 
 			globals::has_unsaved_changes = true;
 			change_made = true;
@@ -238,10 +251,29 @@ namespace bacon
 		}
 
 		// Font
-		// ImGui::ItemLabel("Font", ItemLabelFlag::Left);
-		// if (ImGui::InputText("##font", &m_font_path)) {
-		//     set_font(m_font_path);
-		// }
+		ImGui::ItemLabel("Font", ItemLabelFlag::Left);
+		if (ImGui::BeginCombo("##font", m_font_path.c_str()))
+		{
+		    auto fonts = GameState::assets.get_fonts();
+            for (auto it = fonts.begin(); it != fonts.end(); it++)
+            {
+                std::string key = it->first;
+                std::shared_ptr<Font> font = it->second;
+                bool is_selected = (m_font_path == key);
+
+                if (ImGui::Selectable(key.c_str(), is_selected))
+                {
+                    this->set_font(key);
+                }
+
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::EndCombo();
+		}
 
 		// Font size
 		int32_t font_size = this->m_font_size;
@@ -268,6 +300,11 @@ namespace bacon
 		ImGui::ItemLabel("Color", ItemLabelFlag::Left);
 		if (ImGui::ColorEdit4("##color", color))
 		{
+            color[0] = std::clamp(color[0], 0.f, 1.f);
+            color[1] = std::clamp(color[1], 0.f, 1.f);
+            color[2] = std::clamp(color[2], 0.f, 1.f);
+            color[3] = std::clamp(color[3], 0.f, 1.f);
+
 			m_color = (Color){.r = (unsigned char)(color[0] * 255.f),
 							  .g = (unsigned char)(color[1] * 255.f),
 							  .b = (unsigned char)(color[2] * 255.f),

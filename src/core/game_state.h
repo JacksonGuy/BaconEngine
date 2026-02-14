@@ -5,10 +5,11 @@
 #include <vector>
 
 #include "box2d/box2d.h"
-#include "file/resource_manager.h"
 #include "raylib.h"
 #include "sol/sol.hpp"
 
+#include "lib/arena.h"
+#include "file/asset_manager.h"
 #include "core/2D/entity.h"
 #include "core/2D/game_object.h"
 #include "core/2D/scene_2d.h"
@@ -19,80 +20,22 @@ namespace bacon
 {
 	namespace GameState
 	{
-		inline ResourceManager resources;
-		inline Scene2D scene;
-		inline Renderer* renderer;
-		inline std::string m_default_font_path;
-		inline std::shared_ptr<Font> m_default_font;
+		extern AssetManager assets;
+		extern Scene2D scene;
+		extern Renderer* renderer;
+
+		extern std::string m_default_font_path;
+		extern std::shared_ptr<Font> m_default_font;
 
 		void initialize_game_state();
 		void initialize_renderer(uint32_t width, uint32_t height);
 		void load_default_font(const std::string& path);
+
+		Entity* allocate_entity();
+		void deallocated_entity(Entity* entity);
+		TextObject* allocate_text_object();
+		void deallocate_text_object(TextObject* text);
+		CameraObject* allocate_camera();
+		void deallocate_camera(CameraObject* camera);
 	} // namespace GameState
-
-	// class GameManager
-	// {
-	// public:
-	// 	ResourceManager resources;
-
-	// 	GameManager();
-	// 	GameManager(const GameManager& manager) = delete;
-	// 	GameManager& operator=(const GameManager& manager) = delete;
-	// 	GameManager(GameManager && manager) = delete;
-	// 	GameManager& operator=(GameManager&& manager) = delete;
-	// 	~GameManager();
-
-	// 	Entity* instantiate_entity();
-	// 	Entity* copy_entity(Entity * entity, bool add_to_state = false);
-	// 	void entity_create_body(Entity * entity);
-	// 	void deinstantiate_entity(Entity * entity);
-
-	// 	TextObject* instantiate_text();
-	// 	TextObject* copy_text(TextObject * text);
-	// 	void deinstantiate_text(TextObject * text);
-	// 	void load_default_font(const char* path);
-
-	// 	CameraObject* instantiate_camera();
-	// 	CameraObject* copy_camera(CameraObject * camera);
-	// 	void deinstantiate_camera(CameraObject * camera);
-
-	// 	const std::vector<GameObject*>& get_objects() const;
-	// 	GameObject* find_object_by_uuid(std::string uuid) const;
-	// 	GameObject* find_object_by_uuid(UUID uuid) const;
-
-	// 	void set_object_layer(GameObject * object, size_t layer);
-
-	// 	const std::vector<CameraObject*>& get_cameras() const;
-	// 	void set_active_camera(CameraObject * camera);
-	// 	CameraObject* get_active_camera() const;
-
-	// 	void create_physics_bodies();
-	// 	void initialize_renderer(uint32_t width, uint32_t height);
-	// 	Renderer* get_renderer();
-
-	// 	void simulation_step();
-	// 	void draw_entities(Camera2D* camera = nullptr) const;
-
-	// 	float get_gravity() const;
-	// 	void set_gravity(float gravity);
-
-	// 	void reset();
-	// 	void create_physics_world();
-
-	// private:
-	// 	std::vector<GameObject*> m_objects;
-	// 	std::vector<Entity*> m_entities;
-	// 	std::vector<CameraObject*> m_cameras;
-
-	// 	Renderer* m_renderer = nullptr;
-	// 	CameraObject* m_camera;
-	// 	std::string m_default_font_path;
-	// 	std::shared_ptr<Font> m_default_font;
-
-	// 	b2WorldId m_world;
-	// 	float m_length_units_per_meter;
-	// 	float m_gravity;
-
-	// 	std::unique_ptr<sol::state> m_lua_state;
-	// };
 } // namespace bacon

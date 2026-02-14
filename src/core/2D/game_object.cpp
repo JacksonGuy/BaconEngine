@@ -49,6 +49,26 @@ namespace bacon
 		}
 	}
 
+	GameObject& GameObject::operator=(const GameObject& obj)
+	{
+        this->object_type = ObjectType::OBJECT;
+    	this->name = obj.name;
+    	this->tag = obj.tag;
+    	this->position = obj.position;
+    	this->size = obj.size;
+    	this->rotation = obj.rotation;
+    	this->is_visible = obj.is_visible;
+    	this->layer = obj.layer;
+
+    	this->parent = obj.parent;
+    	if (obj.parent != nullptr)
+    	{
+    		obj.parent->children.push_back(this);
+    	}
+
+	    return *this;
+	}
+
 	const GameObject* GameObject::get_parent() const
 	{
 		return this->parent;

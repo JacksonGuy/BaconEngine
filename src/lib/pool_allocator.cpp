@@ -8,7 +8,7 @@ namespace bacon
 	PoolAllocator::PoolAllocator(size_t chunks_per_block)
 	{
 		m_chunks_per_block = chunks_per_block;
-	}
+    }
 
 	void* PoolAllocator::allocate(size_t size)
 	{
@@ -16,6 +16,7 @@ namespace bacon
 		{
 			m_alloc_ptr = alloc_block(size);
 		}
+
 
 		Chunk* free_chunk = m_alloc_ptr;
 

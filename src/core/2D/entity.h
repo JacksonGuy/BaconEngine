@@ -7,6 +7,7 @@
 
 #include "game_object.h"
 #include "lib/pool_allocator.h"
+#include "lib/arena.h"
 
 namespace bacon
 {
@@ -22,19 +23,17 @@ namespace bacon
 	{
 	public:
 		friend class Scene2D;
+		static Arena<Entity> _allocator;
 
 		Entity();
 		Entity(uint8_t* bytes);
 		Entity(const Entity& entity);
-		Entity& operator=(const Entity& entity) = delete;
+		Entity& operator=(const Entity& entity);
 		Entity(Entity&& entity) = delete;
 		Entity& operator=(Entity&& entity) = delete;
 		~Entity() = default;
 
-		void* operator new(size_t size);
-		void operator delete(void* ptr, size_t size);
-
-		void set_texture(const char* path);
+		void set_texture(const std::string& path);
 		void set_size(float width, float height);
 
 		void draw() const override;
@@ -52,8 +51,6 @@ namespace bacon
 		void create_body(b2WorldId world_id);
 
 	private:
-		static PoolAllocator _allocator;
-
 		std::shared_ptr<Texture2D> m_texture;
 		std::string m_texture_path;
 	};

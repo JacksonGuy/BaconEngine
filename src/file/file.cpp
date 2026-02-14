@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/2D/entity.h"
 #include "core/2D/game_object.h"
 #include "core/game_state.h"
 #include "editor/ui/editor_ui.h"
@@ -83,21 +84,21 @@ namespace bacon
 
 				if (object["type"] == ObjectType::ENTITY)
 				{
-					Entity* entity = new Entity();
+					Entity* entity = (Entity*)GameState::allocate_entity();
 					GameState::scene.add_entity(entity);
 
 					entity->load_from_json(object);
 				}
 				else if (object["type"] == ObjectType::TEXT)
 				{
-					TextObject* text = new TextObject();
+					TextObject* text = GameState::allocate_text_object();
 					GameState::scene.add_text_object(text);
 
 					text->load_from_json(object);
 				}
 				else if (object["type"] == ObjectType::CAMERA)
 				{
-					CameraObject* camera = new CameraObject();
+					CameraObject* camera = GameState::allocate_camera();
 					GameState::scene.add_camera(camera);
 
 					camera->load_from_json(object);
@@ -107,7 +108,7 @@ namespace bacon
 			// Add objects to correct render layers
 			for (GameObject* object : GameState::scene.get_objects())
 			{
-				if (object->object_type != ObjectType::ENTITY)
+				if (object->object_type == ObjectType::CAMERA)
 					continue;
 
 				object->set_layer(object->get_layer());

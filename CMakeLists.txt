@@ -4,7 +4,7 @@ project(BaconEngine
     LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -42,7 +42,7 @@ set(SOURCE_FILES
     src/rendering/2D/renderer.cpp
 
     src/file/file.cpp
-    src/file/resource_manager.cpp
+    src/file/asset_manager.cpp
 
     src/main.cpp
 )

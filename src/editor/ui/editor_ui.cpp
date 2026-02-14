@@ -248,7 +248,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				Entity* entity = new Entity();
+				Entity* entity = GameState::allocate_entity();
 				GameState::scene.add_entity(entity);
 
 				entity->position =
@@ -284,7 +284,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				TextObject* text = new TextObject();
+				TextObject* text = GameState::allocate_text_object();
 				GameState::scene.add_text_object(text);
 
 				text->name = name_buffer;
@@ -315,7 +315,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				CameraObject* camera = new CameraObject();
+				CameraObject* camera = GameState::allocate_camera();
 				GameState::scene.add_camera(camera);
 
 				camera->name = name_buffer;
@@ -346,9 +346,18 @@ namespace bacon
 
 					if (ImGui::Button("Save"))
 					{
-						file::save_project();
-						ui::show_save_confirm_popup = false;
-						button_pressed = true;
+						if (globals::is_project_loaded)
+						{
+							file::save_project();
+							ui::show_save_confirm_popup = false;
+							button_pressed = true;
+						}
+						else
+						{
+							ui::show_save_as_popup = true;
+							ui::show_save_confirm_popup = false;
+							button_pressed = false;
+						}
 						ImGui::CloseCurrentPopup();
 					}
 
@@ -379,16 +388,23 @@ namespace bacon
 							break;
 						}
 
-						case LastEditorAction::PROJECT_SAVE_AS:
-						{
-							ui::show_save_as_popup = true;
-						}
+						// This shouldn't be a case?
+						// case LastEditorAction::PROJECT_SAVE_AS:
+						// {
+						// 	ui::show_save_as_popup = true;
+						// }
 
 						case LastEditorAction::PROJECT_OPEN:
 						{
 							file::load_project(true);
 							break;
 						}
+
+						case LastEditorAction::PROGRAM_EXIT:
+    					{
+                            globals::program_running = false;
+                            break;
+    					}
 
 						default:
 						{

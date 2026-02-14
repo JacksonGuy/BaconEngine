@@ -1,7 +1,10 @@
+#include <chrono>
 #include <iostream>
 
+#include "editor/editor_event.h"
 #include "file/file.h"
 #include "imgui.h"
+#include "lib/pool_allocator.h"
 #include "nfd.h"
 #include "raylib.h"
 #include "rlImGui.h"
@@ -11,11 +14,17 @@
 #include "core/util.h"
 #include "editor/editor.h"
 #include "editor/ui/editor_ui.h"
+#include "core/2D/camera_object.h"
+#include "core/game_state.h"
+#include "lib/arena.h"
 
 int main(int argc, char** argv)
 {
 	using namespace bacon;
 	debug_log("Starting BaconEngine...");
+
+	Entity* test = GameState::allocate_entity();
+	test->name = "Something";
 
 	globals::engine_version = "v0.1";
 
@@ -39,7 +48,7 @@ int main(int argc, char** argv)
 
 	debug_log("Engine startup successful.");
 
-	while (!WindowShouldClose())
+	while (globals::program_running)
 	{
 		if (editor.is_playing)
 		{
@@ -68,6 +77,9 @@ int main(int argc, char** argv)
 		editor.draw_ui();
 		EndDrawing();
 	}
+
+	debug_log("Performing cleanup...");
+	event::event_cleanup();
 
 	rlImGuiShutdown();
 	CloseWindow();

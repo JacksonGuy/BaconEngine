@@ -12,6 +12,7 @@
 #include "core/util.h"
 #include "file/file.h"
 #include "ui/editor_ui.h"
+#include "editor_event.h"
 
 namespace bacon
 {
@@ -49,6 +50,11 @@ namespace bacon
 
 		// TODO change default
 		GameState::initialize_renderer(800, 600);
+	}
+
+	Editor::~Editor()
+	{
+
 	}
 
 	void Editor::create_config_file()
@@ -184,21 +190,36 @@ namespace bacon
 		Vector2 mouse_delta = GetMouseDelta();
 		float mouse_wheel_move = GetMouseWheelMove();
 
+		// Confirm changes on program exit
+		if (WindowShouldClose() || IsKeyPressed(KEY_ESCAPE))
+		{
+			if (globals::has_unsaved_changes)
+			{
+				ui::show_save_confirm_popup = true;
+				ui::last_action = ui::LastEditorAction::PROGRAM_EXIT;
+			}
+			else
+			{
+			    globals::program_running = false;
+			}
+		}
+
+		// Camera pan
 		if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
 		{
 			this->camera.target.x -= (mouse_delta.x * this->camera_move_speed);
 			this->camera.target.y -= (mouse_delta.y * this->camera_move_speed);
 		}
 
+		// Camera zoom
+		if (mouse_wheel_move != 0)
+		{
+			this->camera.zoom +=
+				(mouse_wheel_move * this->camera_zoom_speed);
+		}
+
 		if (IsKeyDown(KEY_LEFT_CONTROL))
 		{
-			// Camera zoom
-			if (mouse_wheel_move != 0)
-			{
-				this->camera.zoom +=
-					(mouse_wheel_move * this->camera_zoom_speed);
-			}
-
 			// Project save
 			if (IsKeyPressed(KEY_S))
 			{

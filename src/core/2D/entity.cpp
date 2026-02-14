@@ -5,6 +5,7 @@
 #include "box2d/types.h"
 #include "core/game_state.h"
 #include "imgui.h"
+#include "imgui_stdlib.h"
 #include "raylib.h"
 
 #include "core/globals.h"
@@ -15,7 +16,7 @@
 
 namespace bacon
 {
-	PoolAllocator Entity::_allocator{globals::allocator_block_size};
+	Arena<Entity> Entity::_allocator(globals::allocator_block_size);
 
 	Entity::Entity() : GameObject()
 	{
@@ -40,19 +41,21 @@ namespace bacon
 		this->set_texture(entity.m_texture_path.c_str());
 	}
 
-	void* Entity::operator new(size_t size)
+	Entity& Entity::operator=(const Entity& entity)
 	{
-		return _allocator.allocate(size);
+	    GameObject::operator=(entity);
+
+	    this->object_type = ObjectType::ENTITY;
+
+		this->body_type = entity.body_type;
+		this->set_texture(entity.m_texture_path.c_str());
+
+	    return *this;
 	}
 
-	void Entity::operator delete(void* ptr, size_t size)
+	void Entity::set_texture(const std::string& path)
 	{
-		_allocator.deallocate(ptr, size);
-	}
-
-	void Entity::set_texture(const char* path)
-	{
-		this->m_texture = GameState::resources.load_texture(path);
+		this->m_texture = GameState::assets.load_texture(path);
 		m_texture_path = path;
 	}
 
@@ -175,9 +178,9 @@ namespace bacon
 		ImGui::Separator();
 
 		// Texture
-		char texture_path_buf[ui::_BUF_SIZE];
-		strcpy(texture_path_buf, this->m_texture_path.c_str());
-		if (ImGui::InputText("Texture", texture_path_buf, ui::_BUF_SIZE))
+		ImGui::ItemLabel("Texture", ItemLabelFlag::Left);
+		std::string texture_path_buf = this->m_texture_path;
+		if (ImGui::InputText("##texture", &texture_path_buf))
 		{
 			this->m_texture_path = texture_path_buf;
 			this->set_texture(m_texture_path.c_str());

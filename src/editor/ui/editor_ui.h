@@ -16,9 +16,10 @@ namespace bacon
 			PROJECT_SAVE,
 			PROJECT_SAVE_AS,
 			PROJECT_OPEN,
+			PROGRAM_EXIT,
+			GAME_PLAY,
+			GAME_EXIT,
 		};
-
-		const size_t _BUF_SIZE = 64;
 
 		inline bool show_test = true;
 		inline bool show_object_properties = true;
@@ -56,6 +57,7 @@ namespace bacon
 		void draw_save_confirm_popup(Editor* editor);
 		void draw_save_as_popup(Editor* editor);
 		void draw_create_project_popup(Editor* editor);
+		// void draw_confirm_close_popup(Editor* editor);
 
 		void game_object_tree_recurse(GameObject* object);
 

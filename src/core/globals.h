@@ -15,6 +15,7 @@ namespace bacon
 
 		inline bool is_project_loaded;
 		inline bool has_unsaved_changes;
+		inline bool program_running = true;
 		inline std::string project_title = "Untitled Project";
 		inline std::string project_directory;
 		inline std::string project_file;
