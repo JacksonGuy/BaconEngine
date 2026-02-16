@@ -69,6 +69,24 @@ namespace bacon
 	    return *this;
 	}
 
+	void GameObject::copy(const GameObject& obj)
+	{
+        this->object_type = ObjectType::OBJECT;
+    	this->name = obj.name;
+    	this->tag = obj.tag;
+    	this->position = obj.position;
+    	this->size = obj.size;
+    	this->rotation = obj.rotation;
+    	this->is_visible = obj.is_visible;
+    	this->layer = obj.layer;
+
+    	this->parent = obj.parent;
+    	if (obj.parent != nullptr)
+    	{
+    		obj.parent->children.push_back(this);
+    	}
+	}
+
 	const GameObject* GameObject::get_parent() const
 	{
 		return this->parent;
@@ -88,57 +106,6 @@ namespace bacon
 	{
 		GameState::renderer->remove_from_layer(this);
 		GameState::renderer->add_to_layer(this, layer);
-	}
-
-	void GameObject::draw_properties_editor()
-	{
-		bool change_made = false;
-
-		// Name
-		std::string name_buf = this->name;
-		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
-		if (ImGui::InputText("##name", &name_buf,
-							 ImGuiInputTextFlags_EnterReturnsTrue))
-		{
-			this->name = std::string(name_buf);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Tag
-		std::string tag_buf = this->tag;
-		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
-		ImGui::InputText("##tag", &tag_buf);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			this->tag = std::string(tag_buf);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Rendering layer
-		int render_layer = this->layer;
-		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
-		// ImGui::InputScalar("##layer", ImGuiDataType_U64, &render_layer);
-		if (ImGui::InputInt("##layer", &render_layer))
-		{
-			if (render_layer < 0)
-			{
-				render_layer = 0;
-			}
-
-			this->set_layer(render_layer);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		if (change_made)
-		{
-			event::push_event(event::EventType::OBJECT_EDIT, this);
-		}
 	}
 
 	void GameObject::save_to_json(nlohmann::json& data) const

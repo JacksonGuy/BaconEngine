@@ -42,13 +42,15 @@ namespace bacon
 		GameObject& operator=(GameObject&& obj) = delete;
 		virtual ~GameObject() = default;
 
+		void copy(const GameObject& obj);
+
 		const GameObject* get_parent() const;
 		const std::vector<GameObject*>& get_children() const;
 		const size_t get_layer() const;
 		void set_layer(size_t layer);
 
 		virtual void draw() const = 0;
-		virtual void draw_properties_editor();
+		virtual void draw_properties_editor() = 0;
 		virtual void save_to_json(nlohmann::json& data) const;
 		virtual void load_from_json(nlohmann::json& data);
 		virtual size_t calculate_size() const;

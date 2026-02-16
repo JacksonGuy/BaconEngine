@@ -33,6 +33,8 @@ namespace bacon
 		Entity& operator=(Entity&& entity) = delete;
 		~Entity() = default;
 
+		void copy(const Entity& entity);
+
 		void set_texture(const std::string& path);
 		void set_size(float width, float height);
 

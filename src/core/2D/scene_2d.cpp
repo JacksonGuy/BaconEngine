@@ -257,11 +257,15 @@ namespace bacon
 		// 	}
 		// }
 
+		// debug_log("Attempting to find object with UUID: %s", uuid.get_uuid().c_str());
+
 		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
 		    for (size_t i = 0; i < it->size; i++)
 		    {
 				Entity* entity = it->get(i);
+
+				// debug_log("Testing UUID: %s", entity->uuid.get_uuid().c_str());
 
 				if (entity->uuid == uuid)
 				{

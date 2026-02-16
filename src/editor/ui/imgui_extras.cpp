@@ -56,3 +56,15 @@ void ImGui::ItemLabel(std::string_view title, ItemLabelFlag flags)
     else if (flags & ItemLabelFlag::Right)
         ImGui::SetCursorScreenPos(lineStart);
 }
+
+void ImGui::HelpMarker(std::string_view text)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(text.data());
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}

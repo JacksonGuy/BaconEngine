@@ -1,6 +1,7 @@
 #include "camera_object.h"
 
 #include "imgui.h"
+#include "imgui_stdlib.h"
 
 #include "core/game_state.h"
 #include "core/globals.h"
@@ -69,9 +70,52 @@ namespace bacon
 
 	void CameraObject::draw_properties_editor()
 	{
-		GameObject::draw_properties_editor();
+	    CameraObject copy_camera(*this);
+		copy_camera.uuid = this->uuid;
 
 		bool change_made = false;
+
+		// Name
+		std::string name_buf = this->name;
+		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+		if (ImGui::InputText("##name", &name_buf,
+							 ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			this->name = std::string(name_buf);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Tag
+		std::string tag_buf = this->tag;
+		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
+		ImGui::InputText("##tag", &tag_buf);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			this->tag = std::string(tag_buf);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Rendering layer
+		int render_layer = this->layer;
+		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
+		// TODO this might be a better choice?
+		// ImGui::InputScalar("##layer", ImGuiDataType_U64, &render_layer);
+		if (ImGui::InputInt("##layer", &render_layer))
+		{
+			if (render_layer < 0)
+			{
+				render_layer = 0;
+			}
+
+			this->set_layer(render_layer);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
 		// Position
 		float position[] = {this->position.x, this->position.y};
@@ -131,7 +175,8 @@ namespace bacon
 
 		if (change_made)
 		{
-			event::push_event(event::EventType::OBJECT_EDIT, this);
+		    event::EditorEvent event = event::make_object_event(&copy_camera, this);
+			event::push_event(event);
 		}
 	}
 

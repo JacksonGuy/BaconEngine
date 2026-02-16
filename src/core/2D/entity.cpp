@@ -38,7 +38,7 @@ namespace bacon
 		this->object_type = ObjectType::ENTITY;
 		this->body_type = entity.body_type;
 
-		this->set_texture(entity.m_texture_path.c_str());
+		this->set_texture(entity.m_texture_path);
 	}
 
 	Entity& Entity::operator=(const Entity& entity)
@@ -48,13 +48,28 @@ namespace bacon
 	    this->object_type = ObjectType::ENTITY;
 
 		this->body_type = entity.body_type;
-		this->set_texture(entity.m_texture_path.c_str());
+		this->set_texture(entity.m_texture_path);
 
 	    return *this;
 	}
 
+	void Entity::copy(const Entity& entity)
+	{
+	    GameObject::copy(entity);
+
+		this->object_type = ObjectType::ENTITY;
+
+		this->body_type = entity.body_type;
+		this->set_texture(entity.m_texture_path);
+	}
+
 	void Entity::set_texture(const std::string& path)
 	{
+	    if (path.length() <= 0)
+		{
+		    return;
+		}
+
 		this->m_texture = GameState::assets.load_texture(path);
 		m_texture_path = path;
 	}
@@ -131,9 +146,54 @@ namespace bacon
 
 	void Entity::draw_properties_editor()
 	{
-		GameObject::draw_properties_editor();
+	    Entity copy_entity(*this);
+		copy_entity.uuid = this->uuid;
 
 		bool change_made = false;
+
+		// Name
+		std::string name_buf = this->name;
+		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+		if (ImGui::InputText("##name", &name_buf,
+							 ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			this->name = std::string(name_buf);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+		ImGui::SameLine();
+		ImGui::HelpMarker("ID: " + this->uuid.get_uuid());
+
+		// Tag
+		std::string tag_buf = this->tag;
+		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
+		ImGui::InputText("##tag", &tag_buf);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			this->tag = std::string(tag_buf);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Rendering layer
+		int render_layer = this->layer;
+		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
+		// TODO this might be a better choice?
+		// ImGui::InputScalar("##layer", ImGuiDataType_U64, &render_layer);
+		if (ImGui::InputInt("##layer", &render_layer))
+		{
+			if (render_layer < 0)
+			{
+				render_layer = 0;
+			}
+
+			this->set_layer(render_layer);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
 		// Position
 		float position[] = {this->position.x, this->position.y};
@@ -205,7 +265,8 @@ namespace bacon
 
 		if (change_made)
 		{
-			event::push_event(event::EventType::OBJECT_EDIT, this);
+		    event::EditorEvent event = event::make_object_event(&copy_entity, this);
+			event::push_event(event);
 		}
 	}
 

@@ -191,7 +191,7 @@ namespace bacon
 		float mouse_wheel_move = GetMouseWheelMove();
 
 		// Confirm changes on program exit
-		if (WindowShouldClose() || IsKeyPressed(KEY_ESCAPE))
+		if (WindowShouldClose())
 		{
 			if (globals::has_unsaved_changes)
 			{
@@ -247,6 +247,18 @@ namespace bacon
 				IsKeyPressed(KEY_N))
 			{
 				ui::editor_new_project();
+			}
+
+			// Undo
+			if (IsKeyPressed(KEY_Z))
+			{
+			    event::undo_event();
+			}
+
+			// Redo
+			if (IsKeyPressed(KEY_Y))
+			{
+			    event::redo_event();
 			}
 		}
 	}
