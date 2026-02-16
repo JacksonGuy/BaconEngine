@@ -1,5 +1,6 @@
 #include "editor_ui.h"
 
+#include "core/game_state.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
@@ -84,7 +85,7 @@ namespace bacon
 			ImGui::End();
 		}
 
-		void draw_object_tree(GameManager& manager)
+		void draw_object_tree()
 		{
 			auto parentFlags = ImGuiTreeNodeFlags_OpenOnArrow |
 							   ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -95,7 +96,7 @@ namespace bacon
 
 			if (ImGui::TreeNodeEx("Scene", parentFlags))
 			{
-				for (GameObject* obj : manager.get_objects())
+				for (GameObject* obj : GameState::scene.get_objects())
 				{
 					if (obj->get_parent() == nullptr)
 					{
@@ -109,8 +110,10 @@ namespace bacon
 			ImGui::End();
 		}
 
-		void draw_scene_display(Renderer* renderer)
+		void draw_scene_display()
 		{
+			Renderer* renderer = GameState::renderer;
+
 			ImGui::Begin("Scene", &show_scene_display);
 			ImVec2 window_size = ImGui::GetContentRegionAvail();
 
@@ -222,10 +225,10 @@ namespace bacon
 			ImGui::End();
 		}
 
-		void draw_entity_create(GameManager& manager)
+		void draw_entity_create()
 		{
 			static char name_buffer[256];
-			static char texture_path_buffer[256];
+			static char texture_path_buffer[512];
 			static float position_buffer[] = {0.f, 0.f};
 			static float size_buffer[] = {32.f, 32.f};
 
@@ -233,12 +236,37 @@ namespace bacon
 				return;
 
 			ImGui::Begin("Create Entity", &ui::show_entity_create);
+
 			ImGui::ItemLabel("Name", ItemLabelFlag::Left);
 			ImGui::InputText("##name", name_buffer, 256);
+
+			ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+			ImGui::InputFloat2("##position", position_buffer);
+
+			ImGui::ItemLabel("Size", ItemLabelFlag::Left);
+			ImGui::InputFloat2("##size", size_buffer);
+
+			if (ImGui::Button("Create"))
+			{
+				Entity* entity = GameState::allocate_entity();
+				GameState::scene.add_entity(entity);
+
+				entity->position =
+					(Vector2){.x = position_buffer[0], .y = position_buffer[1]};
+				entity->set_size(size_buffer[0], size_buffer[1]);
+
+				ui::show_entity_create = false;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				ui::show_entity_create = false;
+			}
+
 			ImGui::End();
 		}
 
-		void draw_text_create(GameManager& manager)
+		void draw_text_create()
 		{
 			static char name_buffer[256];
 			static float position_buffer[] = {0.f, 0.f};
@@ -247,6 +275,7 @@ namespace bacon
 				return;
 
 			ImGui::Begin("Create Text", &ui::show_text_create);
+
 			ImGui::ItemLabel("Name", ItemLabelFlag::Left);
 			ImGui::InputText("##name", name_buffer, 256);
 
@@ -255,10 +284,14 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				TextObject* text = manager.instantiate_text();
+				TextObject* text = GameState::allocate_text_object();
+				GameState::scene.add_text_object(text);
+
 				text->name = name_buffer;
 				text->position =
 					(Vector2){position_buffer[0], position_buffer[1]};
+
+				ui::show_text_create = false;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
@@ -268,9 +301,34 @@ namespace bacon
 			ImGui::End();
 		}
 
-		void draw_camera_create(GameManager& manager)
+		void draw_camera_create()
 		{
-			// debug_error("This function has not been implemented yet.");
+			static std::string name_buffer;
+
+			if (!ui::show_camera_create)
+				return;
+
+			ImGui::Begin("Create Camera", &ui::show_camera_create);
+
+			ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+			ImGui::InputText("##name", &name_buffer);
+
+			if (ImGui::Button("Create"))
+			{
+				CameraObject* camera = GameState::allocate_camera();
+				GameState::scene.add_camera(camera);
+
+				camera->name = name_buffer;
+
+				ui::show_camera_create = false;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				ui::show_camera_create = false;
+			}
+
+			ImGui::End();
 		}
 
 		void draw_save_confirm_popup(Editor* editor)
@@ -288,9 +346,18 @@ namespace bacon
 
 					if (ImGui::Button("Save"))
 					{
-						file::save_project(editor->manager);
-						ui::show_save_confirm_popup = false;
-						button_pressed = true;
+						if (globals::is_project_loaded)
+						{
+							file::save_project();
+							ui::show_save_confirm_popup = false;
+							button_pressed = true;
+						}
+						else
+						{
+							ui::show_save_as_popup = true;
+							ui::show_save_confirm_popup = false;
+							button_pressed = false;
+						}
 						ImGui::CloseCurrentPopup();
 					}
 
@@ -321,16 +388,23 @@ namespace bacon
 							break;
 						}
 
-						case LastEditorAction::PROJECT_SAVE_AS:
-						{
-							ui::show_save_as_popup = true;
-						}
+						// This shouldn't be a case?
+						// case LastEditorAction::PROJECT_SAVE_AS:
+						// {
+						// 	ui::show_save_as_popup = true;
+						// }
 
 						case LastEditorAction::PROJECT_OPEN:
 						{
-							file::load_project(editor->manager, true);
+							file::load_project(true);
 							break;
 						}
+
+						case LastEditorAction::PROGRAM_EXIT:
+    					{
+                            globals::program_running = false;
+                            break;
+    					}
 
 						default:
 						{
@@ -390,8 +464,8 @@ namespace bacon
 						globals::project_file = project_path + "//game.json";
 						globals::is_project_loaded = true;
 
-						file::create_new_project(editor->manager);
-						file::save_project(editor->manager);
+						file::create_new_project();
+						file::save_project();
 
 						ui::show_save_as_popup = false;
 					}
@@ -450,7 +524,7 @@ namespace bacon
 						globals::project_file = project_path + "//game.json";
 						globals::is_project_loaded = true;
 
-						file::create_new_project(editor->manager);
+						file::create_new_project();
 
 						ui::show_create_new_project = false;
 					}
@@ -534,7 +608,7 @@ namespace bacon
 
 			if (globals::is_project_loaded)
 			{
-				file::save_project(editor->manager);
+				file::save_project();
 			}
 			else
 			{
@@ -565,7 +639,7 @@ namespace bacon
 			}
 			else
 			{
-				file::load_project(editor->manager, true);
+				file::load_project(true);
 			}
 		}
 

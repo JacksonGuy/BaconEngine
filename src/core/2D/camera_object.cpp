@@ -1,150 +1,235 @@
 #include "camera_object.h"
 
 #include "imgui.h"
+#include "imgui_stdlib.h"
 
+#include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
+#include "editor/editor_event.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
+#include "lib/pool_allocator.h"
 
 namespace bacon
 {
-    CameraObject::CameraObject() : GameObject()
-    {
-        this->object_type = ObjectType::CAMERA;
-        this->name = "Camera";
-        this->camera = {0};
-        this->is_active = false;
-        this->zoom = 1.0f;
-    }
+	Arena<CameraObject> CameraObject::_allocator(globals::allocator_block_size);
 
-    void CameraObject::move_camera(Vector2 delta)
-    {
-        this->position.x += delta.x;
-        this->position.y += delta.y;
-        this->camera.target = this->position;
-    }
+	CameraObject::CameraObject() : GameObject()
+	{
+		this->object_type = ObjectType::CAMERA;
+		this->name = "Camera";
+		this->camera = {0};
+		this->is_active = false;
+		this->zoom = 1.0f;
+	}
 
-    void CameraObject::set_position(Vector2 position)
-    {
-        this->position = position;
-        this->camera.target = position;
-    }
+	CameraObject::CameraObject(uint8_t* bytes)
+	{
+		this->deserialize(bytes);
+	}
 
-    void CameraObject::calculate_size(Vector2 window_size)
-    {
-        this->size = {window_size.x * this->camera.zoom,
-                      window_size.y * this->camera.zoom};
-    }
+	CameraObject::CameraObject(const CameraObject& camera) : GameObject(camera)
+	{
+		this->camera = camera.camera;
+		this->is_active = false;
+		this->zoom = camera.zoom;
+	}
 
-    void CameraObject::draw() const {}
+	CameraObject& CameraObject::operator=(const CameraObject& camera)
+	{
+	    GameObject::operator=(camera);
 
-    void CameraObject::draw_properties_editor()
-    {
-        GameObject::draw_properties_editor();
+		this->camera = camera.camera;
+		this->is_active = false;
+		this->zoom = camera.zoom;
 
-        // Position
-        float position[] = {this->position.x, this->position.y};
-        ImGui::ItemLabel("Position", ItemLabelFlag::Left);
-        if (ImGui::InputFloat2("##position", position))
-        {
-            this->position = (Vector2){position[0], position[1]};
-            this->camera.target = this->position;
+	    return *this;
+	}
 
-            globals::has_unsaved_changes = true;
-        }
+	void CameraObject::move_camera(Vector2 delta)
+	{
+		this->position.x += delta.x;
+		this->position.y += delta.y;
+		this->camera.target = this->position;
+	}
 
-        // Size
-        float size[] = {this->size.x, this->size.y};
-        ImGui::ItemLabel("Size", ItemLabelFlag::Left);
-        if (ImGui::InputFloat2("##size", size))
-        {
-            this->size = (Vector2){size[0], size[1]};
+	void CameraObject::set_position(Vector2 position)
+	{
+		this->position = position;
+		this->camera.target = position;
+	}
 
-            globals::has_unsaved_changes = true;
-        }
+	void CameraObject::calculate_size(Vector2 window_size)
+	{
+		this->size = {window_size.x * this->camera.zoom,
+					  window_size.y * this->camera.zoom};
+	}
 
-        // Rotation
-        ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
-        if (ImGui::InputFloat("##rotation", &this->rotation))
-        {
-            this->rotation = b_fmod(this->rotation, 360);
+	void CameraObject::draw() const {}
 
-            globals::has_unsaved_changes = true;
-        }
+	void CameraObject::draw_properties_editor()
+	{
+	    CameraObject copy_camera(*this);
+		copy_camera.uuid = this->uuid;
 
-        ImGui::Separator();
+		bool change_made = false;
 
-        ImGui::ItemLabel("Active", ItemLabelFlag::Left);
-        if (ImGui::Checkbox("##is_active", &this->is_active))
-        {
-            if (this->is_active)
-            {
-                this->manager->set_active_camera(this);
-            }
+		// Name
+		std::string name_buf = this->name;
+		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+		if (ImGui::InputText("##name", &name_buf,
+							 ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			this->name = std::string(name_buf);
 
-            globals::has_unsaved_changes = true;
-        }
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
-        ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
-        if (ImGui::InputFloat("##zoom", &this->zoom))
-        {
-            camera.zoom = this->zoom;
+		// Tag
+		std::string tag_buf = this->tag;
+		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
+		ImGui::InputText("##tag", &tag_buf);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			this->tag = std::string(tag_buf);
 
-            globals::has_unsaved_changes = true;
-        }
-    }
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
-    void CameraObject::save_to_json(nlohmann::json& data) const
-    {
-        GameObject::save_to_json(data);
+		// Rendering layer
+		int render_layer = this->layer;
+		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
+		// TODO this might be a better choice?
+		// ImGui::InputScalar("##layer", ImGuiDataType_U64, &render_layer);
+		if (ImGui::InputInt("##layer", &render_layer))
+		{
+			if (render_layer < 0)
+			{
+				render_layer = 0;
+			}
 
-        data["is_active"] = this->is_active;
-        data["zoom"] = this->zoom;
-    }
+			this->set_layer(render_layer);
 
-    void CameraObject::load_from_json(nlohmann::json& data)
-    {
-        GameObject::load_from_json(data);
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
-        for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
-        {
-            std::string key = it.key();
-            auto value = *it;
+		// Position
+		float position[] = {this->position.x, this->position.y};
+		ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+		if (ImGui::InputFloat2("##position", position))
+		{
+			this->position = (Vector2){position[0], position[1]};
+			this->camera.target = this->position;
 
-            if (key == "is_active")
-            {
-                this->is_active = value;
-            }
-            else if (key == "zoom")
-            {
-                this->zoom = value;
-                this->camera.zoom = value;
-            }
-        }
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
-        if (this->is_active)
-        {
-            this->manager->set_active_camera(this);
-        }
-        this->camera.target = this->position;
-        this->camera.rotation = this->rotation;
-    }
+		// Size
+		float size[] = {this->size.x, this->size.y};
+		ImGui::ItemLabel("Size", ItemLabelFlag::Left);
+		if (ImGui::InputFloat2("##size", size))
+		{
+			this->size = (Vector2){size[0], size[1]};
 
-    size_t CameraObject::calculate_size() const
-    {
-        debug_error("This function has not been implemented yet.");
-        return 0;
-    }
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
 
-    uint8_t* CameraObject::serialize() const
-    {
-        debug_error("This function has not been implemented yet.");
-        return nullptr;
-    }
+		// Rotation
+		ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
+		if (ImGui::InputFloat("##rotation", &this->rotation))
+		{
+			this->rotation = b_fmod(this->rotation, 360);
 
-    void CameraObject::deserialize(uint8_t* bytes)
-    {
-        debug_error("This function has not been implemented yet.");
-    }
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::Separator();
+
+		ImGui::ItemLabel("Active", ItemLabelFlag::Left);
+		if (ImGui::Checkbox("##is_active", &this->is_active))
+		{
+			if (this->is_active)
+			{
+				GameState::scene.set_active_camera(this);
+			}
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
+		if (ImGui::InputFloat("##zoom", &this->zoom))
+		{
+			camera.zoom = this->zoom;
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		if (change_made)
+		{
+		    event::EditorEvent event = event::make_object_event(&copy_camera, this);
+			event::push_event(event);
+		}
+	}
+
+	void CameraObject::save_to_json(nlohmann::json& data) const
+	{
+		GameObject::save_to_json(data);
+
+		data["is_active"] = this->is_active;
+		data["zoom"] = this->zoom;
+	}
+
+	void CameraObject::load_from_json(nlohmann::json& data)
+	{
+		GameObject::load_from_json(data);
+
+		for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
+		{
+			std::string key = it.key();
+			auto value = *it;
+
+			if (key == "is_active")
+			{
+				this->is_active = value;
+			}
+			else if (key == "zoom")
+			{
+				this->zoom = value;
+				this->camera.zoom = value;
+			}
+		}
+
+		if (this->is_active)
+		{
+			GameState::scene.set_active_camera(this);
+		}
+		this->camera.target = this->position;
+		this->camera.rotation = this->rotation;
+	}
+
+	size_t CameraObject::calculate_size() const
+	{
+		debug_error("This function has not been implemented yet.");
+		return 0;
+	}
+
+	uint8_t* CameraObject::serialize() const
+	{
+		debug_error("This function has not been implemented yet.");
+		return nullptr;
+	}
+
+	void CameraObject::deserialize(uint8_t* bytes)
+	{
+		debug_error("This function has not been implemented yet.");
+	}
 } // namespace bacon

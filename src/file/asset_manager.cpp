@@ -1,4 +1,4 @@
-#include "resource_manager.h"
+#include "asset_manager.h"
 
 #include <memory>
 
@@ -8,7 +8,7 @@
 
 namespace bacon
 {
-    ResourceManager::~ResourceManager()
+    AssetManager::~AssetManager()
     {
         // Unload textures
         for (auto it = m_textures.begin(); it != m_textures.end(); it++)
@@ -27,7 +27,7 @@ namespace bacon
         m_fonts.clear();
     }
 
-    std::shared_ptr<Texture2D> ResourceManager::load_texture(const char* path)
+    std::shared_ptr<Texture2D> AssetManager::load_texture(const std::string& path)
     {
         if (m_textures.find(path) != m_textures.end())
         {
@@ -35,7 +35,7 @@ namespace bacon
         }
         else
         {
-            Texture2D new_texture = LoadTexture(path);
+            Texture2D new_texture = LoadTexture(path.c_str());
             if (new_texture.id <= 0)
             {
                 debug_error("Failed to load texture: %s", path);
@@ -46,7 +46,7 @@ namespace bacon
         }
     }
 
-    std::shared_ptr<Font> ResourceManager::load_font(const std::string& path)
+    std::shared_ptr<Font> AssetManager::load_font(const std::string& path)
     {
         if (m_fonts.find(path) != m_fonts.end())
         {
@@ -63,5 +63,17 @@ namespace bacon
             m_fonts[path] = std::make_shared<Font>(new_font);
             return m_fonts[path];
         }
+    }
+
+    const std::unordered_map<std::string, std::shared_ptr<Texture2D>>&
+    AssetManager::get_textures() const
+    {
+        return m_textures;
+    }
+
+    const std::unordered_map<std::string, std::shared_ptr<Font>>&
+    AssetManager::get_fonts() const
+    {
+        return m_fonts;
     }
 } // namespace bacon

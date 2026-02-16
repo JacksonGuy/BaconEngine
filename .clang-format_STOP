@@ -1,5 +1,5 @@
 Language: Cpp
-Standard: c++17
+Standard: c++20
 IndentWidth: 4
 TabWidth: 4
 UseTab: ForContinuationAndIndentation
@@ -11,3 +11,4 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Inline
 NamespaceIndentation: All
 IndentCaseLabels: true
+AlwaysBreakTemplateDeclarations: Yes

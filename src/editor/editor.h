@@ -1,9 +1,11 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "imgui.h"
 #include "raylib.h"
 
-#include "core/2D/game_manager.h"
+#include "core/game_state.h"
 
 namespace bacon
 {
@@ -34,11 +36,10 @@ namespace bacon
 
 		std::string editor_font_path;
 
-		GameManager manager;
 		Camera2D camera;
 
 		Editor();
-		~Editor() = default;
+		~Editor();
 
 		void create_config_file();
 		void load_config_file();

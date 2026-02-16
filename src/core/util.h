@@ -48,4 +48,5 @@ namespace bacon
 #define debug_warn(...) ((void)0);
 #define debug_error(...) ((void)0);
 #endif
+
 } // namespace bacon
