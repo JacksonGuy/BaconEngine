@@ -42,10 +42,17 @@ namespace bacon
 		GameObject& operator=(GameObject&& obj) = delete;
 		virtual ~GameObject() = default;
 
-		void copy(const GameObject& obj);
+		virtual void copy(const GameObject& obj);
+		virtual GameObject* clone() const = 0;
 
-		const GameObject* get_parent() const;
+		virtual void add_to_state() = 0;
+
+		GameObject* get_parent() const;
+		void set_parent(GameObject* object);
+		void add_child(GameObject* object);
+		void remove_child(GameObject* object);
 		const std::vector<GameObject*>& get_children() const;
+
 		const size_t get_layer() const;
 		void set_layer(size_t layer);
 

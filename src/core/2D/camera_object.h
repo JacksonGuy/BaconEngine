@@ -23,6 +23,11 @@ namespace bacon
 		CameraObject& operator=(CameraObject&& camera) = delete;
 		~CameraObject() = default;
 
+		void copy(const GameObject& object) override;
+		CameraObject* clone() const override;
+
+		void add_to_state() override;
+
 		void move_camera(Vector2 delta);
 		void set_position(Vector2 position);
 		void calculate_size(Vector2 window_size);

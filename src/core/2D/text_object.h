@@ -21,6 +21,11 @@ namespace bacon
 		TextObject& operator=(TextObject&& text_object) = delete;
 		~TextObject() = default;
 
+		void copy(const GameObject& object) override;
+		TextObject* clone() const override;
+
+		void add_to_state() override;
+
 		void set_text(const std::string& text);
 		void set_font(const std::string& font_path);
 		void set_font_size(int32_t size);

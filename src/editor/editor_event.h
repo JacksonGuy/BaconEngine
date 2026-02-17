@@ -4,18 +4,14 @@
 #include <stack>
 
 #include "core/2D/game_object.h"
+#include "core/2D/entity.h"
+#include "core/2D/text_object.h"
+#include "core/2D/camera_object.h"
 
 namespace bacon
 {
 	namespace event
 	{
-		enum class EventType : uint32_t
-		{
-			NONE = 0,
-			OBJECT_EDIT,
-			STATE_EDIT
-		};
-
 		enum class EventAction : uint8_t
 		{
 		    NONE = 0,
@@ -25,20 +21,39 @@ namespace bacon
 
 		typedef struct EditorEvent
 		{
-			EventType type;
-			GameObject* before;
-			GameObject* after;
+		    EditorEvent() = default;
+			virtual ~EditorEvent() = default;
+			virtual void apply(EventAction action) = 0;
 		} EditorEvent;
 
-		extern std::stack<EditorEvent> undo_stack;
-		extern std::stack<EditorEvent> redo_stack;
+		typedef struct ObjectEvent : EditorEvent
+		{
+		    GameObject* before;
+			GameObject* after;
 
-		void push_event(EditorEvent event);
+			ObjectEvent(GameObject* before, GameObject* after);
+			~ObjectEvent();
+			void apply(EventAction action) override;
+		} ObjectEvent;
+
+		typedef struct TreeEvent : EditorEvent
+		{
+		    GameObject* object;
+			GameObject* old_parent;
+			GameObject* new_parent;
+
+			TreeEvent();
+			~TreeEvent();
+			void apply(EventAction action) override;
+		} TreeEvent;
+
+		extern std::stack<EditorEvent*> undo_stack;
+		extern std::stack<EditorEvent*> redo_stack;
+
+		void push_event(EditorEvent* event);
 		void undo_event();
 		void redo_event();
-		void apply_event(EditorEvent event, EventAction action);
 
-		EditorEvent make_object_event(const GameObject* before, const GameObject* after);
 		void event_cleanup();
 	} // namespace event
 } // namespace bacon

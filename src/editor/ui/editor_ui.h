@@ -57,7 +57,6 @@ namespace bacon
 		void draw_save_confirm_popup(Editor* editor);
 		void draw_save_as_popup(Editor* editor);
 		void draw_create_project_popup(Editor* editor);
-		// void draw_confirm_close_popup(Editor* editor);
 
 		void game_object_tree_recurse(GameObject* object);
 

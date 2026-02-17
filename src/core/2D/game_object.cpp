@@ -33,38 +33,12 @@ namespace bacon
 
 	GameObject::GameObject(const GameObject& obj)
 	{
-		this->object_type = ObjectType::OBJECT;
-		this->name = obj.name;
-		this->tag = obj.tag;
-		this->position = obj.position;
-		this->size = obj.size;
-		this->rotation = obj.rotation;
-		this->is_visible = obj.is_visible;
-		this->layer = obj.layer;
-
-		this->parent = obj.parent;
-		if (obj.parent != nullptr)
-		{
-			obj.parent->children.push_back(this);
-		}
+		this->copy(obj);
 	}
 
 	GameObject& GameObject::operator=(const GameObject& obj)
 	{
-        this->object_type = ObjectType::OBJECT;
-    	this->name = obj.name;
-    	this->tag = obj.tag;
-    	this->position = obj.position;
-    	this->size = obj.size;
-    	this->rotation = obj.rotation;
-    	this->is_visible = obj.is_visible;
-    	this->layer = obj.layer;
-
-    	this->parent = obj.parent;
-    	if (obj.parent != nullptr)
-    	{
-    		obj.parent->children.push_back(this);
-    	}
+        this->copy(obj);
 
 	    return *this;
 	}
@@ -72,6 +46,8 @@ namespace bacon
 	void GameObject::copy(const GameObject& obj)
 	{
         this->object_type = ObjectType::OBJECT;
+
+        this->uuid = obj.uuid;
     	this->name = obj.name;
     	this->tag = obj.tag;
     	this->position = obj.position;
@@ -85,11 +61,47 @@ namespace bacon
     	{
     		obj.parent->children.push_back(this);
     	}
+
+        // TODO
+        // const std::vector<GameObject*>& children = obj.get_children();
+		// if (children.size() > 0)
+		// {
+		//     for (GameObject* child : children)
+		// 	{
+		// 	    GameObject* new_child = child->clone();
+		// 		new_child->add_to_state();
+		// 		this->children.push_back(new_child);
+		// 	}
+		// }
 	}
 
-	const GameObject* GameObject::get_parent() const
+	GameObject* GameObject::get_parent() const
 	{
 		return this->parent;
+	}
+
+	void GameObject::set_parent(GameObject* parent)
+	{
+	    this->parent = parent;
+	}
+
+	void GameObject::add_child(GameObject* object)
+	{
+	    this->children.push_back(object);
+	}
+
+	void GameObject::remove_child(GameObject* object)
+	{
+	    for (auto it = children.begin(); it != children.end(); it++)
+		{
+		    GameObject* child = *it;
+			if (child->uuid == object->uuid)
+			{
+			    children.erase(it);
+				globals::has_unsaved_changes = true;
+				return;
+			}
+		}
 	}
 
 	const std::vector<GameObject*>& GameObject::get_children() const

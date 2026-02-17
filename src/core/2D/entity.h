@@ -33,7 +33,10 @@ namespace bacon
 		Entity& operator=(Entity&& entity) = delete;
 		~Entity() = default;
 
-		void copy(const Entity& entity);
+		void copy(const GameObject& object) override;
+		Entity* clone() const override;
+
+		void add_to_state() override;
 
 		void set_texture(const std::string& path);
 		void set_size(float width, float height);

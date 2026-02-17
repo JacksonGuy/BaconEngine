@@ -35,32 +35,36 @@ namespace bacon
 
 	Entity::Entity(const Entity& entity) : GameObject(entity)
 	{
-		this->object_type = ObjectType::ENTITY;
-		this->body_type = entity.body_type;
-
-		this->set_texture(entity.m_texture_path);
+		this->copy(entity);
 	}
 
 	Entity& Entity::operator=(const Entity& entity)
 	{
-	    GameObject::operator=(entity);
-
-	    this->object_type = ObjectType::ENTITY;
-
-		this->body_type = entity.body_type;
-		this->set_texture(entity.m_texture_path);
+	    this->copy(entity);
 
 	    return *this;
 	}
 
-	void Entity::copy(const Entity& entity)
+	void Entity::copy(const GameObject& object)
 	{
-	    GameObject::copy(entity);
+	    GameObject::copy(object);
+
+		const Entity& entity = static_cast<const Entity&>(object);
 
 		this->object_type = ObjectType::ENTITY;
 
 		this->body_type = entity.body_type;
 		this->set_texture(entity.m_texture_path);
+	}
+
+	Entity* Entity::clone() const
+	{
+	    return new Entity(*this);
+	}
+
+	void Entity::add_to_state()
+	{
+	    GameState::scene.add_entity(this);
 	}
 
 	void Entity::set_texture(const std::string& path)
@@ -147,7 +151,6 @@ namespace bacon
 	void Entity::draw_properties_editor()
 	{
 	    Entity copy_entity(*this);
-		copy_entity.uuid = this->uuid;
 
 		bool change_made = false;
 
@@ -265,7 +268,7 @@ namespace bacon
 
 		if (change_made)
 		{
-		    event::EditorEvent event = event::make_object_event(&copy_entity, this);
+			event::ObjectEvent* event = new event::ObjectEvent(&copy_entity, this);
 			event::push_event(event);
 		}
 	}

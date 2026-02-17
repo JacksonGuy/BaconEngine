@@ -1,5 +1,6 @@
 #include "camera_object.h"
 
+#include "core/2D/game_object.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 
@@ -47,6 +48,27 @@ namespace bacon
 	    return *this;
 	}
 
+	void CameraObject::copy(const GameObject& object)
+	{
+	    GameObject::copy(object);
+
+		const CameraObject& camera = static_cast<const CameraObject&>(object);
+
+		this->camera = camera.camera;
+		this->is_active = false;
+		this->zoom = camera.zoom;
+	}
+
+	CameraObject* CameraObject::clone() const
+	{
+	    return new CameraObject(*this);
+	}
+
+	void CameraObject::add_to_state()
+	{
+	    GameState::scene.add_camera(this);
+	}
+
 	void CameraObject::move_camera(Vector2 delta)
 	{
 		this->position.x += delta.x;
@@ -71,7 +93,6 @@ namespace bacon
 	void CameraObject::draw_properties_editor()
 	{
 	    CameraObject copy_camera(*this);
-		copy_camera.uuid = this->uuid;
 
 		bool change_made = false;
 
@@ -175,7 +196,7 @@ namespace bacon
 
 		if (change_made)
 		{
-		    event::EditorEvent event = event::make_object_event(&copy_camera, this);
+			event::ObjectEvent* event = new event::ObjectEvent(&copy_camera, this);
 			event::push_event(event);
 		}
 	}

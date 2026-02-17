@@ -39,6 +39,23 @@ namespace bacon
 		: GameObject(text_object)
 	{
 		this->object_type = ObjectType::TEXT;
+
+		this->copy(text_object);
+	}
+
+	TextObject& TextObject::operator=(const TextObject& text_object)
+	{
+	    this->copy(text_object);
+
+	    return *this;
+	}
+
+	void TextObject::copy(const GameObject& object)
+	{
+	    GameObject::copy(object);
+
+		const TextObject& text_object = static_cast<const TextObject&>(object);
+
 		this->m_text = text_object.m_text;
 		this->set_font(text_object.m_font_path);
 		this->m_font_size = text_object.m_font_size;
@@ -46,18 +63,14 @@ namespace bacon
 		this->m_color = text_object.m_color;
 	}
 
-	TextObject& TextObject::operator=(const TextObject& text_object)
+	TextObject* TextObject::clone() const
 	{
-	    GameObject::operator=(text_object);
+	    return new TextObject(*this);
+	}
 
-		this->object_type = ObjectType::TEXT;
-		this->m_text = text_object.m_text;
-		this->set_font(text_object.m_font_path);
-		this->m_font_size = text_object.m_font_size;
-		this->m_char_spacing = text_object.m_char_spacing;
-		this->m_color = text_object.m_color;
-
-	    return *this;
+	void TextObject::add_to_state()
+	{
+	    GameState::scene.add_text_object(this);
 	}
 
 	void TextObject::set_text(const std::string& text)
@@ -201,7 +214,6 @@ namespace bacon
 	void TextObject::draw_properties_editor()
 	{
 	    TextObject copy_text(*this);
-		copy_text.uuid = this->uuid;
 
 		bool change_made = false;
 
@@ -359,7 +371,7 @@ namespace bacon
 
 		if (change_made)
 		{
-		    event::EditorEvent event = event::make_object_event(&copy_text, this);
+			event::ObjectEvent* event = new event::ObjectEvent(&copy_text, this);
 			event::push_event(event);
 		}
 	}

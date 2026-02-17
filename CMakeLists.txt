@@ -50,9 +50,10 @@ add_executable(main ${SOURCE_FILES})
 
 # Options
 target_compile_options(main PRIVATE
-    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Release>:-O3 -fno-rtti>
     $<$<CONFIG:Debug>:
         -O0 -g3 -pg -Wall
+        -fno-rtti
         -fsanitize=address,undefined -fno-omit-frame-pointer
         -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=
     >

@@ -10,6 +10,7 @@
 #include "core/globals.h"
 #include "core/util.h"
 #include "editor/editor.h"
+#include "editor/editor_event.h"
 #include "editor/ui/imgui_extras.h"
 #include "file/file.h"
 
@@ -54,6 +55,21 @@ namespace bacon
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Edit"))
+			{
+                if (ImGui::MenuItem("Undo", "Ctrl-Z"))
+                {
+                    event::undo_event();
+                }
+
+                if (ImGui::MenuItem("Redo", "Ctrl-Y"))
+                {
+                    event::redo_event();
+                }
+
+			    ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Create"))
 			{
 				ImGui::MenuItem("Entity", NULL, &show_entity_create);
@@ -96,6 +112,30 @@ namespace bacon
 
 			if (ImGui::TreeNodeEx("Scene", parentFlags))
 			{
+			    // Handle drag-drop onto root scene node
+			    if (ImGui::BeginDragDropTarget())
+			    {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_UUID"))
+					{
+					    // Find object
+					    UUID source_uuid = *(UUID*)payload->Data;
+						GameObject* object = GameState::scene.find_object_by_uuid(source_uuid);
+
+						if (object != nullptr)
+						{
+						    // Remove from current parent if object has one
+						    GameObject* parent = object->get_parent();
+						    if (parent != nullptr)
+						    {
+								parent->remove_child(object);
+								object->set_parent(nullptr);
+							}
+						}
+					}
+
+					ImGui::EndDragDropTarget();
+				}
+
 				for (GameObject* obj : GameState::scene.get_objects())
 				{
 					if (obj->get_parent() == nullptr)
@@ -536,20 +576,21 @@ namespace bacon
 
 		void game_object_tree_recurse(GameObject* object)
 		{
+		    if (object == nullptr) return;
+
 			// TODO This might be bad.
-			ImGui::PushID(object->uuid.get_left());
+			ImGui::PushID(object);
 
 			auto normalFlags =
-				ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+				ImGuiTreeNodeFlags_Leaf;// | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 			auto parentFlags = ImGuiTreeNodeFlags_OpenOnArrow |
 							   ImGuiTreeNodeFlags_OpenOnDoubleClick |
 							   ImGuiTreeNodeFlags_DefaultOpen;
 
 			bool is_open = true;
-			const std::vector<GameObject*>& children = object->get_children();
 
 			// Create tree node for parent
-			if (children.size() == 0)
+			if (object->get_children().size() == 0)
 			{
 				ImGui::TreeNodeEx(object->name.c_str(), normalFlags);
 			}
@@ -564,7 +605,42 @@ namespace bacon
 				view_properties_object = object;
 			}
 
+			// Handle mouse drag
+			if (ImGui::BeginDragDropSource())
+			{
+			    ImGui::SetDragDropPayload("OBJECT_UUID", &object->uuid, sizeof(object->uuid));
+			    ImGui::EndDragDropSource();
+			}
+
+			// Handle mouse drop
+			if (ImGui::BeginDragDropTarget())
+			{
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_UUID"))
+				{
+				    UUID source_uuid = *(UUID*)payload->Data;
+					GameObject* source_obj = GameState::scene.find_object_by_uuid(source_uuid);
+
+					if (source_obj != nullptr)
+					{
+					    GameObject* parent = source_obj->get_parent();
+
+						// Remove from current parent if object has one
+						if (parent != nullptr)
+						{
+						    parent->remove_child(source_obj);
+						}
+
+						// Add to new parent
+						object->add_child(source_obj);
+						source_obj->set_parent(object);
+					}
+				}
+
+				ImGui::EndDragDropTarget();
+			}
+
 			// Display children if open
+			auto children = object->get_children();
 			if (children.size() > 0 && is_open)
 			{
 				ImGui::Indent(4);
@@ -574,10 +650,11 @@ namespace bacon
 					game_object_tree_recurse(child);
 				}
 
-				ImGui::TreePop();
 				ImGui::Unindent(4);
 			}
 
+			if (is_open)
+			    ImGui::TreePop();
 			ImGui::PopID();
 		}
 
