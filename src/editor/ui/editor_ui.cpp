@@ -130,6 +130,14 @@ namespace bacon
 								parent->remove_child(object);
 								object->set_parent(nullptr);
 							}
+
+							event::TreeEvent* event = new event::TreeEvent();
+							event->object = object;
+							event->old_parent = parent;
+							event->new_parent = nullptr;
+
+							event::push_event(event);
+							globals::has_unsaved_changes = true;
 						}
 					}
 
@@ -288,7 +296,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				Entity* entity = GameState::allocate_entity();
+				Entity* entity = new Entity();
 				GameState::scene.add_entity(entity);
 
 				entity->position =
@@ -324,7 +332,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				TextObject* text = GameState::allocate_text_object();
+				TextObject* text = new TextObject();
 				GameState::scene.add_text_object(text);
 
 				text->name = name_buffer;
@@ -355,7 +363,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				CameraObject* camera = GameState::allocate_camera();
+				CameraObject* camera = new CameraObject();
 				GameState::scene.add_camera(camera);
 
 				camera->name = name_buffer;
@@ -633,6 +641,14 @@ namespace bacon
 						// Add to new parent
 						object->add_child(source_obj);
 						source_obj->set_parent(object);
+
+						event::TreeEvent* event = new event::TreeEvent();
+						event->object = source_obj;
+						event->old_parent = parent;
+						event->new_parent = object;
+
+						event::push_event(event);
+						globals::has_unsaved_changes = true;
 					}
 				}
 

@@ -30,12 +30,5 @@ namespace bacon
 		void initialize_game_state();
 		void initialize_renderer(uint32_t width, uint32_t height);
 		void load_default_font(const std::string& path);
-
-		Entity* allocate_entity();
-		void deallocated_entity(Entity* entity);
-		TextObject* allocate_text_object();
-		void deallocate_text_object(TextObject* text);
-		CameraObject* allocate_camera();
-		void deallocate_camera(CameraObject* camera);
 	} // namespace GameState
 } // namespace bacon

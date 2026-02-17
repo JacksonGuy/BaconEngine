@@ -84,21 +84,21 @@ namespace bacon
 
 				if (object["type"] == ObjectType::ENTITY)
 				{
-					Entity* entity = (Entity*)GameState::allocate_entity();
+					Entity* entity = new Entity();
 					GameState::scene.add_entity(entity);
 
 					entity->load_from_json(object);
 				}
 				else if (object["type"] == ObjectType::TEXT)
 				{
-					TextObject* text = GameState::allocate_text_object();
+					TextObject* text = new TextObject();
 					GameState::scene.add_text_object(text);
 
 					text->load_from_json(object);
 				}
 				else if (object["type"] == ObjectType::CAMERA)
 				{
-					CameraObject* camera = GameState::allocate_camera();
+					CameraObject* camera = new CameraObject();
 					GameState::scene.add_camera(camera);
 
 					camera->load_from_json(object);

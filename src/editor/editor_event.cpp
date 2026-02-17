@@ -6,6 +6,7 @@
 #include "core/2D/text_object.h"
 #include "core/util.h"
 #include "core/game_state.h"
+#include "core/globals.h"
 
 namespace bacon
 {
@@ -48,10 +49,56 @@ namespace bacon
 			if (action == EventAction::UNDO)
 			{
 			    object->copy(*this->before);
+
+				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
 			    object->copy(*this->after);
+
+				globals::has_unsaved_changes = true;
+			}
+		}
+
+		TreeEvent::TreeEvent()
+		{
+		    object = nullptr;
+			old_parent = nullptr;
+			new_parent = nullptr;
+		}
+
+		void TreeEvent::apply(EventAction action)
+		{
+		    assert(object != nullptr);
+			assert(action != EventAction::NONE);
+
+			if (action == EventAction::UNDO)
+			{
+			    object->set_parent(old_parent);
+				if (old_parent != nullptr)
+				{
+				    old_parent->add_child(object);
+				}
+				if (new_parent != nullptr)
+				{
+				    new_parent->remove_child(object);
+				}
+
+				globals::has_unsaved_changes = true;
+			}
+			else if (action == EventAction::REDO)
+			{
+			    object->set_parent(new_parent);
+				if (new_parent != nullptr)
+				{
+				    new_parent->add_child(object);
+				}
+				if (old_parent != nullptr)
+				{
+				    old_parent->remove_child(object);
+				}
+
+				globals::has_unsaved_changes = true;
 			}
 		}
 

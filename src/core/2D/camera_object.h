@@ -10,6 +10,9 @@ namespace bacon
 	{
 	public:
 	    static Arena<CameraObject> _allocator;
+		static void* operator new(size_t size);
+		static void* operator new(size_t size, void* ptr);
+		static void operator delete(void* ptr, size_t size);
 
 		Camera2D camera;
 		bool is_active;

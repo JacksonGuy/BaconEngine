@@ -19,6 +19,21 @@ namespace bacon
 {
 	Arena<TextObject> TextObject::_allocator(globals::allocator_block_size);
 
+	void* TextObject::operator new(size_t size)
+	{
+	    return TextObject::_allocator.allocate();
+	}
+
+	void TextObject::operator delete(void* ptr, size_t size)
+	{
+	    TextObject::_allocator.deallocate((TextObject*)ptr);
+	}
+
+	void* TextObject::operator new(size_t size, void* ptr)
+	{
+	    return ptr;
+	}
+
 	TextObject::TextObject() : GameObject()
 	{
 		this->object_type = ObjectType::TEXT;

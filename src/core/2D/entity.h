@@ -23,7 +23,11 @@ namespace bacon
 	{
 	public:
 		friend class Scene2D;
+
 		static Arena<Entity> _allocator;
+		static void* operator new(size_t size);
+		static void* operator new(size_t size, void* ptr);
+		static void operator delete(void* ptr, size_t size);
 
 		Entity();
 		Entity(uint8_t* bytes);

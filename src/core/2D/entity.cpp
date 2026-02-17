@@ -18,6 +18,21 @@ namespace bacon
 {
 	Arena<Entity> Entity::_allocator(globals::allocator_block_size);
 
+	void* Entity::operator new(size_t size)
+	{
+	    return Entity::_allocator.allocate();
+	}
+
+	void Entity::operator delete(void* ptr, size_t size)
+	{
+	    Entity::_allocator.deallocate((Entity*)ptr);
+	}
+
+	void* Entity::operator new(size_t size, void* ptr)
+	{
+	    return ptr;
+	}
+
 	Entity::Entity() : GameObject()
 	{
 		this->object_type = ObjectType::ENTITY;

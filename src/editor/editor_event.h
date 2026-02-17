@@ -43,7 +43,7 @@ namespace bacon
 			GameObject* new_parent;
 
 			TreeEvent();
-			~TreeEvent();
+			~TreeEvent() = default;
 			void apply(EventAction action) override;
 		} TreeEvent;
 

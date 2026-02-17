@@ -41,36 +41,5 @@ namespace bacon
 				debug_log("Default font set.");
 			}
 		}
-
-		Entity* allocate_entity()
-		{
-		    return Entity::_allocator.allocate();
-		}
-
-		void deallocated_entity(Entity* entity)
-		{
-		    Entity::_allocator.deallocate(entity);
-		}
-
-		TextObject* allocate_text_object()
-		{
-		    return TextObject::_allocator.allocate();
-		}
-
-		void deallocate_text_object(TextObject* text)
-		{
-		    TextObject::_allocator.deallocate(text);
-		}
-
-		CameraObject* allocate_camera()
-		{
-		    return CameraObject::_allocator.allocate();
-		}
-
-		void deallocate_camera(CameraObject* camera)
-		{
-		    CameraObject::_allocator.deallocate(camera);
-		}
-
 	} // namespace GameState
 } // namespace bacon

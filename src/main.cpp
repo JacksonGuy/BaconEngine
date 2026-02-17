@@ -23,9 +23,6 @@ int main(int argc, char** argv)
 	using namespace bacon;
 	debug_log("Starting BaconEngine...");
 
-	Entity* test = GameState::allocate_entity();
-	test->name = "Something";
-
 	globals::engine_version = "v0.1";
 
 	// Disable RayLib logging

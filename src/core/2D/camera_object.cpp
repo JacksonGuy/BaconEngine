@@ -16,6 +16,21 @@ namespace bacon
 {
 	Arena<CameraObject> CameraObject::_allocator(globals::allocator_block_size);
 
+	void* CameraObject::operator new(size_t size)
+	{
+	    return CameraObject::_allocator.allocate();
+	}
+
+	void CameraObject::operator delete(void* ptr, size_t size)
+	{
+	    CameraObject::_allocator.deallocate((CameraObject*)ptr);
+	}
+
+	void* CameraObject::operator new(size_t size, void* ptr)
+	{
+	    return ptr;
+	}
+
 	CameraObject::CameraObject() : GameObject()
 	{
 		this->object_type = ObjectType::CAMERA;
