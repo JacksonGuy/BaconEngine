@@ -120,6 +120,105 @@ namespace bacon
 		GameState::renderer->add_to_layer(this, layer);
 	}
 
+	void GameObject::update_base_buffers()
+	{
+	    m_buffers.name = name;
+		m_buffers.tag = tag;
+		m_buffers.position[0] = position.x;
+		m_buffers.position[1] = position.y;
+		m_buffers.size[0] = size.x;
+		m_buffers.size[1] = size.y;
+		m_buffers.rotation = rotation;
+		m_buffers.is_visible = is_visible;
+		m_buffers.layer = layer;
+	}
+
+	void GameObject::update_from_base_buffers()
+	{
+	    this->name = m_buffers.name;
+		this->tag = m_buffers.tag;
+		this->position = (Vector2){m_buffers.position[0], m_buffers.position[1]};
+		this->size = (Vector2){m_buffers.size[0], m_buffers.size[1]};
+		this->rotation = m_buffers.rotation;
+		this->is_visible = m_buffers.is_visible;
+		this->set_layer(m_buffers.layer);
+	}
+
+	bool GameObject::draw_base_properties()
+	{
+	    bool change_made = false;
+
+	    // Name
+		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+		ImGui::InputText("##name", &m_buffers.name);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+		// ImGui::SameLine();
+		ImGui::HelpMarker("ID: " + this->uuid.get_uuid());
+
+		// Tag
+		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
+		ImGui::InputText("##tag", &m_buffers.tag);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Rendering layer
+		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
+		ImGui::InputScalar("##layer", ImGuiDataType_U64, &m_buffers.layer);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Position
+		ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+		ImGui::InputFloat2("##position", m_buffers.position);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Size
+		ImGui::ItemLabel("Size", ItemLabelFlag::Left);
+		ImGui::InputFloat2("##size", m_buffers.size);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Rotation
+		ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
+		ImGui::InputFloat("##rotation", &m_buffers.rotation);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			m_buffers.rotation = b_fmod(m_buffers.rotation, 360);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Visibility
+		ImGui::ItemLabel("Visible", ItemLabelFlag::Left);
+		if (ImGui::Checkbox("##visible", &m_buffers.is_visible))
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::Separator();
+
+		return change_made;
+	}
+
 	void GameObject::save_to_json(nlohmann::json& data) const
 	{
 		data["uuid"] = uuid.get_uuid();

@@ -23,8 +23,23 @@ namespace bacon
 			rlImGuiSetup(true);
 			ImGuiIO& io = ImGui::GetIO();
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+			io.ConfigDockingWithShift = true;
+
+			global_window_flags = ImGuiWindowFlags_None;
+			if (!move_windows)
+			{
+			    global_window_flags |= ImGuiWindowFlags_NoMove;
+			}
 
 			SetImGuiStyle();
+		}
+
+		void set_input_buffers()
+		{
+		    // Settings window buffers
+			settings::project_title = globals::project_title;
+			settings::gravity = GameState::scene.get_gravity();
+			settings::physics_steps = GameState::scene.physics_steps;
 		}
 
 		void draw_top_bar(Editor* editor)
@@ -50,6 +65,13 @@ namespace bacon
 				if (ImGui::MenuItem("Open Project", "Ctrl-O"))
 				{
 					ui::editor_open_project(editor);
+				}
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Settings"))
+				{
+				    ui::show_settings = true;
 				}
 
 				ImGui::EndMenu();
@@ -93,7 +115,7 @@ namespace bacon
 
 		void draw_object_properties()
 		{
-			ImGui::Begin("Properties", &show_object_properties);
+			ImGui::Begin("Properties", &show_object_properties, global_window_flags);
 			if (view_properties_object != nullptr)
 			{
 				view_properties_object->draw_properties_editor();
@@ -107,7 +129,7 @@ namespace bacon
 							   ImGuiTreeNodeFlags_OpenOnDoubleClick |
 							   ImGuiTreeNodeFlags_DefaultOpen;
 
-			ImGui::Begin("Objects", &show_object_tree);
+			ImGui::Begin("Objects", &show_object_tree, global_window_flags);
 			ImGui::SetNextItemOpen(true);
 
 			if (ImGui::TreeNodeEx("Scene", parentFlags))
@@ -162,7 +184,8 @@ namespace bacon
 		{
 			Renderer* renderer = GameState::renderer;
 
-			ImGui::Begin("Scene", &show_scene_display);
+			ImGui::Begin("Scene", &show_scene_display, global_window_flags);
+
 			ImVec2 window_size = ImGui::GetContentRegionAvail();
 
 			// Resize frame to correct window size
@@ -188,7 +211,8 @@ namespace bacon
 			const std::vector<ConsoleMessage>& messages =
 				editor->get_console_messages();
 
-			ImGui::Begin("Console");
+			ImGui::Begin("Console", &ui::show_console, global_window_flags);
+
 			ImGui::Checkbox("Logs", &console_show_logs);
 			ImGui::SameLine();
 			ImGui::Checkbox("Warnings", &console_show_warnings);
@@ -237,12 +261,125 @@ namespace bacon
 
 		void draw_settings()
 		{
-			// debug_error("This function has not been implemented yet.");
+		    // WARNING!!
+		    using namespace event;
+
+			if (!ui::show_settings) return;
+
+			ImGuiWindowFlags settings_flags = global_window_flags;
+			if (!move_windows)
+			{
+			    settings_flags ^= ImGuiWindowFlags_NoMove;
+			}
+
+			ImGui::Begin("Settings", &ui::show_settings, settings_flags);
+
+			if (ImGui::BeginTabBar("##tab_bar"))
+			{
+			    if (ImGui::BeginTabItem("Editor"))
+				{
+				    ImGui::ItemLabel("Project Title:", ItemLabelFlag::Left);
+				    if (ImGui::InputText("##project_title",
+								&settings::project_title,
+								ImGuiInputTextFlags_EnterReturnsTrue
+					)) {
+					    globals::has_unsaved_changes = true;
+						EditorEvent* event = new EditorEvent();
+						event->before = new EditorSnapshot();
+
+					    globals::project_title = settings::project_title;
+
+						event->after = new EditorSnapshot();
+						push_event(event);
+					}
+
+					ImGui::ItemLabel("Move windows:", ItemLabelFlag::Left);
+					if (ImGui::Checkbox("##docking", &ui::move_windows))
+					{
+					    ui::global_window_flags ^= ImGuiWindowFlags_NoMove;
+					}
+
+					ImGuiIO& io = ImGui::GetIO();
+					ImGui::ItemLabel("Shift Dock:", ItemLabelFlag::Left);
+					ImGui::Checkbox("##shift_dock", &io.ConfigDockingWithShift);
+
+					ImGui::ItemLabel("Preview Framerate Max", ItemLabelFlag::Left);
+					ImGui::InputScalar("##framerate", ImGuiDataType_U32, &settings::framerate_limit);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+					    // This probably isn't necessary for Editor changes.
+						// We should probably just be saving settings to config file
+						// after edit instead.
+					    // globals::has_unsaved_changes = true;
+
+						EditorEvent* event = new EditorEvent();
+						event->before = new EditorSnapshot();
+
+						globals::editor_ref->set_framerate_limit(settings::framerate_limit);
+
+						event->after = new EditorSnapshot();
+						push_event(event);
+					}
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Project"))
+				{
+				    ImGui::ItemLabel("Gravity:", ItemLabelFlag::Left);
+					ImGui::InputFloat("##gravity", &settings::gravity);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+					    globals::has_unsaved_changes = true;
+						EditorEvent* event = new EditorEvent();
+						event->before = new EditorSnapshot();
+
+						GameState::scene.set_gravity(settings::gravity);
+
+						event->after = new EditorSnapshot();
+						push_event(event);
+					}
+
+					ImGui::ItemLabel("Physics Steps:", ItemLabelFlag::Left);
+					ImGui::InputInt("##phys_step", &settings::physics_steps);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+					    globals::has_unsaved_changes = true;
+						EditorEvent* event = new EditorEvent();
+						event->before = new EditorSnapshot();
+
+						GameState::scene.physics_steps = settings::physics_steps;
+
+						event->after = new EditorSnapshot();
+						push_event(event);
+					}
+
+					ImGui::ItemLabel("Pixels per Meter:", ItemLabelFlag::Left);
+					ImGui::InputFloat("##units_per_meter", &settings::pixels_per_meter);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+					    globals::has_unsaved_changes = true;
+						EditorEvent* event = new EditorEvent();
+						event->before = new EditorSnapshot();
+
+						GameState::scene.set_unit_length(settings::pixels_per_meter);
+
+						event->after = new EditorSnapshot();
+						push_event(event);
+					}
+
+				    ImGui::EndTabItem();
+				}
+
+				ImGui::EndTabBar();
+			}
+
+			ImGui::End();
 		}
 
 		void draw_general_info_display(Editor* editor)
 		{
-			ImGui::Begin("Info", &show_general_info);
+			ImGui::Begin("Info", &show_general_info, global_window_flags);
 			int fps = GetFPS();
 			std::string title = "Bacon Engine " + globals::engine_version;
 			ImGui::Text("%s", title.c_str());
@@ -780,7 +917,7 @@ namespace bacon
 			io.Fonts->Clear();
 
 			float fontSize = 18.f;
-			std::string font_path = globals::editor_default_font_path;
+			std::string font_path = globals::editor_font_path;
 			io.Fonts->AddFontFromFileTTF(font_path.c_str(), fontSize);
 			io.FontDefault =
 				io.Fonts->AddFontFromFileTTF(font_path.c_str(), fontSize);

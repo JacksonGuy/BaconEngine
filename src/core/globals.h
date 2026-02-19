@@ -4,12 +4,16 @@
 
 #include "raylib.h"
 
+#include "editor/editor.h"
+
 namespace bacon
 {
 	namespace globals
 	{
 		inline std::string engine_version;
-		inline std::string editor_default_font_path;
+		inline std::string editor_font_path;
+
+		inline Editor* editor_ref;
 
 		inline size_t allocator_block_size = 512;
 

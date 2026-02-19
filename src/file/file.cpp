@@ -27,8 +27,7 @@ namespace bacon
 			json project_data;
 
 			project_data["settings"]["version"] = globals::engine_version;
-			project_data["settings"]["gravity"] =
-				GameState::scene.get_gravity();
+			project_data["settings"]["gravity"] = GameState::scene.get_gravity();
 			project_data["settings"]["title"] = globals::project_title;
 
 			const std::vector<GameObject*>& objects =
@@ -188,6 +187,8 @@ namespace bacon
 			globals::has_unsaved_changes = false;
 			globals::update_window_title();
 
+			ui::set_input_buffers();
+
 			return NFD_OKAY;
 		}
 
@@ -219,6 +220,8 @@ namespace bacon
 
 			globals::has_unsaved_changes = false;
 			globals::update_window_title();
+
+			ui::set_input_buffers();
 
 			return NFD_OKAY;
 		}

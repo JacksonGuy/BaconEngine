@@ -34,8 +34,9 @@ int main(int argc, char** argv)
 
 	// Setup
 	Editor editor;
-	editor.framerate_limit = 165;
+	editor.set_framerate_limit(165);
 	editor.is_playing = false;
+	globals::editor_ref = &editor;
 
 	// Debug for quick startup
 	globals::project_directory = "/home/jackson/BaconEngine/projects/test2";

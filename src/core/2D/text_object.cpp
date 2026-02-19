@@ -43,6 +43,8 @@ namespace bacon
 		this->m_font_size = 12;
 		this->m_char_spacing = 0;
 		this->m_color = BLACK;
+
+		this->update_buffers();
 	}
 
 	TextObject::TextObject(uint8_t* bytes)
@@ -98,6 +100,7 @@ namespace bacon
 	{
 		this->m_font = GameState::assets.load_font(font_path.c_str());
 		this->m_font_path = font_path;
+		this->update_render_text();
 	}
 
 	void TextObject::set_font_size(int32_t size)
@@ -212,6 +215,28 @@ namespace bacon
 		return final;
 	}
 
+	void TextObject::update_buffers()
+	{
+	    update_base_buffers();
+
+		m_buffers.text = m_text;
+		m_buffers.font_path = m_font_path;
+		m_buffers.font_size = m_font_size;
+		m_buffers.char_spacing = m_char_spacing;
+		m_buffers.color = m_color;
+	}
+
+	void TextObject::update_from_buffers()
+	{
+	    update_from_base_buffers();
+
+		set_text(m_buffers.text);
+		set_font(m_buffers.font_path);
+		set_font_size(m_buffers.font_size);
+		m_char_spacing = m_buffers.char_spacing;
+		m_color = m_buffers.color;
+	}
+
 	void TextObject::draw() const
 	{
 		DrawTextPro(
@@ -228,145 +253,56 @@ namespace bacon
 
 	void TextObject::draw_properties_editor()
 	{
+	    // WARNING!!
+		using namespace event;
+
 	    TextObject copy_text(*this);
 
-		bool change_made = false;
-
-		// Name
-		std::string name_buf = this->name;
-		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
-		if (ImGui::InputText("##name", &name_buf,
-							 ImGuiInputTextFlags_EnterReturnsTrue))
-		{
-			this->name = std::string(name_buf);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Tag
-		std::string tag_buf = this->tag;
-		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
-		ImGui::InputText("##tag", &tag_buf);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			this->tag = std::string(tag_buf);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Rendering layer
-		int render_layer = this->layer;
-		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
-		// TODO this might be a better choice?
-		// ImGui::InputScalar("##layer", ImGuiDataType_U64, &render_layer);
-		if (ImGui::InputInt("##layer", &render_layer))
-		{
-			if (render_layer < 0)
-			{
-				render_layer = 0;
-			}
-
-			this->set_layer(render_layer);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Position
-		float position[] = {this->position.x, this->position.y};
-		ImGui::ItemLabel("Position", ItemLabelFlag::Left);
-		if (ImGui::InputFloat2("##position", position))
-		{
-			this->position = (Vector2){position[0], position[1]};
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Size
-		float size[] = {this->size.x, this->size.y};
-		ImGui::ItemLabel("Size", ItemLabelFlag::Left);
-		if (ImGui::InputFloat2("##size", size))
-		{
-			this->size = (Vector2){size[0], size[1]};
-			this->update_render_text();
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Rotation
-		ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
-		if (ImGui::InputFloat("##rotation", &this->rotation))
-		{
-			this->rotation = b_fmod(this->rotation, 360);
-			this->update_render_text();
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		ImGui::Separator();
+		bool change_made = draw_base_properties();
 
 		// Text
 		ImGui::ItemLabel("Text", ItemLabelFlag::Left);
-		if (ImGui::InputTextMultiline("##text", &m_text))
+		ImGui::InputTextMultiline("##text", &m_text);
+		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-			this->set_text(m_text);
-
 			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		// Font
 		ImGui::ItemLabel("Font", ItemLabelFlag::Left);
-		if (ImGui::BeginCombo("##font", m_font_path.c_str()))
+		ImGui::InputText("##font", &m_buffers.font_path);
+		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-		    auto fonts = GameState::assets.get_fonts();
-            for (auto it = fonts.begin(); it != fonts.end(); it++)
-            {
-                std::string key = it->first;
-                std::shared_ptr<Font> font = it->second;
-                bool is_selected = (m_font_path == key);
-
-                if (ImGui::Selectable(key.c_str(), is_selected))
-                {
-                    this->set_font(key);
-                }
-
-                if (is_selected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-
-            ImGui::EndCombo();
+		    globals::has_unsaved_changes = true;
+			change_made = true;
 		}
 
 		// Font size
-		int32_t font_size = this->m_font_size;
 		ImGui::ItemLabel("Font Size", ItemLabelFlag::Left);
-		if (ImGui::InputInt("##fontsize", &font_size))
+		ImGui::InputInt("##fontsize", &m_buffers.font_size);
+		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-			this->set_font_size(font_size);
-
-			globals::has_unsaved_changes = true;
+		    globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		// Character spacing
 		ImGui::ItemLabel("Character Spacing", ItemLabelFlag::Left);
-		if (ImGui::InputInt("##charspacing", &m_char_spacing))
+		ImGui::InputInt("##charspacing", &m_buffers.char_spacing);
+		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		// Color
-		float color[] = {(float)m_color.r / 255.f, (float)m_color.g / 255.f,
-						 (float)m_color.b / 255.f, (float)m_color.a / 255.f};
+		float color[] = {
+		    (float)m_buffers.color.r / 255.f,
+		    (float)m_buffers.color.g / 255.f,
+			(float)m_buffers.color.b / 255.f,
+			(float)m_buffers.color.a / 255.f
+		};
 		ImGui::ItemLabel("Color", ItemLabelFlag::Left);
 		if (ImGui::ColorEdit4("##color", color))
 		{
@@ -375,19 +311,26 @@ namespace bacon
             color[2] = std::clamp(color[2], 0.f, 1.f);
             color[3] = std::clamp(color[3], 0.f, 1.f);
 
-			m_color = (Color){.r = (unsigned char)(color[0] * 255.f),
-							  .g = (unsigned char)(color[1] * 255.f),
-							  .b = (unsigned char)(color[2] * 255.f),
-							  .a = (unsigned char)(color[3] * 255.f)};
-
-			globals::has_unsaved_changes = true;
+			m_buffers.color = (Color){
+			    .r = (unsigned char)(color[0] * 255.f),
+				.g = (unsigned char)(color[1] * 255.f),
+				.b = (unsigned char)(color[2] * 255.f),
+				.a = (unsigned char)(color[3] * 255.f)
+			};
+		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+		    globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		if (change_made)
 		{
-			event::ObjectEvent* event = new event::ObjectEvent(&copy_text, this);
-			event::push_event(event);
+		    update_from_buffers();
+
+			ObjectEvent* event = new ObjectEvent(&copy_text, this);
+			event->object = this;
+			push_event(event);
 		}
 	}
 
@@ -436,6 +379,7 @@ namespace bacon
 		}
 
 		this->set_text(m_text);
+		this->update_buffers();
 	}
 
 	size_t TextObject::calculate_size() const

@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/game_state.h"
 #include "imgui.h"
 #include "raylib.h"
 #include "rlImGui.h"
@@ -16,11 +17,37 @@
 
 namespace bacon
 {
+    EditorSnapshot::EditorSnapshot()
+    {
+        framerate_limit = globals::editor_ref->get_framerate_limit();
+        project_title = globals::project_title;
+        editor_font_path = globals::editor_font_path;
+
+        gravity = GameState::scene.get_gravity();
+        physics_steps = GameState::scene.physics_steps;
+        pixels_per_meter = GameState::scene.get_unit_length();
+    }
+
+    void EditorSnapshot::apply()
+    {
+        Editor* editor = globals::editor_ref;
+
+        editor->set_framerate_limit(framerate_limit);
+        globals::project_title = project_title;
+        globals::editor_font_path = editor_font_path;
+
+        GameState::scene.set_gravity(gravity);
+        GameState::scene.physics_steps = physics_steps;
+        GameState::scene.set_unit_length(pixels_per_meter);
+
+        ui::SetImGuiStyle(); // For UI font update
+    }
+
 	Editor::Editor()
 	{
 		this->screen_width = 1280;
 		this->screen_height = 720;
-		this->framerate_limit = 60;
+		this->m_framerate_limit = 60;
 		this->editor_font_path = "";
 
 		this->is_playing = false;
@@ -36,7 +63,6 @@ namespace bacon
 
 		SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 		InitWindow(this->screen_width, this->screen_height, "Test");
-		SetTargetFPS(this->framerate_limit);
 		globals::update_window_title();
 		SetExitKey(KEY_NULL); // Remove ESC as exit key
 
@@ -45,10 +71,8 @@ namespace bacon
 		// Load config
 		this->load_config_file();
 
-		// Initialize UI elements
-		ui::init(800, 600);
-
 		// TODO change default
+		ui::init(800, 600);
 		GameState::initialize_renderer(800, 600);
 	}
 
@@ -100,16 +124,16 @@ namespace bacon
 			{
 				globals::engine_version = value;
 			}
-			else if (key == "default_font_path")
+			else if (key == "editor_font_path")
 			{
-				globals::editor_default_font_path = value;
+				globals::editor_font_path = value;
 			}
 		}
 
-		// Load default font for game manager
-		debug_log("Config - Default Font: %s",
-				  globals::editor_default_font_path.c_str());
-		GameState::load_default_font(globals::editor_default_font_path);
+
+		debug_log("Config - Editor Font: %s",
+				  globals::editor_font_path.c_str());
+		GameState::load_default_font(globals::editor_font_path);
 	}
 
 	void Editor::console_log(const char* text)
@@ -300,5 +324,17 @@ namespace bacon
 				GameState::scene.find_object_by_uuid(inspect_uuid);
 			ui::view_properties_object = inspect_object;
 		}
+	}
+
+	uint32_t Editor::get_framerate_limit() const
+	{
+	    return m_framerate_limit;
+	}
+
+	void Editor::set_framerate_limit(uint32_t limit)
+	{
+	    m_framerate_limit = limit;
+
+		SetTargetFPS(m_framerate_limit);
 	}
 } // namespace bacon

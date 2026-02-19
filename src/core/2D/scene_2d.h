@@ -17,6 +17,8 @@ namespace bacon
 	class Scene2D
 	{
 	public:
+	    int physics_steps = 4;
+
 		Scene2D();
 		Scene2D(const Scene2D& scene) = delete;
 		Scene2D& operator=(const Scene2D& scene) = delete;
@@ -45,8 +47,11 @@ namespace bacon
 
 		void create_physics_bodies();
 		void create_physics_world();
+
 		float get_gravity() const;
 		void set_gravity(float gravity);
+		float get_unit_length() const;
+		void set_unit_length(float pixels_per_meter);
 
 		void simulation_step();
 		void draw_entities(Camera2D* camera = nullptr) const;

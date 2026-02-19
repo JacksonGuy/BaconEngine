@@ -36,11 +36,11 @@ namespace bacon
 		if (layer < 0 || layer >= _MAX_LAYERS)
 		{
 			debug_error("Layer %ul is out of bounds", layer);
-			return;
 		}
 
-		object->layer = layer;
-		this->m_layers[layer].objects.push_back(object);
+		size_t layer_val = std::clamp(layer, (size_t)0, _MAX_LAYERS);
+		object->layer = layer_val;
+		this->m_layers[layer_val].objects.push_back(object);
 	}
 
 	void Renderer::remove_from_layer(GameObject* object)

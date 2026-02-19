@@ -7,6 +7,7 @@
 #include "core/2D/entity.h"
 #include "core/2D/text_object.h"
 #include "core/2D/camera_object.h"
+#include "editor/editor.h"
 
 namespace bacon
 {
@@ -19,15 +20,16 @@ namespace bacon
 			REDO
 		};
 
-		typedef struct EditorEvent
+		typedef struct EventBase
 		{
-		    EditorEvent() = default;
-			virtual ~EditorEvent() = default;
+		    EventBase() = default;
+			virtual ~EventBase() = default;
 			virtual void apply(EventAction action) = 0;
-		} EditorEvent;
+		} EventBase;
 
-		typedef struct ObjectEvent : EditorEvent
+		typedef struct ObjectEvent : EventBase
 		{
+		    GameObject* object;
 		    GameObject* before;
 			GameObject* after;
 
@@ -36,7 +38,7 @@ namespace bacon
 			void apply(EventAction action) override;
 		} ObjectEvent;
 
-		typedef struct TreeEvent : EditorEvent
+		typedef struct TreeEvent : EventBase
 		{
 		    GameObject* object;
 			GameObject* old_parent;
@@ -47,10 +49,20 @@ namespace bacon
 			void apply(EventAction action) override;
 		} TreeEvent;
 
-		extern std::stack<EditorEvent*> undo_stack;
-		extern std::stack<EditorEvent*> redo_stack;
+		typedef struct EditorEvent : EventBase
+		{
+		    EditorSnapshot* before;
+			EditorSnapshot* after;
 
-		void push_event(EditorEvent* event);
+			EditorEvent();
+			~EditorEvent();
+			void apply(EventAction action) override;
+		} EditorEvent;
+
+		extern std::stack<EventBase*> undo_stack;
+		extern std::stack<EventBase*> redo_stack;
+
+		void push_event(EventBase* event);
 		void undo_event();
 		void redo_event();
 

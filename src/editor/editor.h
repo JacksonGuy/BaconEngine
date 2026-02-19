@@ -23,12 +23,25 @@ namespace bacon
 		std::string message;
 	} ConsoleMessage;
 
+	typedef struct EditorSnapshot
+   	{
+   	    uint32_t framerate_limit;
+  		std::string project_title;
+  		std::string editor_font_path;
+
+        float gravity;
+        int physics_steps;
+        float pixels_per_meter;
+
+  		EditorSnapshot();
+        void apply();
+   	} EditorSnapshot;
+
 	class Editor
 	{
 	public:
 		uint32_t screen_width;
 		uint32_t screen_height;
-		uint32_t framerate_limit;
 
 		bool is_playing = false;
 		float camera_move_speed = 1.0f;
@@ -56,7 +69,11 @@ namespace bacon
 		void start_game();
 		void end_game();
 
+		uint32_t get_framerate_limit() const;
+		void set_framerate_limit(uint32_t limit);
+
 	private:
 		std::vector<ConsoleMessage> m_console_messages;
-	};
+		uint32_t m_framerate_limit;
+	}; // Editor
 } // namespace bacon

@@ -21,6 +21,17 @@ namespace bacon
 			GAME_EXIT,
 		};
 
+		namespace settings
+		{
+		    inline std::string project_title;
+			inline std::string editor_font;
+			inline uint32_t framerate_limit;
+
+			inline float gravity;
+			inline int physics_steps;
+			inline float pixels_per_meter;
+		}
+
 		inline bool show_test = true;
 		inline bool show_object_properties = true;
 		inline bool show_object_tree = true;
@@ -40,7 +51,11 @@ namespace bacon
 
 		inline GameObject* view_properties_object = nullptr;
 
+		inline ImGuiWindowFlags global_window_flags;
+		inline bool move_windows = false;
+
 		void init(uint32_t width, uint32_t height);
+		void set_input_buffers();
 
 		void draw_top_bar(Editor* editor);
 		void draw_object_properties();

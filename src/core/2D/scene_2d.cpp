@@ -197,14 +197,6 @@ namespace bacon
 
 	GameObject* Scene2D::find_object_by_uuid(std::string uuid) const
 	{
-		// for (GameObject* object : m_objects)
-		// {
-		// 	if (object->uuid.get_uuid() == uuid)
-		// 	{
-		// 		return object;
-		// 	}
-		// }
-
 		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
 		    for (size_t i = 0; i < it->size; i++)
@@ -249,23 +241,11 @@ namespace bacon
 
 	GameObject* Scene2D::find_object_by_uuid(UUID uuid) const
 	{
-		// for (GameObject* object : m_objects)
-		// {
-		// 	if (object->uuid == uuid)
-		// 	{
-		// 		return object;
-		// 	}
-		// }
-
-		// debug_log("Attempting to find object with UUID: %s", uuid.get_uuid().c_str());
-
 		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
 		    for (size_t i = 0; i < it->size; i++)
 		    {
 				Entity* entity = it->get(i);
-
-				// debug_log("Testing UUID: %s", entity->uuid.get_uuid().c_str());
 
 				if (entity->uuid == uuid)
 				{
@@ -357,13 +337,25 @@ namespace bacon
 	{
 		this->m_gravity = gravity * this->m_length_units_per_meter;
 
-		this->create_physics_world();
+		b2World_SetGravity(m_world, (b2Vec2){0.0f, m_gravity});
+	}
+
+	float Scene2D::get_unit_length() const
+	{
+	    return m_length_units_per_meter;
+	}
+
+	void Scene2D::set_unit_length(float pixels_per_meter)
+	{
+	    m_length_units_per_meter = pixels_per_meter;
+
+		set_gravity(m_gravity);
 	}
 
 	void Scene2D::simulation_step()
 	{
 		float delta_time = GetFrameTime();
-		b2World_Step(this->m_world, delta_time, 4);
+		b2World_Step(this->m_world, delta_time, this->physics_steps);
 
 		// Perform entity updates
 		for (Entity* entity : this->m_entities)

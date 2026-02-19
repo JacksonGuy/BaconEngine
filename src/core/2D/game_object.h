@@ -20,6 +20,17 @@ namespace bacon
 		CAMERA,
 	};
 
+	typedef struct
+	{
+	    std::string name;
+		std::string tag;
+		float position[2];
+		float size[2];
+		float rotation;
+		bool is_visible;
+		size_t layer;
+	} ObjectBuffers;
+
 	class GameObject
 	{
 	public:
@@ -56,6 +67,9 @@ namespace bacon
 		const size_t get_layer() const;
 		void set_layer(size_t layer);
 
+		virtual void update_buffers() = 0;
+		virtual void update_from_buffers() = 0;
+
 		virtual void draw() const = 0;
 		virtual void draw_properties_editor() = 0;
 		virtual void save_to_json(nlohmann::json& data) const;
@@ -68,5 +82,13 @@ namespace bacon
 		GameObject* parent;
 		std::vector<GameObject*> children;
 		size_t layer;
+
+		void update_base_buffers();
+		void update_from_base_buffers();
+
+		bool draw_base_properties();
+
+	private:
+	    ObjectBuffers m_buffers;
 	};
 } // namespace bacon

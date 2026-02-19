@@ -38,6 +38,8 @@ namespace bacon
 		this->camera = {0};
 		this->is_active = false;
 		this->zoom = 1.0f;
+
+		this->update_buffers();
 	}
 
 	CameraObject::CameraObject(uint8_t* bytes)
@@ -103,115 +105,62 @@ namespace bacon
 					  window_size.y * this->camera.zoom};
 	}
 
+	void CameraObject::update_buffers()
+	{
+	    update_base_buffers();
+
+		m_buffers.is_active = is_active;
+		m_buffers.zoom = zoom;
+	}
+
+	void CameraObject::update_from_buffers()
+	{
+	    update_from_base_buffers();
+
+		is_active = m_buffers.is_active;
+		zoom = m_buffers.zoom;
+
+		if (this->is_active)
+		{
+		    GameState::scene.set_active_camera(this);
+		}
+		this->camera.target = this->position;
+		this->camera.rotation = this->rotation;
+		this->camera.zoom = zoom;
+	}
+
 	void CameraObject::draw() const {}
 
 	void CameraObject::draw_properties_editor()
 	{
+	    // WARNING!!
+		using namespace event;
+
 	    CameraObject copy_camera(*this);
 
-		bool change_made = false;
-
-		// Name
-		std::string name_buf = this->name;
-		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
-		if (ImGui::InputText("##name", &name_buf,
-							 ImGuiInputTextFlags_EnterReturnsTrue))
-		{
-			this->name = std::string(name_buf);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Tag
-		std::string tag_buf = this->tag;
-		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
-		ImGui::InputText("##tag", &tag_buf);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			this->tag = std::string(tag_buf);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Rendering layer
-		int render_layer = this->layer;
-		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
-		// TODO this might be a better choice?
-		// ImGui::InputScalar("##layer", ImGuiDataType_U64, &render_layer);
-		if (ImGui::InputInt("##layer", &render_layer))
-		{
-			if (render_layer < 0)
-			{
-				render_layer = 0;
-			}
-
-			this->set_layer(render_layer);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Position
-		float position[] = {this->position.x, this->position.y};
-		ImGui::ItemLabel("Position", ItemLabelFlag::Left);
-		if (ImGui::InputFloat2("##position", position))
-		{
-			this->position = (Vector2){position[0], position[1]};
-			this->camera.target = this->position;
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Size
-		float size[] = {this->size.x, this->size.y};
-		ImGui::ItemLabel("Size", ItemLabelFlag::Left);
-		if (ImGui::InputFloat2("##size", size))
-		{
-			this->size = (Vector2){size[0], size[1]};
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		// Rotation
-		ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
-		if (ImGui::InputFloat("##rotation", &this->rotation))
-		{
-			this->rotation = b_fmod(this->rotation, 360);
-
-			globals::has_unsaved_changes = true;
-			change_made = true;
-		}
-
-		ImGui::Separator();
+		bool change_made = draw_base_properties();
 
 		ImGui::ItemLabel("Active", ItemLabelFlag::Left);
-		if (ImGui::Checkbox("##is_active", &this->is_active))
+		if (ImGui::Checkbox("##is_active", &m_buffers.is_active))
 		{
-			if (this->is_active)
-			{
-				GameState::scene.set_active_camera(this);
-			}
-
 			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
-		if (ImGui::InputFloat("##zoom", &this->zoom))
+		ImGui::InputFloat("##zoom", &m_buffers.zoom);
+		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-			camera.zoom = this->zoom;
-
 			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		if (change_made)
 		{
-			event::ObjectEvent* event = new event::ObjectEvent(&copy_camera, this);
+		    update_from_buffers();
+
+			ObjectEvent* event = new ObjectEvent(&copy_camera, this);
+			event->object = this;
 			event::push_event(event);
 		}
 	}
@@ -250,6 +199,8 @@ namespace bacon
 		}
 		this->camera.target = this->position;
 		this->camera.rotation = this->rotation;
+
+		this->update_buffers();
 	}
 
 	size_t CameraObject::calculate_size() const
