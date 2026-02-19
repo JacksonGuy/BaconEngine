@@ -23,14 +23,14 @@ namespace bacon
 
 		namespace settings
 		{
-		    inline std::string project_title;
+			inline std::string project_title;
 			inline std::string editor_font;
 			inline uint32_t framerate_limit;
 
 			inline float gravity;
 			inline int physics_steps;
 			inline float pixels_per_meter;
-		}
+		} // namespace settings
 
 		inline bool show_test = true;
 		inline bool show_object_properties = true;
@@ -50,6 +50,9 @@ namespace bacon
 		inline bool show_save_as_popup = false;
 
 		inline GameObject* view_properties_object = nullptr;
+		inline ImVec2 window_position;
+		inline ImVec2 window_size;
+		inline Vector2 window_mouse_position;
 
 		inline ImGuiWindowFlags global_window_flags;
 		inline bool move_windows = false;

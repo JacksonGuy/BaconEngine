@@ -2,6 +2,7 @@
 
 #include "core/game_state.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
 #include "rlImGui.h"
@@ -28,7 +29,7 @@ namespace bacon
 			global_window_flags = ImGuiWindowFlags_None;
 			if (!move_windows)
 			{
-			    global_window_flags |= ImGuiWindowFlags_NoMove;
+				global_window_flags |= ImGuiWindowFlags_NoMove;
 			}
 
 			SetImGuiStyle();
@@ -36,7 +37,7 @@ namespace bacon
 
 		void set_input_buffers()
 		{
-		    // Settings window buffers
+			// Settings window buffers
 			settings::project_title = globals::project_title;
 			settings::gravity = GameState::scene.get_gravity();
 			settings::physics_steps = GameState::scene.physics_steps;
@@ -71,7 +72,7 @@ namespace bacon
 
 				if (ImGui::MenuItem("Settings"))
 				{
-				    ui::show_settings = true;
+					ui::show_settings = true;
 				}
 
 				ImGui::EndMenu();
@@ -79,17 +80,17 @@ namespace bacon
 
 			if (ImGui::BeginMenu("Edit"))
 			{
-                if (ImGui::MenuItem("Undo", "Ctrl-Z"))
-                {
-                    event::undo_event();
-                }
+				if (ImGui::MenuItem("Undo", "Ctrl-Z"))
+				{
+					event::undo_event();
+				}
 
-                if (ImGui::MenuItem("Redo", "Ctrl-Y"))
-                {
-                    event::redo_event();
-                }
+				if (ImGui::MenuItem("Redo", "Ctrl-Y"))
+				{
+					event::redo_event();
+				}
 
-			    ImGui::EndMenu();
+				ImGui::EndMenu();
 			}
 
 			if (ImGui::BeginMenu("Create"))
@@ -134,21 +135,21 @@ namespace bacon
 
 			if (ImGui::TreeNodeEx("Scene", parentFlags))
 			{
-			    // Handle drag-drop onto root scene node
-			    if (ImGui::BeginDragDropTarget())
-			    {
+				// Handle drag-drop onto root scene node
+				if (ImGui::BeginDragDropTarget())
+				{
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_UUID"))
 					{
-					    // Find object
-					    UUID source_uuid = *(UUID*)payload->Data;
+						// Find object
+						UUID source_uuid = *(UUID*)payload->Data;
 						GameObject* object = GameState::scene.find_object_by_uuid(source_uuid);
 
 						if (object != nullptr)
 						{
-						    // Remove from current parent if object has one
-						    GameObject* parent = object->get_parent();
-						    if (parent != nullptr)
-						    {
+							// Remove from current parent if object has one
+							GameObject* parent = object->get_parent();
+							if (parent != nullptr)
+							{
 								parent->remove_child(object);
 								object->set_parent(nullptr);
 							}
@@ -186,7 +187,21 @@ namespace bacon
 
 			ImGui::Begin("Scene", &show_scene_display, global_window_flags);
 
-			ImVec2 window_size = ImGui::GetContentRegionAvail();
+			ui::window_position = ImGui::GetWindowPos();
+			ui::window_size = ImGui::GetContentRegionAvail();
+
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			const ImRect title_bar = window->TitleBarRect();
+			const float title_bar_height = title_bar.Max.y - title_bar.Min.y;
+
+			ImVec2 mouse_pos = ImGui::GetMousePos();
+			ImVec2 padding = ImGui::GetStyle().WindowPadding;
+			ImVec2 relative_mouse_pos = ImVec2(
+				mouse_pos.x - window_position.x - padding.x,
+				mouse_pos.y - window_position.y - title_bar_height - padding.y);
+			ui::window_mouse_position = GetScreenToWorld2D(
+				(Vector2){relative_mouse_pos.x, relative_mouse_pos.y},
+				globals::editor_ref->camera);
 
 			// Resize frame to correct window size
 			if (renderer->get_width() != window_size.x ||
@@ -261,33 +276,34 @@ namespace bacon
 
 		void draw_settings()
 		{
-		    // WARNING!!
-		    using namespace event;
+			// WARNING!!
+			using namespace event;
 
-			if (!ui::show_settings) return;
+			if (!ui::show_settings)
+				return;
 
 			ImGuiWindowFlags settings_flags = global_window_flags;
 			if (!move_windows)
 			{
-			    settings_flags ^= ImGuiWindowFlags_NoMove;
+				settings_flags ^= ImGuiWindowFlags_NoMove;
 			}
 
 			ImGui::Begin("Settings", &ui::show_settings, settings_flags);
 
 			if (ImGui::BeginTabBar("##tab_bar"))
 			{
-			    if (ImGui::BeginTabItem("Editor"))
+				if (ImGui::BeginTabItem("Editor"))
 				{
-				    ImGui::ItemLabel("Project Title:", ItemLabelFlag::Left);
-				    if (ImGui::InputText("##project_title",
-								&settings::project_title,
-								ImGuiInputTextFlags_EnterReturnsTrue
-					)) {
-					    globals::has_unsaved_changes = true;
+					ImGui::ItemLabel("Project Title:", ItemLabelFlag::Left);
+					if (ImGui::InputText("##project_title",
+										 &settings::project_title,
+										 ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						globals::has_unsaved_changes = true;
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
-					    globals::project_title = settings::project_title;
+						globals::project_title = settings::project_title;
 
 						event->after = new EditorSnapshot();
 						push_event(event);
@@ -296,7 +312,7 @@ namespace bacon
 					ImGui::ItemLabel("Move windows:", ItemLabelFlag::Left);
 					if (ImGui::Checkbox("##docking", &ui::move_windows))
 					{
-					    ui::global_window_flags ^= ImGuiWindowFlags_NoMove;
+						ui::global_window_flags ^= ImGuiWindowFlags_NoMove;
 					}
 
 					ImGuiIO& io = ImGui::GetIO();
@@ -307,10 +323,10 @@ namespace bacon
 					ImGui::InputScalar("##framerate", ImGuiDataType_U32, &settings::framerate_limit);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-					    // This probably isn't necessary for Editor changes.
+						// This probably isn't necessary for Editor changes.
 						// We should probably just be saving settings to config file
 						// after edit instead.
-					    // globals::has_unsaved_changes = true;
+						// globals::has_unsaved_changes = true;
 
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
@@ -326,11 +342,11 @@ namespace bacon
 
 				if (ImGui::BeginTabItem("Project"))
 				{
-				    ImGui::ItemLabel("Gravity:", ItemLabelFlag::Left);
+					ImGui::ItemLabel("Gravity:", ItemLabelFlag::Left);
 					ImGui::InputFloat("##gravity", &settings::gravity);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-					    globals::has_unsaved_changes = true;
+						globals::has_unsaved_changes = true;
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
@@ -344,7 +360,7 @@ namespace bacon
 					ImGui::InputInt("##phys_step", &settings::physics_steps);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-					    globals::has_unsaved_changes = true;
+						globals::has_unsaved_changes = true;
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
@@ -358,7 +374,7 @@ namespace bacon
 					ImGui::InputFloat("##units_per_meter", &settings::pixels_per_meter);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-					    globals::has_unsaved_changes = true;
+						globals::has_unsaved_changes = true;
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
@@ -368,7 +384,7 @@ namespace bacon
 						push_event(event);
 					}
 
-				    ImGui::EndTabItem();
+					ImGui::EndTabItem();
 				}
 
 				ImGui::EndTabBar();
@@ -402,11 +418,31 @@ namespace bacon
 				}
 			}
 
+			ImGui::Separator();
+
+			ImGui::Text("Cursor: (%.0f, %.0f)",
+						ui::window_mouse_position.x,
+						ui::window_mouse_position.y);
+
 			ImGui::ItemLabel("Camera Move Speed", ItemLabelFlag::Left);
-			ImGui::InputFloat("##cameraspeed", &editor->camera_move_speed);
+			ImGui::InputFloat("##camera_speed", &editor->camera_move_speed);
 
 			ImGui::ItemLabel("Camera Zoom Speed", ItemLabelFlag::Left);
-			ImGui::InputFloat("##camerazoom", &editor->camera_zoom_speed);
+			ImGui::InputFloat("##camera_zoom_speed", &editor->camera_zoom_speed);
+
+			ImGui::ItemLabel("Camera Position", ItemLabelFlag::Left);
+			float camera_pos[] = {editor->camera.target.x, editor->camera.target.y};
+			if (ImGui::InputFloat2("##camera_pos", camera_pos))
+			{
+				editor->camera.target = (Vector2){
+					camera_pos[0],
+					camera_pos[1],
+				};
+			}
+
+			ImGui::ItemLabel("Camera Zoom", ItemLabelFlag::Left);
+			ImGui::InputFloat("##camera_zoom", &editor->camera.zoom);
+
 			ImGui::End();
 		}
 
@@ -573,11 +609,11 @@ namespace bacon
 							break;
 						}
 
-						// This shouldn't be a case?
-						// case LastEditorAction::PROJECT_SAVE_AS:
-						// {
-						// 	ui::show_save_as_popup = true;
-						// }
+							// This shouldn't be a case?
+							// case LastEditorAction::PROJECT_SAVE_AS:
+							// {
+							// 	ui::show_save_as_popup = true;
+							// }
 
 						case LastEditorAction::PROJECT_OPEN:
 						{
@@ -586,10 +622,10 @@ namespace bacon
 						}
 
 						case LastEditorAction::PROGRAM_EXIT:
-    					{
-                            globals::program_running = false;
-                            break;
-    					}
+						{
+							globals::program_running = false;
+							break;
+						}
 
 						default:
 						{
@@ -721,13 +757,14 @@ namespace bacon
 
 		void game_object_tree_recurse(GameObject* object)
 		{
-		    if (object == nullptr) return;
+			if (object == nullptr)
+				return;
 
 			// TODO This might be bad.
 			ImGui::PushID(object);
 
 			auto normalFlags =
-				ImGuiTreeNodeFlags_Leaf;// | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+				ImGuiTreeNodeFlags_Leaf; // | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 			auto parentFlags = ImGuiTreeNodeFlags_OpenOnArrow |
 							   ImGuiTreeNodeFlags_OpenOnDoubleClick |
 							   ImGuiTreeNodeFlags_DefaultOpen;
@@ -753,26 +790,26 @@ namespace bacon
 			// Handle mouse drag
 			if (ImGui::BeginDragDropSource())
 			{
-			    ImGui::SetDragDropPayload("OBJECT_UUID", &object->uuid, sizeof(object->uuid));
-			    ImGui::EndDragDropSource();
+				ImGui::SetDragDropPayload("OBJECT_UUID", &object->uuid, sizeof(object->uuid));
+				ImGui::EndDragDropSource();
 			}
 
 			// Handle mouse drop
 			if (ImGui::BeginDragDropTarget())
 			{
-			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_UUID"))
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_UUID"))
 				{
-				    UUID source_uuid = *(UUID*)payload->Data;
+					UUID source_uuid = *(UUID*)payload->Data;
 					GameObject* source_obj = GameState::scene.find_object_by_uuid(source_uuid);
 
 					if (source_obj != nullptr)
 					{
-					    GameObject* parent = source_obj->get_parent();
+						GameObject* parent = source_obj->get_parent();
 
 						// Remove from current parent if object has one
 						if (parent != nullptr)
 						{
-						    parent->remove_child(source_obj);
+							parent->remove_child(source_obj);
 						}
 
 						// Add to new parent
@@ -807,7 +844,7 @@ namespace bacon
 			}
 
 			if (is_open)
-			    ImGui::TreePop();
+				ImGui::TreePop();
 			ImGui::PopID();
 		}
 

@@ -47,3 +47,4 @@ Test.cpp
 todo.txt
 *.swp
 projects/
+.cache

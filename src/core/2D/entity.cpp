@@ -3,11 +3,11 @@
 #include "box2d/box2d.h"
 #include "box2d/collision.h"
 #include "box2d/types.h"
-#include "core/game_state.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
 
+#include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
 #include "editor/editor_event.h"
@@ -20,17 +20,17 @@ namespace bacon
 
 	void* Entity::operator new(size_t size)
 	{
-	    return Entity::_allocator.allocate();
+		return Entity::_allocator.allocate();
 	}
 
 	void Entity::operator delete(void* ptr, size_t size)
 	{
-	    Entity::_allocator.deallocate((Entity*)ptr);
+		Entity::_allocator.deallocate((Entity*)ptr);
 	}
 
 	void* Entity::operator new(size_t size, void* ptr)
 	{
-	    return ptr;
+		return ptr;
 	}
 
 	Entity::Entity() : GameObject()
@@ -57,14 +57,14 @@ namespace bacon
 
 	Entity& Entity::operator=(const Entity& entity)
 	{
-	    this->copy(entity);
+		this->copy(entity);
 
-	    return *this;
+		return *this;
 	}
 
 	void Entity::copy(const GameObject& object)
 	{
-	    GameObject::copy(object);
+		GameObject::copy(object);
 
 		const Entity& entity = static_cast<const Entity&>(object);
 
@@ -76,19 +76,19 @@ namespace bacon
 
 	Entity* Entity::clone() const
 	{
-	    return new Entity(*this);
+		return new Entity(*this);
 	}
 
 	void Entity::add_to_state()
 	{
-	    GameState::scene.add_entity(this);
+		GameState::scene.add_entity(this);
 	}
 
 	void Entity::set_texture(const std::string& path)
 	{
-	    if (path.length() <= 0)
+		if (path.length() <= 0)
 		{
-		    return;
+			return;
 		}
 
 		this->m_texture = GameState::assets.load_texture(path);
@@ -148,7 +148,7 @@ namespace bacon
 
 	void Entity::update_buffers()
 	{
-	    update_base_buffers();
+		update_base_buffers();
 
 		m_buffers.texture_path = m_texture_path;
 		m_buffers.body_type = body_type;
@@ -156,7 +156,7 @@ namespace bacon
 
 	void Entity::update_from_buffers()
 	{
-	    update_from_base_buffers();
+		update_from_base_buffers();
 
 		this->set_size(size.x, size.y);
 		this->set_texture(m_buffers.texture_path);
@@ -184,10 +184,10 @@ namespace bacon
 
 	void Entity::draw_properties_editor()
 	{
-	    // WARNING!!
+		// WARNING!!
 		using namespace event;
 
-	    Entity copy_entity(*this);
+		Entity copy_entity(*this);
 
 		bool change_made = draw_base_properties();
 
@@ -217,7 +217,7 @@ namespace bacon
 
 		if (change_made)
 		{
-		    update_from_buffers();
+			update_from_buffers();
 
 			ObjectEvent* event = new ObjectEvent(&copy_entity, this);
 			event->object = this;

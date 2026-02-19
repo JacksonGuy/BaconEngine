@@ -22,7 +22,7 @@ namespace bacon
 
 	typedef struct
 	{
-	    std::string name;
+		std::string name;
 		std::string tag;
 		float position[2];
 		float size[2];
@@ -67,6 +67,8 @@ namespace bacon
 		const size_t get_layer() const;
 		void set_layer(size_t layer);
 
+		virtual bool contains_point(Vector2 point);
+
 		virtual void update_buffers() = 0;
 		virtual void update_from_buffers() = 0;
 
@@ -89,6 +91,6 @@ namespace bacon
 		bool draw_base_properties();
 
 	private:
-	    ObjectBuffers m_buffers;
+		ObjectBuffers m_buffers;
 	};
 } // namespace bacon

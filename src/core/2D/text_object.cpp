@@ -4,11 +4,12 @@
 #include <cstring>
 #include <sstream>
 
-#include "core/game_state.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
+#include "raymath.h"
 
+#include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
 #include "editor/editor_event.h"
@@ -21,17 +22,17 @@ namespace bacon
 
 	void* TextObject::operator new(size_t size)
 	{
-	    return TextObject::_allocator.allocate();
+		return TextObject::_allocator.allocate();
 	}
 
 	void TextObject::operator delete(void* ptr, size_t size)
 	{
-	    TextObject::_allocator.deallocate((TextObject*)ptr);
+		TextObject::_allocator.deallocate((TextObject*)ptr);
 	}
 
 	void* TextObject::operator new(size_t size, void* ptr)
 	{
-	    return ptr;
+		return ptr;
 	}
 
 	TextObject::TextObject() : GameObject()
@@ -62,14 +63,14 @@ namespace bacon
 
 	TextObject& TextObject::operator=(const TextObject& text_object)
 	{
-	    this->copy(text_object);
+		this->copy(text_object);
 
-	    return *this;
+		return *this;
 	}
 
 	void TextObject::copy(const GameObject& object)
 	{
-	    GameObject::copy(object);
+		GameObject::copy(object);
 
 		const TextObject& text_object = static_cast<const TextObject&>(object);
 
@@ -82,17 +83,17 @@ namespace bacon
 
 	TextObject* TextObject::clone() const
 	{
-	    return new TextObject(*this);
+		return new TextObject(*this);
 	}
 
 	void TextObject::add_to_state()
 	{
-	    GameState::scene.add_text_object(this);
+		GameState::scene.add_text_object(this);
 	}
 
 	void TextObject::set_text(const std::string& text)
 	{
-	    m_text = text;
+		m_text = text;
 		this->update_render_text();
 	}
 
@@ -215,9 +216,23 @@ namespace bacon
 		return final;
 	}
 
+	bool TextObject::contains_point(Vector2 point)
+	{
+		Vector2 point_relative = Vector2Subtract(point, position);
+		Vector2 p = Vector2Rotate(point_relative, -this->rotation * DEG2RAD);
+		Rectangle rect = {
+			0,
+			0,
+			size.x,
+			size.y,
+		};
+
+		return CheckCollisionPointRec(p, rect);
+	}
+
 	void TextObject::update_buffers()
 	{
-	    update_base_buffers();
+		update_base_buffers();
 
 		m_buffers.text = m_text;
 		m_buffers.font_path = m_font_path;
@@ -228,7 +243,7 @@ namespace bacon
 
 	void TextObject::update_from_buffers()
 	{
-	    update_from_base_buffers();
+		update_from_base_buffers();
 
 		set_text(m_buffers.text);
 		set_font(m_buffers.font_path);
@@ -240,23 +255,22 @@ namespace bacon
 	void TextObject::draw() const
 	{
 		DrawTextPro(
-		    *this->m_font,
+			*this->m_font,
 			this->m_render_text.c_str(),
 			this->position,
-			{0, 0},  // Origin
+			{0, 0}, // Origin
 			this->rotation,
 			this->m_font_size,
 			this->m_char_spacing,
-			this->m_color
-		);
+			this->m_color);
 	}
 
 	void TextObject::draw_properties_editor()
 	{
-	    // WARNING!!
+		// WARNING!!
 		using namespace event;
 
-	    TextObject copy_text(*this);
+		TextObject copy_text(*this);
 
 		bool change_made = draw_base_properties();
 
@@ -274,7 +288,7 @@ namespace bacon
 		ImGui::InputText("##font", &m_buffers.font_path);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-		    globals::has_unsaved_changes = true;
+			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
@@ -283,7 +297,7 @@ namespace bacon
 		ImGui::InputInt("##fontsize", &m_buffers.font_size);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-		    globals::has_unsaved_changes = true;
+			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
@@ -298,35 +312,33 @@ namespace bacon
 
 		// Color
 		float color[] = {
-		    (float)m_buffers.color.r / 255.f,
-		    (float)m_buffers.color.g / 255.f,
+			(float)m_buffers.color.r / 255.f,
+			(float)m_buffers.color.g / 255.f,
 			(float)m_buffers.color.b / 255.f,
-			(float)m_buffers.color.a / 255.f
-		};
+			(float)m_buffers.color.a / 255.f};
 		ImGui::ItemLabel("Color", ItemLabelFlag::Left);
 		if (ImGui::ColorEdit4("##color", color))
 		{
-            color[0] = std::clamp(color[0], 0.f, 1.f);
-            color[1] = std::clamp(color[1], 0.f, 1.f);
-            color[2] = std::clamp(color[2], 0.f, 1.f);
-            color[3] = std::clamp(color[3], 0.f, 1.f);
+			color[0] = std::clamp(color[0], 0.f, 1.f);
+			color[1] = std::clamp(color[1], 0.f, 1.f);
+			color[2] = std::clamp(color[2], 0.f, 1.f);
+			color[3] = std::clamp(color[3], 0.f, 1.f);
 
 			m_buffers.color = (Color){
-			    .r = (unsigned char)(color[0] * 255.f),
+				.r = (unsigned char)(color[0] * 255.f),
 				.g = (unsigned char)(color[1] * 255.f),
 				.b = (unsigned char)(color[2] * 255.f),
-				.a = (unsigned char)(color[3] * 255.f)
-			};
+				.a = (unsigned char)(color[3] * 255.f)};
 		}
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-		    globals::has_unsaved_changes = true;
+			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		if (change_made)
 		{
-		    update_from_buffers();
+			update_from_buffers();
 
 			ObjectEvent* event = new ObjectEvent(&copy_text, this);
 			event->object = this;

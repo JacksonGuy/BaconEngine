@@ -17,31 +17,31 @@
 
 namespace bacon
 {
-    EditorSnapshot::EditorSnapshot()
-    {
-        framerate_limit = globals::editor_ref->get_framerate_limit();
-        project_title = globals::project_title;
-        editor_font_path = globals::editor_font_path;
+	EditorSnapshot::EditorSnapshot()
+	{
+		framerate_limit = globals::editor_ref->get_framerate_limit();
+		project_title = globals::project_title;
+		editor_font_path = globals::editor_font_path;
 
-        gravity = GameState::scene.get_gravity();
-        physics_steps = GameState::scene.physics_steps;
-        pixels_per_meter = GameState::scene.get_unit_length();
-    }
+		gravity = GameState::scene.get_gravity();
+		physics_steps = GameState::scene.physics_steps;
+		pixels_per_meter = GameState::scene.get_unit_length();
+	}
 
-    void EditorSnapshot::apply()
-    {
-        Editor* editor = globals::editor_ref;
+	void EditorSnapshot::apply()
+	{
+		Editor* editor = globals::editor_ref;
 
-        editor->set_framerate_limit(framerate_limit);
-        globals::project_title = project_title;
-        globals::editor_font_path = editor_font_path;
+		editor->set_framerate_limit(framerate_limit);
+		globals::project_title = project_title;
+		globals::editor_font_path = editor_font_path;
 
-        GameState::scene.set_gravity(gravity);
-        GameState::scene.physics_steps = physics_steps;
-        GameState::scene.set_unit_length(pixels_per_meter);
+		GameState::scene.set_gravity(gravity);
+		GameState::scene.physics_steps = physics_steps;
+		GameState::scene.set_unit_length(pixels_per_meter);
 
-        ui::SetImGuiStyle(); // For UI font update
-    }
+		ui::SetImGuiStyle(); // For UI font update
+	}
 
 	Editor::Editor()
 	{
@@ -78,7 +78,6 @@ namespace bacon
 
 	Editor::~Editor()
 	{
-
 	}
 
 	void Editor::create_config_file()
@@ -129,7 +128,6 @@ namespace bacon
 				globals::editor_font_path = value;
 			}
 		}
-
 
 		debug_log("Config - Editor Font: %s",
 				  globals::editor_font_path.c_str());
@@ -210,7 +208,10 @@ namespace bacon
 
 	void Editor::editor_input()
 	{
-		Vector2 mouse_position = GetMousePosition();
+		Vector2 mouse_position = (Vector2){
+			ui::window_mouse_position.x,
+			ui::window_mouse_position.y,
+		};
 		Vector2 mouse_delta = GetMouseDelta();
 		float mouse_wheel_move = GetMouseWheelMove();
 
@@ -224,7 +225,27 @@ namespace bacon
 			}
 			else
 			{
-			    globals::program_running = false;
+				globals::program_running = false;
+			}
+		}
+
+		if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+		{
+			// TODO This can be optimized by using iterator over
+			// the object allocators. It's verbose, but faster.
+			bool found = false;
+			for (GameObject* object : GameState::scene.get_objects())
+			{
+				if (object->contains_point(mouse_position))
+				{
+					ui::view_properties_object = object;
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				ui::view_properties_object = nullptr;
 			}
 		}
 
@@ -276,13 +297,13 @@ namespace bacon
 			// Undo
 			if (IsKeyPressed(KEY_Z))
 			{
-			    event::undo_event();
+				event::undo_event();
 			}
 
 			// Redo
 			if (IsKeyPressed(KEY_Y))
 			{
-			    event::redo_event();
+				event::redo_event();
 			}
 		}
 	}
@@ -328,12 +349,12 @@ namespace bacon
 
 	uint32_t Editor::get_framerate_limit() const
 	{
-	    return m_framerate_limit;
+		return m_framerate_limit;
 	}
 
 	void Editor::set_framerate_limit(uint32_t limit)
 	{
-	    m_framerate_limit = limit;
+		m_framerate_limit = limit;
 
 		SetTargetFPS(m_framerate_limit);
 	}

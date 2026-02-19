@@ -12,3 +12,5 @@ AllowShortFunctionsOnASingleLine: Inline
 NamespaceIndentation: All
 IndentCaseLabels: true
 AlwaysBreakTemplateDeclarations: Yes
+ColumnLimit: 0
+SortIncludes: false

@@ -2,6 +2,8 @@
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
+#include "raylib.h"
+#include "raymath.h"
 
 #include "core/game_state.h"
 #include "core/globals.h"
@@ -38,32 +40,32 @@ namespace bacon
 
 	GameObject& GameObject::operator=(const GameObject& obj)
 	{
-        this->copy(obj);
+		this->copy(obj);
 
-	    return *this;
+		return *this;
 	}
 
 	void GameObject::copy(const GameObject& obj)
 	{
-        this->object_type = ObjectType::OBJECT;
+		this->object_type = ObjectType::OBJECT;
 
-        this->uuid = obj.uuid;
-    	this->name = obj.name;
-    	this->tag = obj.tag;
-    	this->position = obj.position;
-    	this->size = obj.size;
-    	this->rotation = obj.rotation;
-    	this->is_visible = obj.is_visible;
-    	this->layer = obj.layer;
+		this->uuid = obj.uuid;
+		this->name = obj.name;
+		this->tag = obj.tag;
+		this->position = obj.position;
+		this->size = obj.size;
+		this->rotation = obj.rotation;
+		this->is_visible = obj.is_visible;
+		this->layer = obj.layer;
 
-    	this->parent = obj.parent;
-    	if (obj.parent != nullptr)
-    	{
-    		obj.parent->children.push_back(this);
-    	}
+		this->parent = obj.parent;
+		if (obj.parent != nullptr)
+		{
+			obj.parent->children.push_back(this);
+		}
 
-        // TODO
-        // const std::vector<GameObject*>& children = obj.get_children();
+		// TODO
+		// const std::vector<GameObject*>& children = obj.get_children();
 		// if (children.size() > 0)
 		// {
 		//     for (GameObject* child : children)
@@ -82,22 +84,22 @@ namespace bacon
 
 	void GameObject::set_parent(GameObject* parent)
 	{
-	    this->parent = parent;
+		this->parent = parent;
 	}
 
 	void GameObject::add_child(GameObject* object)
 	{
-	    this->children.push_back(object);
+		this->children.push_back(object);
 	}
 
 	void GameObject::remove_child(GameObject* object)
 	{
-	    for (auto it = children.begin(); it != children.end(); it++)
+		for (auto it = children.begin(); it != children.end(); it++)
 		{
-		    GameObject* child = *it;
+			GameObject* child = *it;
 			if (child->uuid == object->uuid)
 			{
-			    children.erase(it);
+				children.erase(it);
 				globals::has_unsaved_changes = true;
 				return;
 			}
@@ -120,9 +122,23 @@ namespace bacon
 		GameState::renderer->add_to_layer(this, layer);
 	}
 
+	bool GameObject::contains_point(Vector2 point)
+	{
+		Vector2 point_relative = Vector2Subtract(point, position);
+		Vector2 p = Vector2Rotate(point_relative, -this->rotation * DEG2RAD);
+		Rectangle rect = {
+			-size.x / 2.f,
+			-size.y / 2.f,
+			size.x,
+			size.y,
+		};
+
+		return CheckCollisionPointRec(p, rect);
+	}
+
 	void GameObject::update_base_buffers()
 	{
-	    m_buffers.name = name;
+		m_buffers.name = name;
 		m_buffers.tag = tag;
 		m_buffers.position[0] = position.x;
 		m_buffers.position[1] = position.y;
@@ -135,7 +151,7 @@ namespace bacon
 
 	void GameObject::update_from_base_buffers()
 	{
-	    this->name = m_buffers.name;
+		this->name = m_buffers.name;
 		this->tag = m_buffers.tag;
 		this->position = (Vector2){m_buffers.position[0], m_buffers.position[1]};
 		this->size = (Vector2){m_buffers.size[0], m_buffers.size[1]};
@@ -146,9 +162,9 @@ namespace bacon
 
 	bool GameObject::draw_base_properties()
 	{
-	    bool change_made = false;
+		bool change_made = false;
 
-	    // Name
+		// Name
 		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
 		ImGui::InputText("##name", &m_buffers.name);
 		if (ImGui::IsItemDeactivatedAfterEdit())

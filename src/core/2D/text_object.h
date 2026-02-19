@@ -8,19 +8,19 @@
 
 namespace bacon
 {
-    typedef struct
-    {
-        std::string text;
-        std::string font_path;
-        int32_t font_size;
-        int32_t char_spacing;
-        Color color;
-    } TextObjectBuffers;
+	typedef struct
+	{
+		std::string text;
+		std::string font_path;
+		int32_t font_size;
+		int32_t char_spacing;
+		Color color;
+	} TextObjectBuffers;
 
 	class TextObject : public GameObject
 	{
 	public:
-	    static Arena<TextObject> _allocator;
+		static Arena<TextObject> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
 		static void operator delete(void* ptr, size_t size);
@@ -41,6 +41,8 @@ namespace bacon
 		void set_text(const std::string& text);
 		void set_font(const std::string& font_path);
 		void set_font_size(int32_t size);
+
+		bool contains_point(Vector2 point) override;
 
 		void update_buffers() override;
 		void update_from_buffers() override;

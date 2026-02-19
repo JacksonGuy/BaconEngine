@@ -1,12 +1,13 @@
 #include "scene_2d.h"
 
-#include "box2d/box2d.h"
+#include <memory>
 
+#include "box2d/box2d.h"
 #include "box2d/id.h"
+
 #include "core/2D/camera_object.h"
 #include "core/game_state.h"
 #include "core/util.h"
-#include <memory>
 
 namespace bacon
 {
@@ -199,39 +200,39 @@ namespace bacon
 	{
 		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
-		    for (size_t i = 0; i < it->size; i++)
-		    {
+			for (size_t i = 0; i < it->size; i++)
+			{
 				Entity* entity = it->get(i);
 
 				if (entity->uuid.get_uuid() == uuid)
 				{
-				    return entity;
+					return entity;
 				}
 			}
 		}
 
 		for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
 		{
-		    for (size_t i = 0; i < it->size; i++)
-		    {
+			for (size_t i = 0; i < it->size; i++)
+			{
 				TextObject* text = it->get(i);
 
 				if (text->uuid.get_uuid() == uuid)
 				{
-				    return text;
+					return text;
 				}
 			}
 		}
 
 		for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
 		{
-		    for (size_t i = 0; i < it->size; i++)
-		    {
+			for (size_t i = 0; i < it->size; i++)
+			{
 				CameraObject* camera = it->get(i);
 
 				if (camera->uuid.get_uuid() == uuid)
 				{
-				    return camera;
+					return camera;
 				}
 			}
 		}
@@ -243,39 +244,39 @@ namespace bacon
 	{
 		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
 		{
-		    for (size_t i = 0; i < it->size; i++)
-		    {
+			for (size_t i = 0; i < it->size; i++)
+			{
 				Entity* entity = it->get(i);
 
 				if (entity->uuid == uuid)
 				{
-				    return entity;
+					return entity;
 				}
 			}
 		}
 
 		for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
 		{
-		    for (size_t i = 0; i < it->size; i++)
-		    {
+			for (size_t i = 0; i < it->size; i++)
+			{
 				TextObject* text = it->get(i);
 
 				if (text->uuid == uuid)
 				{
-				    return text;
+					return text;
 				}
 			}
 		}
 
 		for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
 		{
-		    for (size_t i = 0; i < it->size; i++)
-		    {
+			for (size_t i = 0; i < it->size; i++)
+			{
 				CameraObject* camera = it->get(i);
 
 				if (camera->uuid == uuid)
 				{
-				    return camera;
+					return camera;
 				}
 			}
 		}
@@ -342,12 +343,12 @@ namespace bacon
 
 	float Scene2D::get_unit_length() const
 	{
-	    return m_length_units_per_meter;
+		return m_length_units_per_meter;
 	}
 
 	void Scene2D::set_unit_length(float pixels_per_meter)
 	{
-	    m_length_units_per_meter = pixels_per_meter;
+		m_length_units_per_meter = pixels_per_meter;
 
 		set_gravity(m_gravity);
 	}

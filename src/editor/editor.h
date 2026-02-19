@@ -24,18 +24,18 @@ namespace bacon
 	} ConsoleMessage;
 
 	typedef struct EditorSnapshot
-   	{
-   	    uint32_t framerate_limit;
-  		std::string project_title;
-  		std::string editor_font_path;
+	{
+		uint32_t framerate_limit;
+		std::string project_title;
+		std::string editor_font_path;
 
-        float gravity;
-        int physics_steps;
-        float pixels_per_meter;
+		float gravity;
+		int physics_steps;
+		float pixels_per_meter;
 
-  		EditorSnapshot();
-        void apply();
-   	} EditorSnapshot;
+		EditorSnapshot();
+		void apply();
+	} EditorSnapshot;
 
 	class Editor
 	{
@@ -44,12 +44,12 @@ namespace bacon
 		uint32_t screen_height;
 
 		bool is_playing = false;
-		float camera_move_speed = 1.0f;
-		float camera_zoom_speed = 0.1f;
 
 		std::string editor_font_path;
 
 		Camera2D camera;
+		float camera_move_speed = 1.0f;
+		float camera_zoom_speed = 0.1f;
 
 		Editor();
 		~Editor();
