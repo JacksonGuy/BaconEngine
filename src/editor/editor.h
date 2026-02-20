@@ -45,8 +45,6 @@ namespace bacon
 
 		bool is_playing = false;
 
-		std::string editor_font_path;
-
 		Camera2D camera;
 		float camera_move_speed = 1.0f;
 		float camera_zoom_speed = 0.1f;

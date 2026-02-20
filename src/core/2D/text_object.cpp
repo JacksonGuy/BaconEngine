@@ -12,6 +12,7 @@
 #include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
+#include "file/file.h"
 #include "editor/editor_event.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
@@ -99,8 +100,25 @@ namespace bacon
 
 	void TextObject::set_font(const std::string& font_path)
 	{
+		if (font_path.length() <= 0)
+		{
+			m_font = nullptr;
+			m_font_path = "";
+			update_render_text();
+
+			return;
+		}
+
 		this->m_font = GameState::assets.load_font(font_path.c_str());
-		this->m_font_path = font_path;
+		if (m_font == nullptr)
+		{
+			m_font_path = "";
+		}
+		else
+		{
+			m_font_path = font_path;
+		}
+
 		this->update_render_text();
 	}
 
@@ -126,9 +144,23 @@ namespace bacon
 
 	float TextObject::calculate_text_width(const std::string& text)
 	{
-		Vector2 size_vector =
-			MeasureTextEx(*this->m_font, text.data(), this->m_font_size,
-						  this->m_char_spacing);
+		Vector2 size_vector = {0, 0};
+		if (m_font != nullptr)
+		{
+			size_vector = MeasureTextEx(
+				*m_font,
+				text.data(),
+				m_font_size,
+				m_char_spacing);
+		}
+		else
+		{
+			size_vector = MeasureTextEx(
+				GetFontDefault(),
+				text.data(),
+				m_font_size,
+				m_char_spacing);
+		}
 
 		return size_vector.x;
 	}
@@ -254,15 +286,30 @@ namespace bacon
 
 	void TextObject::draw() const
 	{
-		DrawTextPro(
-			*this->m_font,
-			this->m_render_text.c_str(),
-			this->position,
-			{0, 0}, // Origin
-			this->rotation,
-			this->m_font_size,
-			this->m_char_spacing,
-			this->m_color);
+		if (m_font == nullptr)
+		{
+			DrawTextPro(
+				GetFontDefault(),
+				m_render_text.c_str(),
+				position,
+				{0, 0},
+				rotation,
+				m_font_size,
+				m_char_spacing,
+				m_color);
+		}
+		else
+		{
+			DrawTextPro(
+				*this->m_font,
+				this->m_render_text.c_str(),
+				this->position,
+				{0, 0},
+				this->rotation,
+				this->m_font_size,
+				this->m_char_spacing,
+				this->m_color);
+		}
 	}
 
 	void TextObject::draw_properties_editor()
@@ -276,7 +323,7 @@ namespace bacon
 
 		// Text
 		ImGui::ItemLabel("Text", ItemLabelFlag::Left);
-		ImGui::InputTextMultiline("##text", &m_text);
+		ImGui::InputTextMultiline("##text", &m_buffers.text);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -291,10 +338,21 @@ namespace bacon
 			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
+		if (ImGui::Button("Select"))
+		{
+			file::asset_t result = file::load_asset_nfd(file::AssetType::FONT);
+			if (result.type != file::AssetType::NONE)
+			{
+				m_buffers.font_path = result.path;
+
+				globals::has_unsaved_changes = true;
+				change_made = true;
+			}
+		}
 
 		// Font size
 		ImGui::ItemLabel("Font Size", ItemLabelFlag::Left);
-		ImGui::InputInt("##fontsize", &m_buffers.font_size);
+		ImGui::InputInt("##font_size", &m_buffers.font_size);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -303,7 +361,7 @@ namespace bacon
 
 		// Character spacing
 		ImGui::ItemLabel("Character Spacing", ItemLabelFlag::Left);
-		ImGui::InputInt("##charspacing", &m_buffers.char_spacing);
+		ImGui::InputInt("##char_spacing", &m_buffers.char_spacing);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;

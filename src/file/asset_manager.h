@@ -9,6 +9,12 @@
 
 namespace bacon
 {
+	/*
+	 * For future reference:
+	 * Yes, I understand that Raylib structs are just a handle to GPU memory.
+	 * We use shared_ptr instead of copying to prevent undefined behavior.
+	 */
+
 	class AssetManager
 	{
 	public:

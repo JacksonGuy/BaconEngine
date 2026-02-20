@@ -24,11 +24,6 @@ namespace bacon
 		extern Scene2D scene;
 		extern Renderer* renderer;
 
-		extern std::string m_default_font_path;
-		extern std::shared_ptr<Font> m_default_font;
-
-		void initialize_game_state();
 		void initialize_renderer(uint32_t width, uint32_t height);
-		void load_default_font(const std::string& path);
 	} // namespace GameState
 } // namespace bacon

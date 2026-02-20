@@ -48,7 +48,6 @@ namespace bacon
 		this->screen_width = 1280;
 		this->screen_height = 720;
 		this->m_framerate_limit = 60;
-		this->editor_font_path = "";
 
 		this->is_playing = false;
 
@@ -64,7 +63,7 @@ namespace bacon
 		SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 		InitWindow(this->screen_width, this->screen_height, "Test");
 		globals::update_window_title();
-		SetExitKey(KEY_NULL); // Remove ESC as exit key
+		SetExitKey(KEY_NULL); // Removes ESC as exit key
 
 		debug_log("Raylib initialized.");
 
@@ -128,10 +127,6 @@ namespace bacon
 				globals::editor_font_path = value;
 			}
 		}
-
-		debug_log("Config - Editor Font: %s",
-				  globals::editor_font_path.c_str());
-		GameState::load_default_font(globals::editor_font_path);
 	}
 
 	void Editor::console_log(const char* text)

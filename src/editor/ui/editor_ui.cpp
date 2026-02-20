@@ -41,6 +41,7 @@ namespace bacon
 			settings::project_title = globals::project_title;
 			settings::gravity = GameState::scene.get_gravity();
 			settings::physics_steps = GameState::scene.physics_steps;
+			settings::pixels_per_meter = GameState::scene.get_unit_length();
 		}
 
 		void draw_top_bar(Editor* editor)

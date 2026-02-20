@@ -3,14 +3,14 @@
 #include <filesystem>
 #include <fstream>
 
-#include "core/2D/entity.h"
-#include "core/2D/game_object.h"
-#include "core/game_state.h"
-#include "editor/ui/editor_ui.h"
 #include "json.hpp"
 #include "nfd.h"
 #include "nfd.hpp"
 
+#include "core/2D/entity.h"
+#include "core/2D/game_object.h"
+#include "core/game_state.h"
+#include "editor/ui/editor_ui.h"
 #include "core/globals.h"
 #include "core/util.h"
 
@@ -224,6 +224,55 @@ namespace bacon
 			ui::set_input_buffers();
 
 			return NFD_OKAY;
+		}
+
+		asset_t load_asset_nfd(AssetType type)
+		{
+			asset_t return_val = {
+				.type = AssetType::NONE,
+				.path = "",
+			};
+			nfdu8char_t* path = NULL;
+
+			nfdu8filteritem_t filters;
+			switch (type)
+			{
+				case AssetType::TEXTURE:
+				{
+					filters = texture_types;
+					break;
+				}
+
+				case AssetType::FONT:
+				{
+					filters = font_types;
+					break;
+				}
+
+				default:
+				{
+					debug_error("Invalid asset type!");
+					return return_val;
+				}
+			}
+
+			nfdopendialogu8args_t args = {0};
+			args.filterCount = 1;
+			args.filterList = &filters;
+			nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+
+			if (result == NFD_ERROR)
+			{
+				debug_error("Failed to load asset!");
+			}
+			else if (result == NFD_OKAY)
+			{
+				return_val.type = type;
+				return_val.path = std::string(path);
+			}
+
+			free(path);
+			return return_val;
 		}
 
 		std::string abs_path_to_relative(std::string abs_path)

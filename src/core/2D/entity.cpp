@@ -10,6 +10,7 @@
 #include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
+#include "file/file.h"
 #include "editor/editor_event.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
@@ -88,19 +89,18 @@ namespace bacon
 	{
 		if (path.length() <= 0)
 		{
+			m_texture = nullptr;
+			m_texture_path = "";
 			return;
 		}
 
-		this->m_texture = GameState::assets.load_texture(path);
 		m_texture_path = path;
+		m_texture = GameState::assets.load_texture(path);
 	}
 
 	void Entity::set_size(float width, float height)
 	{
 		this->size = (Vector2){width, height};
-
-		// New size means we have to update texture?
-		// this->set_texture(this->m_texture_path.c_str());
 	}
 
 	void Entity::create_body(b2WorldId world_id)
@@ -168,18 +168,24 @@ namespace bacon
 		if (!this->is_visible)
 			return;
 
-		// Vector2 pos = {b_pos.x, b_pos.y};
-		// DrawTextureEx(
-		//     this->m_texture,
-		//     pos,
-		//     RAD2DEG * b_radians,
-		//     1.f,
-		//     WHITE
-		// );
-
-		DrawRectanglePro(
-			{this->position.x, this->position.y, this->size.x, this->size.y},
-			{this->size.x * 0.5f, this->size.y * 0.5f}, this->rotation, RED);
+		if (m_texture == nullptr)
+		{
+			DrawRectanglePro(
+				{this->position.x, this->position.y, this->size.x, this->size.y},
+				{this->size.x * 0.5f, this->size.y * 0.5f},
+				this->rotation,
+				RED);
+		}
+		else
+		{
+			DrawTexturePro(
+				*m_texture,
+				(Rectangle){0, 0, (float)m_texture->width, (float)m_texture->height},
+				(Rectangle){position.x, position.y, size.x, size.y},
+				{this->size.x * 0.5f, this->size.y * 0.5f},
+				rotation,
+				WHITE);
+		}
 	}
 
 	void Entity::draw_properties_editor()
@@ -198,6 +204,17 @@ namespace bacon
 		{
 			globals::has_unsaved_changes = true;
 			change_made = true;
+		}
+		if (ImGui::Button("Select"))
+		{
+			file::asset_t result = file::load_asset_nfd(file::AssetType::TEXTURE);
+			if (result.type != file::AssetType::NONE)
+			{
+				m_buffers.texture_path = result.path;
+
+				globals::has_unsaved_changes = true;
+				change_made = true;
+			}
 		}
 
 		ImGui::Separator();
@@ -244,17 +261,11 @@ namespace bacon
 
 			if (key == "body_type")
 			{
-				this->body_type = BodyType(value);
+				body_type = BodyType(value);
 			}
 			else if (key == "texture_path")
 			{
-				this->m_texture_path = value;
-
-				// This calls set_texture() with m_texture_path
-				if (this->m_texture_path.length() > 0)
-				{
-					this->set_size(this->size.x, this->size.y);
-				}
+				set_texture(value);
 			}
 		}
 
