@@ -122,6 +122,20 @@ namespace bacon
 		GameState::renderer->add_to_layer(this, layer);
 	}
 
+	void GameObject::draw_outline() const
+	{
+		DrawRectangleLinesPro(
+			{
+				position.x, //- (size.x / 2.f),
+				position.y, //- (size.y / 2.f),
+				size.x,
+				size.y,
+			},
+			this->rotation,
+			3.f,
+			Color{0, 255, 0, 255});
+	}
+
 	bool GameObject::contains_point(Vector2 point)
 	{
 		Vector2 point_relative = Vector2Subtract(point, position);

@@ -42,6 +42,7 @@ namespace bacon
 		void set_font(const std::string& font_path);
 		void set_font_size(int32_t size);
 
+		void draw_outline() const override;
 		bool contains_point(Vector2 point) override;
 
 		void update_buffers() override;

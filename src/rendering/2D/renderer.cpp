@@ -4,6 +4,7 @@
 
 #include "raylib.h"
 
+#include "editor/ui/editor_ui.h"
 #include "core/util.h"
 
 namespace bacon
@@ -77,6 +78,11 @@ namespace bacon
 			for (GameObject* object : layer.objects)
 			{
 				object->draw();
+
+				if (ui::view_properties_object == object)
+				{
+					object->draw_outline();
+				}
 			}
 		}
 		EndMode2D();

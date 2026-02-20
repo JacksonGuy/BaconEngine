@@ -67,6 +67,7 @@ namespace bacon
 		const size_t get_layer() const;
 		void set_layer(size_t layer);
 
+		virtual void draw_outline() const;
 		virtual bool contains_point(Vector2 point);
 
 		virtual void update_buffers() = 0;
