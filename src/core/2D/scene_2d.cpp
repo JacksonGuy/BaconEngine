@@ -93,8 +93,11 @@ namespace bacon
 		}
 
 		// Destroy physics body
-		b2DestroyBody(entity->physics_body);
-		entity->physics_body = b2_nullBodyId;
+		if (b2Body_IsValid(entity->physics_body))
+		{
+			b2DestroyBody(entity->physics_body);
+			entity->physics_body = b2_nullBodyId;
+		}
 
 		// Remove from render layer
 		GameState::renderer->remove_from_layer(entity);
@@ -394,6 +397,8 @@ namespace bacon
 		m_camera = nullptr;
 		this->create_physics_world();
 		m_lua_state.reset();
+
+		// Free memory
 
 		m_objects.clear();
 		m_entities.clear();

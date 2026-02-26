@@ -21,7 +21,7 @@ namespace bacon
 
 	typedef struct EntityBuffers
 	{
-	    std::string texture_path;
+		std::string texture_path;
 		BodyType body_type;
 	} EntityBuffers;
 
@@ -33,6 +33,7 @@ namespace bacon
 		static Arena<Entity> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
+		static void operator delete(void* ptr);
 		static void operator delete(void* ptr, size_t size);
 
 		Entity();
@@ -44,9 +45,11 @@ namespace bacon
 		~Entity() = default;
 
 		void copy(const GameObject& object) override;
-		Entity* clone() const override;
+		Entity* clone_exact() const override;
+		Entity* clone_unique() const override;
 
-		void add_to_state() override;
+		void add_to_scene() override;
+		void remove_from_scene() override;
 
 		void set_texture(const std::string& path);
 		void set_size(float width, float height);
@@ -69,7 +72,7 @@ namespace bacon
 		void create_body(b2WorldId world_id);
 
 	private:
-	    EntityBuffers m_buffers;
+		EntityBuffers m_buffers;
 		std::shared_ptr<Texture2D> m_texture;
 		std::string m_texture_path;
 	};

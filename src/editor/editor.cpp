@@ -43,6 +43,9 @@ namespace bacon
 		ui::SetImGuiStyle(); // For UI font update
 	}
 
+	// Editor static variables
+	GameObject* Editor::copy_object = nullptr;
+
 	Editor::Editor()
 	{
 		this->screen_width = 1280;
@@ -224,6 +227,7 @@ namespace bacon
 			}
 		}
 
+		// Right click inspect
 		if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
 		{
 			// TODO This can be optimized by using iterator over
@@ -300,6 +304,38 @@ namespace bacon
 			{
 				event::redo_event();
 			}
+
+			// Copy
+			if (IsKeyPressed(KEY_C) && ui::view_properties_object != nullptr)
+			{
+				Editor::copy_object = ui::view_properties_object;
+			}
+
+			// Paste
+			if (IsKeyPressed(KEY_V) && Editor::copy_object != nullptr)
+			{
+				GameObject* new_object = Editor::copy_object->clone_unique();
+				new_object->position = mouse_position;
+
+				new_object->clone_children(*Editor::copy_object);
+				new_object->add_to_scene();
+				new_object->update_buffers();
+
+				ui::view_properties_object = new_object;
+			}
+
+			// Delete
+			if (IsKeyPressed(KEY_DELETE) && ui::view_properties_object != nullptr)
+			{
+				if (Editor::copy_object == ui::view_properties_object)
+				{
+					Editor::copy_object = nullptr;
+				}
+				ui::view_properties_object->remove_from_scene();
+				ui::view_properties_object = nullptr;
+
+				delete ui::view_properties_object;
+			}
 		}
 	}
 
@@ -322,6 +358,7 @@ namespace bacon
 	{
 		this->is_playing = false;
 
+		// Store last object inspected
 		std::string inspect_uuid = "";
 		if (ui::view_properties_object != nullptr)
 		{
@@ -329,11 +366,13 @@ namespace bacon
 		}
 		ui::view_properties_object = nullptr;
 
+		// Reload project
 		if (globals::is_project_loaded)
 		{
 			file::load_project(false);
 		}
 
+		// Restore inspected object
 		if (inspect_uuid.length() > 0)
 		{
 			GameObject* inspect_object =

@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
+#include "raymath.h"
 
 #include "core/game_state.h"
 #include "core/globals.h"
@@ -14,6 +15,7 @@
 #include "editor/editor_event.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
+#include "core/2D/game_object.h"
 
 namespace bacon
 {
@@ -24,14 +26,19 @@ namespace bacon
 		return Entity::_allocator.allocate();
 	}
 
-	void Entity::operator delete(void* ptr, size_t size)
+	void* Entity::operator new(size_t size, void* ptr)
+	{
+		return ptr;
+	}
+
+	void Entity::operator delete(void* ptr)
 	{
 		Entity::_allocator.deallocate((Entity*)ptr);
 	}
 
-	void* Entity::operator new(size_t size, void* ptr)
+	void Entity::operator delete(void* ptr, size_t size)
 	{
-		return ptr;
+		Entity::_allocator.deallocate((Entity*)ptr);
 	}
 
 	Entity::Entity() : GameObject()
@@ -51,7 +58,7 @@ namespace bacon
 		this->deserialize(bytes);
 	}
 
-	Entity::Entity(const Entity& entity) : GameObject(entity)
+	Entity::Entity(const Entity& entity) : GameObject()
 	{
 		this->copy(entity);
 	}
@@ -73,16 +80,33 @@ namespace bacon
 
 		this->body_type = entity.body_type;
 		this->set_texture(entity.m_texture_path);
+
+		update_buffers();
 	}
 
-	Entity* Entity::clone() const
+	Entity* Entity::clone_exact() const
 	{
-		return new Entity(*this);
+		Entity* new_entity = new Entity(*this);
+		return new_entity;
 	}
 
-	void Entity::add_to_state()
+	Entity* Entity::clone_unique() const
+	{
+		Entity* new_entity = new Entity(*this);
+		new_entity->uuid = UUID();
+		return new_entity;
+	}
+
+	void Entity::add_to_scene()
 	{
 		GameState::scene.add_entity(this);
+		GameState::renderer->add_to_layer(this, layer);
+	}
+
+	void Entity::remove_from_scene()
+	{
+		GameState::scene.remove_entity(this);
+		GameState::renderer->remove_from_layer(this);
 	}
 
 	void Entity::set_texture(const std::string& path)
@@ -171,8 +195,8 @@ namespace bacon
 		if (m_texture == nullptr)
 		{
 			DrawRectanglePro(
-				{this->position.x, this->position.y, this->size.x, this->size.y},
-				{this->size.x * 0.5f, this->size.y * 0.5f},
+				{position.x, position.y, size.x, size.y},
+				{size.x * 0.5f, size.y * 0.5f},
 				this->rotation,
 				RED);
 		}

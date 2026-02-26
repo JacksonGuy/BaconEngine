@@ -15,22 +15,22 @@ namespace bacon
 	{
 		enum class EventAction : uint8_t
 		{
-		    NONE = 0,
+			NONE = 0,
 			UNDO,
 			REDO
 		};
 
 		typedef struct EventBase
 		{
-		    EventBase() = default;
+			EventBase() = default;
 			virtual ~EventBase() = default;
 			virtual void apply(EventAction action) = 0;
 		} EventBase;
 
 		typedef struct ObjectEvent : EventBase
 		{
-		    GameObject* object;
-		    GameObject* before;
+			GameObject* object;
+			GameObject* before;
 			GameObject* after;
 
 			ObjectEvent(GameObject* before, GameObject* after);
@@ -40,7 +40,7 @@ namespace bacon
 
 		typedef struct TreeEvent : EventBase
 		{
-		    GameObject* object;
+			GameObject* object;
 			GameObject* old_parent;
 			GameObject* new_parent;
 
@@ -51,15 +51,25 @@ namespace bacon
 
 		typedef struct EditorEvent : EventBase
 		{
-		    EditorSnapshot* before;
+			EditorSnapshot* before;
 			EditorSnapshot* after;
 
-			EditorEvent();
+			EditorEvent() = default;
 			~EditorEvent();
 			void apply(EventAction action) override;
 		} EditorEvent;
 
-		extern std::stack<EventBase*> undo_stack;
+		typedef struct ObjectCreateEvent : EventBase
+		{
+			GameObject* object;
+
+			ObjectCreateEvent() = default;
+			~ObjectCreateEvent();
+			void apply(EventAction action) override;
+		} ObjectCreateEvent;
+
+		extern std::stack<EventBase*>
+			undo_stack;
 		extern std::stack<EventBase*> redo_stack;
 
 		void push_event(EventBase* event);

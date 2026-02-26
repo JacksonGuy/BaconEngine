@@ -19,48 +19,48 @@ namespace bacon
 
 		ObjectEvent::ObjectEvent(GameObject* before, GameObject* after)
 		{
-		    assert(before != nullptr && after != nullptr);
+			assert(before != nullptr && after != nullptr);
 			assert(before->uuid == after->uuid);
 
 			// Allocate new objects
 			this->object = nullptr;
-			this->before = before->clone();
-			this->after = after->clone();
+			this->before = before->clone_exact();
+			this->after = after->clone_exact();
 		}
 
 		ObjectEvent::~ObjectEvent()
 		{
-		    delete before;
+			delete before;
 			delete after;
 		}
 
 		void ObjectEvent::apply(EventAction action)
 		{
-		    assert(before != nullptr && after != nullptr);
+			assert(before != nullptr && after != nullptr);
 			assert(before->uuid == after->uuid);
 			assert(before->object_type == after->object_type);
 			assert(action != EventAction::NONE);
 
 			if (object == nullptr)
 			{
-			    object = GameState::scene.find_object_by_uuid(before->uuid);
+				object = GameState::scene.find_object_by_uuid(before->uuid);
 
 				if (object == nullptr)
 				{
-				    debug_error("Failed to find object!");
+					debug_error("Failed to find object!");
 					return;
 				}
 			}
 
 			if (action == EventAction::UNDO)
 			{
-			    object->copy(*this->before);
+				object->copy(*this->before);
 
 				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
-			    object->copy(*this->after);
+				object->copy(*this->after);
 
 				globals::has_unsaved_changes = true;
 			}
@@ -70,75 +70,67 @@ namespace bacon
 
 		TreeEvent::TreeEvent()
 		{
-		    object = nullptr;
+			object = nullptr;
 			old_parent = nullptr;
 			new_parent = nullptr;
 		}
 
 		void TreeEvent::apply(EventAction action)
 		{
-		    assert(object != nullptr);
+			assert(object != nullptr);
 			assert(action != EventAction::NONE);
 
 			if (action == EventAction::UNDO)
 			{
-			    object->set_parent(old_parent);
+				object->set_parent(old_parent);
 				if (old_parent != nullptr)
 				{
-				    old_parent->add_child(object);
+					old_parent->add_child(object);
 				}
 				if (new_parent != nullptr)
 				{
-				    new_parent->remove_child(object);
+					new_parent->remove_child(object);
 				}
 
 				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
-			    object->set_parent(new_parent);
+				object->set_parent(new_parent);
 				if (new_parent != nullptr)
 				{
-				    new_parent->add_child(object);
+					new_parent->add_child(object);
 				}
 				if (old_parent != nullptr)
 				{
-				    old_parent->remove_child(object);
+					old_parent->remove_child(object);
 				}
 
 				globals::has_unsaved_changes = true;
 			}
 		}
 
-		EditorEvent::EditorEvent()
-		{
-		    before = nullptr;
-			after = nullptr;
-		}
-
 		EditorEvent::~EditorEvent()
 		{
-		    delete before;
+			delete before;
 			delete after;
 		}
 
 		void EditorEvent::apply(EventAction action)
 		{
-		    assert(before != nullptr);
+			assert(before != nullptr);
 			assert(after != nullptr);
 			assert(action != EventAction::NONE);
 
-			Editor* editor = globals::editor_ref;
-
 			if (action == EventAction::UNDO)
 			{
-			    before->apply();
+				before->apply();
 
 				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
-			    after->apply();
+				after->apply();
 
 				globals::has_unsaved_changes = true;
 			}
@@ -146,9 +138,31 @@ namespace bacon
 			ui::set_input_buffers();
 		}
 
+		ObjectCreateEvent::~ObjectCreateEvent()
+		{
+			delete object;
+		}
+
+		void ObjectCreateEvent::apply(EventAction action)
+		{
+			assert(object != nullptr);
+			assert(action != EventAction::NONE);
+
+			if (action == EventAction::UNDO)
+			{
+				GameObject* scene_object = GameState::scene.find_object_by_uuid(object->uuid);
+				scene_object->remove_from_scene();
+				delete scene_object;
+			}
+			else if (action == EventAction::REDO)
+			{
+				object->add_to_scene();
+			}
+		}
+
 		void push_event(EventBase* event)
 		{
-		    undo_stack.push(event);
+			undo_stack.push(event);
 
 			debug_log("Event pushed to stack.");
 		}
@@ -157,7 +171,7 @@ namespace bacon
 		{
 			if (undo_stack.empty())
 			{
-			    return;
+				return;
 			}
 
 			debug_log("Undoing event...");
@@ -171,9 +185,9 @@ namespace bacon
 
 		void redo_event()
 		{
-		    if (redo_stack.empty())
+			if (redo_stack.empty())
 			{
-                return;
+				return;
 			}
 
 			debug_log("Redoing event...");
@@ -187,9 +201,9 @@ namespace bacon
 
 		void event_cleanup()
 		{
-		    while (!undo_stack.empty())
+			while (!undo_stack.empty())
 			{
-			    EventBase* event = undo_stack.top();
+				EventBase* event = undo_stack.top();
 				undo_stack.pop();
 
 				delete event;
@@ -197,7 +211,7 @@ namespace bacon
 
 			while (!redo_stack.empty())
 			{
-			    EventBase* event = redo_stack.top();
+				EventBase* event = redo_stack.top();
 				redo_stack.pop();
 
 				delete event;

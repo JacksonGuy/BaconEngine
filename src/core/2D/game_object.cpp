@@ -57,24 +57,6 @@ namespace bacon
 		this->rotation = obj.rotation;
 		this->is_visible = obj.is_visible;
 		this->layer = obj.layer;
-
-		this->parent = obj.parent;
-		if (obj.parent != nullptr)
-		{
-			obj.parent->children.push_back(this);
-		}
-
-		// TODO
-		// const std::vector<GameObject*>& children = obj.get_children();
-		// if (children.size() > 0)
-		// {
-		//     for (GameObject* child : children)
-		// 	{
-		// 	    GameObject* new_child = child->clone();
-		// 		new_child->add_to_state();
-		// 		this->children.push_back(new_child);
-		// 	}
-		// }
 	}
 
 	GameObject* GameObject::get_parent() const
@@ -82,9 +64,20 @@ namespace bacon
 		return this->parent;
 	}
 
-	void GameObject::set_parent(GameObject* parent)
+	void GameObject::set_parent(GameObject* new_parent)
 	{
-		this->parent = parent;
+		if (new_parent == nullptr)
+		{
+			if (this->parent != nullptr)
+			{
+				this->parent->remove_child(this);
+			}
+			this->parent = nullptr;
+
+			return;
+		}
+
+		this->parent = new_parent;
 	}
 
 	void GameObject::add_child(GameObject* object)
@@ -106,9 +99,49 @@ namespace bacon
 		}
 	}
 
+	void GameObject::clone_children(const GameObject& object)
+	{
+		for (GameObject* child : object.get_children())
+		{
+			GameObject* new_child = child->clone_unique();
+			this->children.push_back(new_child);
+			new_child->set_parent(this);
+			new_child->add_to_scene();
+
+			// Recurse down to copy all children below the
+			// root object being copied.
+			new_child->clone_children(*child);
+		}
+	}
+
 	const std::vector<GameObject*>& GameObject::get_children() const
 	{
 		return this->children;
+	}
+
+	Vector2 GameObject::get_position_abs() const
+	{
+		if (parent == nullptr)
+		{
+			return position;
+		}
+
+		return Vector2Add(position, parent->get_position_abs());
+	}
+
+	void GameObject::set_position(Vector2 position)
+	{
+		Vector2 delta = Vector2Subtract(position, this->position);
+		this->position = position;
+		update_child_positions(delta);
+	}
+
+	void GameObject::update_child_positions(Vector2 delta)
+	{
+		for (GameObject* child : children)
+		{
+			child->position = Vector2Add(child->position, delta);
+		}
 	}
 
 	const size_t GameObject::get_layer() const
@@ -167,7 +200,11 @@ namespace bacon
 	{
 		this->name = m_buffers.name;
 		this->tag = m_buffers.tag;
-		this->position = (Vector2){m_buffers.position[0], m_buffers.position[1]};
+
+		Vector2 pos = {m_buffers.position[0], m_buffers.position[1]};
+		this->set_position(pos);
+		// this->position = (Vector2){m_buffers.position[0], m_buffers.position[1]};
+
 		this->size = (Vector2){m_buffers.size[0], m_buffers.size[1]};
 		this->rotation = m_buffers.rotation;
 		this->is_visible = m_buffers.is_visible;
@@ -313,19 +350,18 @@ namespace bacon
 			else if (key == "layer")
 			{
 				this->layer = value;
-				// this->manager->set_object_layer(this, this->layer);
 			}
-			else if (key == "parent")
-			{
-				if (value == "null")
-				{
-					this->parent = nullptr;
-				}
-				else
-				{
-					this->parent = GameState::scene.find_object_by_uuid(value);
-				}
-			}
+			// else if (key == "parent")
+			// {
+			// 	if (value == "null")
+			// 	{
+			// 		this->parent = nullptr;
+			// 	}
+			// 	else
+			// 	{
+			// 		this->parent = GameState::scene.find_object_by_uuid(value);
+			// 	}
+			// }
 		}
 	}
 

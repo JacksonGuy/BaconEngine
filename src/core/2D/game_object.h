@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <stdint.h>
 
 #include <string>
@@ -54,15 +55,22 @@ namespace bacon
 		virtual ~GameObject() = default;
 
 		virtual void copy(const GameObject& obj);
-		virtual GameObject* clone() const = 0;
+		virtual GameObject* clone_exact() const = 0;
+		virtual GameObject* clone_unique() const = 0;
 
-		virtual void add_to_state() = 0;
+		virtual void add_to_scene() = 0;
+		virtual void remove_from_scene() = 0;
 
 		GameObject* get_parent() const;
 		void set_parent(GameObject* object);
 		void add_child(GameObject* object);
 		void remove_child(GameObject* object);
+		void clone_children(const GameObject& object);
 		const std::vector<GameObject*>& get_children() const;
+
+		Vector2 get_position_abs() const;
+		void set_position(Vector2 position);
+		void update_child_positions(Vector2 delta);
 
 		const size_t get_layer() const;
 		void set_layer(size_t layer);

@@ -23,6 +23,7 @@ namespace bacon
 		static Arena<TextObject> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
+		static void operator delete(void* ptr);
 		static void operator delete(void* ptr, size_t size);
 
 		TextObject();
@@ -34,9 +35,11 @@ namespace bacon
 		~TextObject() = default;
 
 		void copy(const GameObject& object) override;
-		TextObject* clone() const override;
+		TextObject* clone_exact() const override;
+		TextObject* clone_unique() const override;
 
-		void add_to_state() override;
+		void add_to_scene() override;
+		void remove_from_scene() override;
 
 		void set_text(const std::string& text);
 		void set_font(const std::string& font_path);

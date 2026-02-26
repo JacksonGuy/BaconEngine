@@ -471,11 +471,13 @@ namespace bacon
 			if (ImGui::Button("Create"))
 			{
 				Entity* entity = new Entity();
-				GameState::scene.add_entity(entity);
+				entity->add_to_scene();
 
 				entity->position =
 					(Vector2){.x = position_buffer[0], .y = position_buffer[1]};
 				entity->set_size(size_buffer[0], size_buffer[1]);
+
+				entity->update_buffers();
 
 				ui::show_entity_create = false;
 			}
@@ -507,11 +509,13 @@ namespace bacon
 			if (ImGui::Button("Create"))
 			{
 				TextObject* text = new TextObject();
-				GameState::scene.add_text_object(text);
+				text->add_to_scene();
 
 				text->name = name_buffer;
 				text->position =
 					(Vector2){position_buffer[0], position_buffer[1]};
+
+				text->update_buffers();
 
 				ui::show_text_create = false;
 			}
@@ -538,9 +542,11 @@ namespace bacon
 			if (ImGui::Button("Create"))
 			{
 				CameraObject* camera = new CameraObject();
-				GameState::scene.add_camera(camera);
+				camera->add_to_scene();
 
 				camera->name = name_buffer;
+
+				camera->update_buffers();
 
 				ui::show_camera_create = false;
 			}

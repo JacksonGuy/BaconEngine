@@ -26,14 +26,19 @@ namespace bacon
 		return TextObject::_allocator.allocate();
 	}
 
-	void TextObject::operator delete(void* ptr, size_t size)
+	void* TextObject::operator new(size_t size, void* ptr)
+	{
+		return ptr;
+	}
+
+	void TextObject::operator delete(void* ptr)
 	{
 		TextObject::_allocator.deallocate((TextObject*)ptr);
 	}
 
-	void* TextObject::operator new(size_t size, void* ptr)
+	void TextObject::operator delete(void* ptr, size_t size)
 	{
-		return ptr;
+		TextObject::_allocator.deallocate((TextObject*)ptr);
 	}
 
 	TextObject::TextObject() : GameObject()
@@ -54,8 +59,7 @@ namespace bacon
 		this->deserialize(bytes);
 	}
 
-	TextObject::TextObject(const TextObject& text_object)
-		: GameObject(text_object)
+	TextObject::TextObject(const TextObject& text_object) : GameObject()
 	{
 		this->object_type = ObjectType::TEXT;
 
@@ -75,21 +79,36 @@ namespace bacon
 
 		const TextObject& text_object = static_cast<const TextObject&>(object);
 
-		this->m_text = text_object.m_text;
 		this->set_font(text_object.m_font_path);
 		this->m_font_size = text_object.m_font_size;
 		this->m_char_spacing = text_object.m_char_spacing;
 		this->m_color = text_object.m_color;
+		set_text(text_object.m_text); // Call last
 	}
 
-	TextObject* TextObject::clone() const
+	TextObject* TextObject::clone_exact() const
 	{
-		return new TextObject(*this);
+		TextObject* new_text = new TextObject(*this);
+		return new_text;
 	}
 
-	void TextObject::add_to_state()
+	TextObject* TextObject::clone_unique() const
+	{
+		TextObject* new_text = new TextObject(*this);
+		new_text->uuid = UUID();
+		return new_text;
+	}
+
+	void TextObject::add_to_scene()
 	{
 		GameState::scene.add_text_object(this);
+		GameState::renderer->add_to_layer(this, layer);
+	}
+
+	void TextObject::remove_from_scene()
+	{
+		GameState::scene.remove_text_object(this);
+		GameState::renderer->remove_from_layer(this);
 	}
 
 	void TextObject::set_text(const std::string& text)
@@ -317,7 +336,7 @@ namespace bacon
 			DrawTextPro(
 				*this->m_font,
 				this->m_render_text.c_str(),
-				this->position,
+				position,
 				{0, 0},
 				this->rotation,
 				this->m_font_size,

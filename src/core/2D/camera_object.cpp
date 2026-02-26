@@ -18,17 +18,22 @@ namespace bacon
 
 	void* CameraObject::operator new(size_t size)
 	{
-	    return CameraObject::_allocator.allocate();
-	}
-
-	void CameraObject::operator delete(void* ptr, size_t size)
-	{
-	    CameraObject::_allocator.deallocate((CameraObject*)ptr);
+		return CameraObject::_allocator.allocate();
 	}
 
 	void* CameraObject::operator new(size_t size, void* ptr)
 	{
-	    return ptr;
+		return ptr;
+	}
+
+	void CameraObject::operator delete(void* ptr)
+	{
+		CameraObject::_allocator.deallocate((CameraObject*)ptr);
+	}
+
+	void CameraObject::operator delete(void* ptr, size_t size)
+	{
+		CameraObject::_allocator.deallocate((CameraObject*)ptr);
 	}
 
 	CameraObject::CameraObject() : GameObject()
@@ -47,27 +52,21 @@ namespace bacon
 		this->deserialize(bytes);
 	}
 
-	CameraObject::CameraObject(const CameraObject& camera) : GameObject(camera)
+	CameraObject::CameraObject(const CameraObject& camera) : GameObject()
 	{
-		this->camera = camera.camera;
-		this->is_active = false;
-		this->zoom = camera.zoom;
+		this->copy(camera);
 	}
 
 	CameraObject& CameraObject::operator=(const CameraObject& camera)
 	{
-	    GameObject::operator=(camera);
+		this->copy(camera);
 
-		this->camera = camera.camera;
-		this->is_active = false;
-		this->zoom = camera.zoom;
-
-	    return *this;
+		return *this;
 	}
 
 	void CameraObject::copy(const GameObject& object)
 	{
-	    GameObject::copy(object);
+		GameObject::copy(object);
 
 		const CameraObject& camera = static_cast<const CameraObject&>(object);
 
@@ -76,14 +75,29 @@ namespace bacon
 		this->zoom = camera.zoom;
 	}
 
-	CameraObject* CameraObject::clone() const
+	CameraObject* CameraObject::clone_exact() const
 	{
-	    return new CameraObject(*this);
+		CameraObject* new_camera = new CameraObject(*this);
+		return new_camera;
 	}
 
-	void CameraObject::add_to_state()
+	CameraObject* CameraObject::clone_unique() const
 	{
-	    GameState::scene.add_camera(this);
+		CameraObject* new_camera = new CameraObject(*this);
+		new_camera->uuid = UUID();
+		return new_camera;
+	}
+
+	void CameraObject::add_to_scene()
+	{
+		GameState::scene.add_camera(this);
+		GameState::renderer->add_to_layer(this, layer);
+	}
+
+	void CameraObject::remove_from_scene()
+	{
+		GameState::scene.remove_camera(this);
+		GameState::renderer->remove_from_layer(this);
 	}
 
 	void CameraObject::move_camera(Vector2 delta)
@@ -107,7 +121,7 @@ namespace bacon
 
 	void CameraObject::update_buffers()
 	{
-	    update_base_buffers();
+		update_base_buffers();
 
 		m_buffers.is_active = is_active;
 		m_buffers.zoom = zoom;
@@ -115,14 +129,14 @@ namespace bacon
 
 	void CameraObject::update_from_buffers()
 	{
-	    update_from_base_buffers();
+		update_from_base_buffers();
 
 		is_active = m_buffers.is_active;
 		zoom = m_buffers.zoom;
 
 		if (this->is_active)
 		{
-		    GameState::scene.set_active_camera(this);
+			GameState::scene.set_active_camera(this);
 		}
 		this->camera.target = this->position;
 		this->camera.rotation = this->rotation;
@@ -133,10 +147,10 @@ namespace bacon
 
 	void CameraObject::draw_properties_editor()
 	{
-	    // WARNING!!
+		// WARNING!!
 		using namespace event;
 
-	    CameraObject copy_camera(*this);
+		CameraObject copy_camera(*this);
 
 		bool change_made = draw_base_properties();
 
@@ -157,7 +171,7 @@ namespace bacon
 
 		if (change_made)
 		{
-		    update_from_buffers();
+			update_from_buffers();
 
 			ObjectEvent* event = new ObjectEvent(&copy_camera, this);
 			event->object = this;

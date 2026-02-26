@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/uuid.h"
 #include "json.hpp"
 #include "nfd.h"
 #include "nfd.hpp"
@@ -84,33 +85,48 @@ namespace bacon
 				if (object["type"] == ObjectType::ENTITY)
 				{
 					Entity* entity = new Entity();
-					GameState::scene.add_entity(entity);
-
 					entity->load_from_json(object);
+					entity->add_to_scene();
 				}
 				else if (object["type"] == ObjectType::TEXT)
 				{
 					TextObject* text = new TextObject();
-					GameState::scene.add_text_object(text);
-
 					text->load_from_json(object);
+					text->add_to_scene();
 				}
 				else if (object["type"] == ObjectType::CAMERA)
 				{
 					CameraObject* camera = new CameraObject();
-					GameState::scene.add_camera(camera);
-
 					camera->load_from_json(object);
+					camera->add_to_scene();
 				}
 			}
+		}
 
-			// Add objects to correct render layers
-			for (GameObject* object : GameState::scene.get_objects())
+		void construct_object_tree(nlohmann::json& json)
+		{
+			for (auto& object : json)
 			{
-				if (object->object_type == ObjectType::CAMERA)
+				if (object.is_null())
+				{
+					debug_log("Null object encountered.");
 					continue;
+				}
 
-				object->set_layer(object->get_layer());
+				if (object["parent"] != "null")
+				{
+					UUID child_uuid = UUID(object["uuid"]);
+					UUID parent_uuid = UUID(object["parent"]);
+					GameObject* child = GameState::scene.find_object_by_uuid(child_uuid);
+					GameObject* parent = GameState::scene.find_object_by_uuid(parent_uuid);
+
+					assert(parent != nullptr);
+					assert(child != nullptr);
+					assert(parent_uuid != child_uuid);
+
+					parent->add_child(child);
+					child->set_parent(parent);
+				}
 			}
 		}
 
@@ -164,7 +180,7 @@ namespace bacon
 				entry_path.parent_path().generic_string();
 			globals::is_project_loaded = true;
 
-			// Recreate scene
+			// Delete scene data
 			GameState::scene.reset();
 
 			// Load JSON data and parse
@@ -181,6 +197,7 @@ namespace bacon
 				else if (key == "objects")
 				{
 					parse_project_objects(file_data["objects"]);
+					construct_object_tree(file_data["objects"]);
 				}
 			}
 
