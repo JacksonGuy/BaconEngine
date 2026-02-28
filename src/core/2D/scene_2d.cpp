@@ -421,6 +421,11 @@ namespace bacon
 		this->create_physics_world();
 		m_lua_state.reset();
 
+		for (GameObject* object : m_objects)
+		{
+			delete object;
+		}
+
 		m_objects.clear();
 		m_entities.clear();
 		m_camera_objects.clear();

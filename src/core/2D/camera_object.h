@@ -2,14 +2,13 @@
 
 #include "core/2D/game_object.h"
 #include "lib/pool_allocator.h"
-#include "lib/arena.h"
 
 namespace bacon
 {
 	class CameraObject : public GameObject
 	{
 	public:
-		static Arena<CameraObject> _allocator;
+		static PoolAllocator<CameraObject> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
 		static void operator delete(void* ptr);

@@ -14,7 +14,7 @@
 
 namespace bacon
 {
-	Arena<CameraObject> CameraObject::_allocator(globals::allocator_block_size);
+	PoolAllocator<CameraObject> CameraObject::_allocator(globals::allocator_block_size);
 
 	void* CameraObject::operator new(size_t size)
 	{

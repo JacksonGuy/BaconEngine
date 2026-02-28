@@ -4,14 +4,13 @@
 
 #include "core/2D/game_object.h"
 #include "lib/pool_allocator.h"
-#include "lib/arena.h"
 
 namespace bacon
 {
 	class TextObject : public GameObject
 	{
 	public:
-		static Arena<TextObject> _allocator;
+		static PoolAllocator<TextObject> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
 		static void operator delete(void* ptr);

@@ -16,7 +16,7 @@
 #include "editor/ui/editor_ui.h"
 #include "core/2D/camera_object.h"
 #include "core/game_state.h"
-#include "lib/arena.h"
+#include "lib/pool_allocator.h"
 
 int main(int argc, char** argv)
 {
@@ -78,6 +78,7 @@ int main(int argc, char** argv)
 
 	debug_log("Performing cleanup...");
 	event::event_cleanup();
+	GameState::scene.reset();
 
 	rlImGuiShutdown();
 	CloseWindow();

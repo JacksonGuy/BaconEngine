@@ -23,9 +23,6 @@ set(SOURCE_FILES
     extern/imgui/imgui_widgets.cpp
     extern/imgui/misc/cpp/imgui_stdlib.cpp
 
-    src/lib/pool_allocator.cpp
-    src/lib/ring_buffer.cpp
-
     src/core/uuid.cpp
     src/core/game_state.cpp
     src/core/2D/scene_2d.cpp

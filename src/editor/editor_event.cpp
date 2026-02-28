@@ -136,6 +136,7 @@ namespace bacon
 
 		ObjectCreateEvent::~ObjectCreateEvent()
 		{
+			object_copy->delete_children();
 			delete object_copy;
 		}
 
@@ -177,6 +178,7 @@ namespace bacon
 
 		ObjectDeleteEvent::~ObjectDeleteEvent()
 		{
+			object_copy->delete_children();
 			delete object_copy;
 		}
 

@@ -8,7 +8,7 @@
 #include "raylib.h"
 #include "sol/sol.hpp"
 
-#include "lib/arena.h"
+#include "lib/pool_allocator.h"
 #include "file/asset_manager.h"
 #include "core/2D/entity.h"
 #include "core/2D/game_object.h"

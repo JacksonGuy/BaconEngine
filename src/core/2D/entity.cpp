@@ -19,7 +19,7 @@
 
 namespace bacon
 {
-	Arena<Entity> Entity::_allocator(globals::allocator_block_size);
+	PoolAllocator<Entity> Entity::_allocator(globals::allocator_block_size);
 
 	void* Entity::operator new(size_t size)
 	{

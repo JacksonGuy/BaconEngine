@@ -19,7 +19,7 @@
 
 namespace bacon
 {
-	Arena<TextObject> TextObject::_allocator(globals::allocator_block_size);
+	PoolAllocator<TextObject> TextObject::_allocator(globals::allocator_block_size);
 
 	void* TextObject::operator new(size_t size)
 	{

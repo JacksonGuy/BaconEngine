@@ -7,7 +7,6 @@
 
 #include "game_object.h"
 #include "lib/pool_allocator.h"
-#include "lib/arena.h"
 
 namespace bacon
 {
@@ -24,7 +23,7 @@ namespace bacon
 	public:
 		friend class Scene2D;
 
-		static Arena<Entity> _allocator;
+		static PoolAllocator<Entity> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
 		static void operator delete(void* ptr);
