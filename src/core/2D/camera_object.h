@@ -6,12 +6,6 @@
 
 namespace bacon
 {
-	typedef struct
-	{
-		bool is_active;
-		float zoom;
-	} CameraBuffers;
-
 	class CameraObject : public GameObject
 	{
 	public:
@@ -34,7 +28,7 @@ namespace bacon
 		~CameraObject() = default;
 
 		void copy(const GameObject& object) override;
-		CameraObject* clone_exact() const override;
+		CameraObject* clone() const override;
 		CameraObject* clone_unique() const override;
 
 		void add_to_scene() override;
@@ -42,10 +36,10 @@ namespace bacon
 
 		void move_camera(Vector2 delta);
 		void set_position(Vector2 position);
-		void calculate_size(Vector2 window_size);
+		void adjust_frame_size(Vector2 window_size);
 
-		void update_buffers() override;
-		void update_from_buffers() override;
+		void update_ui_buffer() override;
+		void update_from_ui_buffer() override;
 
 		void draw() const override;
 		void draw_properties_editor() override;
@@ -54,8 +48,5 @@ namespace bacon
 		size_t calculate_size() const override;
 		uint8_t* serialize() const override;
 		void deserialize(uint8_t* bytes) override;
-
-	private:
-		CameraBuffers m_buffers;
 	};
 } // namespace bacon

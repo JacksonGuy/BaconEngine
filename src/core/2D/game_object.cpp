@@ -16,7 +16,6 @@ namespace bacon
 {
 	GameObject::GameObject()
 	{
-		this->object_type = ObjectType::OBJECT;
 		this->name = "Object";
 		this->tag = "Default";
 		this->position = {0.f, 0.f};
@@ -47,15 +46,19 @@ namespace bacon
 
 	void GameObject::copy(const GameObject& obj)
 	{
-		this->object_type = ObjectType::OBJECT;
-
 		this->uuid = obj.uuid;
 		this->name = obj.name;
 		this->tag = obj.tag;
-		this->position = obj.position;
+		set_position(obj.position);
 		this->size = obj.size;
 		this->rotation = obj.rotation;
 		this->is_visible = obj.is_visible;
+
+		// TODO this is a problem !!!
+		// Just setting layer doesn't do anything when
+		// we need a unique copy. But using set_layer
+		// breaks functionality with inspecting object...
+		// set_layer(obj.layer);
 		this->layer = obj.layer;
 	}
 
@@ -144,7 +147,22 @@ namespace bacon
 		}
 	}
 
-	const size_t GameObject::get_layer() const
+	void GameObject::set_rotation(float rotation)
+	{
+		this->rotation = rotation;
+	}
+
+	void GameObject::set_visibility(bool visibility)
+	{
+		this->is_visible = visibility;
+
+		for (GameObject* child : children)
+		{
+			child->set_visibility(visibility);
+		}
+	}
+
+	size_t GameObject::get_layer() const
 	{
 		return this->layer;
 	}
@@ -157,14 +175,22 @@ namespace bacon
 
 	void GameObject::draw_outline() const
 	{
+		Vector2 draw_pos = this->position;
+		float draw_rot = this->rotation;
+		if (this->parent != nullptr)
+		{
+			draw_pos = rotate_about_point(draw_pos, parent->position, parent->rotation);
+			draw_rot += parent->rotation;
+		}
+
 		DrawRectangleLinesPro(
 			{
-				position.x, //- (size.x / 2.f),
-				position.y, //- (size.y / 2.f),
+				draw_pos.x, //- (size.x / 2.f),
+				draw_pos.y, //- (size.y / 2.f),
 				size.x,
 				size.y,
 			},
-			this->rotation,
+			draw_rot,
 			3.f,
 			Color{0, 255, 0, 255});
 	}
@@ -183,32 +209,31 @@ namespace bacon
 		return CheckCollisionPointRec(p, rect);
 	}
 
-	void GameObject::update_base_buffers()
+	void GameObject::base_update_ui_buffer()
 	{
-		m_buffers.name = name;
-		m_buffers.tag = tag;
-		m_buffers.position[0] = position.x;
-		m_buffers.position[1] = position.y;
-		m_buffers.size[0] = size.x;
-		m_buffers.size[1] = size.y;
-		m_buffers.rotation = rotation;
-		m_buffers.is_visible = is_visible;
-		m_buffers.layer = layer;
+		ui::obj_properties.name = name;
+		ui::obj_properties.tag = tag;
+		ui::obj_properties.position[0] = position.x;
+		ui::obj_properties.position[1] = position.y;
+		ui::obj_properties.size[0] = size.x;
+		ui::obj_properties.size[1] = size.y;
+		ui::obj_properties.rotation = rotation;
+		ui::obj_properties.is_visible = is_visible;
+		ui::obj_properties.layer = layer;
 	}
 
-	void GameObject::update_from_base_buffers()
+	void GameObject::base_update_from_ui_buffer()
 	{
-		this->name = m_buffers.name;
-		this->tag = m_buffers.tag;
+		this->name = ui::obj_properties.name;
+		this->tag = ui::obj_properties.tag;
 
-		Vector2 pos = {m_buffers.position[0], m_buffers.position[1]};
+		Vector2 pos = {ui::obj_properties.position[0], ui::obj_properties.position[1]};
 		this->set_position(pos);
-		// this->position = (Vector2){m_buffers.position[0], m_buffers.position[1]};
+		this->size = (Vector2){ui::obj_properties.size[0], ui::obj_properties.size[1]};
+		this->set_rotation(ui::obj_properties.rotation);
+		this->set_visibility(ui::obj_properties.is_visible);
 
-		this->size = (Vector2){m_buffers.size[0], m_buffers.size[1]};
-		this->rotation = m_buffers.rotation;
-		this->is_visible = m_buffers.is_visible;
-		this->set_layer(m_buffers.layer);
+		this->set_layer(ui::obj_properties.layer);
 	}
 
 	bool GameObject::draw_base_properties()
@@ -217,7 +242,7 @@ namespace bacon
 
 		// Name
 		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
-		ImGui::InputText("##name", &m_buffers.name);
+		ImGui::InputText("##name", &ui::obj_properties.name);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -228,7 +253,7 @@ namespace bacon
 
 		// Tag
 		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
-		ImGui::InputText("##tag", &m_buffers.tag);
+		ImGui::InputText("##tag", &ui::obj_properties.tag);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -237,7 +262,7 @@ namespace bacon
 
 		// Rendering layer
 		ImGui::ItemLabel("Layer", ItemLabelFlag::Left);
-		ImGui::InputScalar("##layer", ImGuiDataType_U64, &m_buffers.layer);
+		ImGui::InputScalar("##layer", ImGuiDataType_U64, &ui::obj_properties.layer);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -246,7 +271,7 @@ namespace bacon
 
 		// Position
 		ImGui::ItemLabel("Position", ItemLabelFlag::Left);
-		ImGui::InputFloat2("##position", m_buffers.position);
+		ImGui::InputFloat2("##position", ui::obj_properties.position);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -255,7 +280,7 @@ namespace bacon
 
 		// Size
 		ImGui::ItemLabel("Size", ItemLabelFlag::Left);
-		ImGui::InputFloat2("##size", m_buffers.size);
+		ImGui::InputFloat2("##size", ui::obj_properties.size);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -264,10 +289,10 @@ namespace bacon
 
 		// Rotation
 		ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
-		ImGui::InputFloat("##rotation", &m_buffers.rotation);
+		ImGui::InputFloat("##rotation", &ui::obj_properties.rotation);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-			m_buffers.rotation = b_fmod(m_buffers.rotation, 360);
+			ui::obj_properties.rotation = b_fmod(ui::obj_properties.rotation, 360);
 
 			globals::has_unsaved_changes = true;
 			change_made = true;
@@ -275,7 +300,7 @@ namespace bacon
 
 		// Visibility
 		ImGui::ItemLabel("Visible", ItemLabelFlag::Left);
-		if (ImGui::Checkbox("##visible", &m_buffers.is_visible))
+		if (ImGui::Checkbox("##visible", &ui::obj_properties.is_visible))
 		{
 			globals::has_unsaved_changes = true;
 			change_made = true;
@@ -289,7 +314,6 @@ namespace bacon
 	void GameObject::save_to_json(nlohmann::json& data) const
 	{
 		data["uuid"] = uuid.get_uuid();
-		data["type"] = object_type;
 		data["name"] = name;
 		data["tag"] = tag;
 		data["position"] = {position.x, position.y};
@@ -319,10 +343,6 @@ namespace bacon
 			{
 				this->uuid = UUID(value);
 			}
-			else if (key == "type")
-			{
-				this->object_type = ObjectType(value);
-			}
 			else if (key == "name")
 			{
 				this->name = value;
@@ -351,17 +371,6 @@ namespace bacon
 			{
 				this->layer = value;
 			}
-			// else if (key == "parent")
-			// {
-			// 	if (value == "null")
-			// 	{
-			// 		this->parent = nullptr;
-			// 	}
-			// 	else
-			// 	{
-			// 		this->parent = GameState::scene.find_object_by_uuid(value);
-			// 	}
-			// }
 		}
 	}
 

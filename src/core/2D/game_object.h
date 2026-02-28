@@ -13,31 +13,11 @@
 
 namespace bacon
 {
-	enum ObjectType : uint8_t
-	{
-		OBJECT = 0,
-		ENTITY,
-		TEXT,
-		CAMERA,
-	};
-
-	typedef struct
-	{
-		std::string name;
-		std::string tag;
-		float position[2];
-		float size[2];
-		float rotation;
-		bool is_visible;
-		size_t layer;
-	} ObjectBuffers;
-
 	class GameObject
 	{
 	public:
 		friend class Renderer;
 
-		ObjectType object_type;
 		UUID uuid;
 		std::string name;
 		std::string tag;
@@ -55,7 +35,7 @@ namespace bacon
 		virtual ~GameObject() = default;
 
 		virtual void copy(const GameObject& obj);
-		virtual GameObject* clone_exact() const = 0;
+		virtual GameObject* clone() const = 0;
 		virtual GameObject* clone_unique() const = 0;
 
 		virtual void add_to_scene() = 0;
@@ -71,17 +51,20 @@ namespace bacon
 		Vector2 get_position_abs() const;
 		void set_position(Vector2 position);
 		void update_child_positions(Vector2 delta);
+		void set_rotation(float rotation);
+		void set_visibility(bool visibility);
 
-		const size_t get_layer() const;
+		size_t get_layer() const;
 		void set_layer(size_t layer);
 
 		virtual void draw_outline() const;
 		virtual bool contains_point(Vector2 point);
 
-		virtual void update_buffers() = 0;
-		virtual void update_from_buffers() = 0;
+		virtual void update_ui_buffer() = 0;
+		virtual void update_from_ui_buffer() = 0;
 
 		virtual void draw() const = 0;
+
 		virtual void draw_properties_editor() = 0;
 		virtual void save_to_json(nlohmann::json& data) const;
 		virtual void load_from_json(nlohmann::json& data);
@@ -94,12 +77,9 @@ namespace bacon
 		std::vector<GameObject*> children;
 		size_t layer;
 
-		void update_base_buffers();
-		void update_from_base_buffers();
+		void base_update_ui_buffer();
+		void base_update_from_ui_buffer();
 
 		bool draw_base_properties();
-
-	private:
-		ObjectBuffers m_buffers;
 	};
 } // namespace bacon

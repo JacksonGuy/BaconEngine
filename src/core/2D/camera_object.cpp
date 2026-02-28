@@ -38,13 +38,10 @@ namespace bacon
 
 	CameraObject::CameraObject() : GameObject()
 	{
-		this->object_type = ObjectType::CAMERA;
 		this->name = "Camera";
 		this->camera = {0};
 		this->is_active = false;
 		this->zoom = 1.0f;
-
-		this->update_buffers();
 	}
 
 	CameraObject::CameraObject(uint8_t* bytes)
@@ -75,7 +72,7 @@ namespace bacon
 		this->zoom = camera.zoom;
 	}
 
-	CameraObject* CameraObject::clone_exact() const
+	CameraObject* CameraObject::clone() const
 	{
 		CameraObject* new_camera = new CameraObject(*this);
 		return new_camera;
@@ -113,26 +110,26 @@ namespace bacon
 		this->camera.target = position;
 	}
 
-	void CameraObject::calculate_size(Vector2 window_size)
+	void CameraObject::adjust_frame_size(Vector2 window_size)
 	{
 		this->size = {window_size.x * this->camera.zoom,
 					  window_size.y * this->camera.zoom};
 	}
 
-	void CameraObject::update_buffers()
+	void CameraObject::update_ui_buffer()
 	{
-		update_base_buffers();
+		base_update_ui_buffer();
 
-		m_buffers.is_active = is_active;
-		m_buffers.zoom = zoom;
+		ui::obj_properties.is_active = is_active;
+		ui::obj_properties.zoom = zoom;
 	}
 
-	void CameraObject::update_from_buffers()
+	void CameraObject::update_from_ui_buffer()
 	{
-		update_from_base_buffers();
+		base_update_from_ui_buffer();
 
-		is_active = m_buffers.is_active;
-		zoom = m_buffers.zoom;
+		is_active = ui::obj_properties.is_active;
+		zoom = ui::obj_properties.zoom;
 
 		if (this->is_active)
 		{
@@ -155,14 +152,14 @@ namespace bacon
 		bool change_made = draw_base_properties();
 
 		ImGui::ItemLabel("Active", ItemLabelFlag::Left);
-		if (ImGui::Checkbox("##is_active", &m_buffers.is_active))
+		if (ImGui::Checkbox("##is_active", &ui::obj_properties.is_active))
 		{
 			globals::has_unsaved_changes = true;
 			change_made = true;
 		}
 
 		ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
-		ImGui::InputFloat("##zoom", &m_buffers.zoom);
+		ImGui::InputFloat("##zoom", &ui::obj_properties.zoom);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -171,10 +168,10 @@ namespace bacon
 
 		if (change_made)
 		{
-			update_from_buffers();
+			update_from_ui_buffer();
 
 			ObjectEvent* event = new ObjectEvent(&copy_camera, this);
-			event->object = this;
+			event->object_uuid = this->uuid;
 			event::push_event(event);
 		}
 	}
@@ -183,6 +180,7 @@ namespace bacon
 	{
 		GameObject::save_to_json(data);
 
+		data["type"] = "camera";
 		data["is_active"] = this->is_active;
 		data["zoom"] = this->zoom;
 	}
@@ -213,8 +211,6 @@ namespace bacon
 		}
 		this->camera.target = this->position;
 		this->camera.rotation = this->rotation;
-
-		this->update_buffers();
 	}
 
 	size_t CameraObject::calculate_size() const

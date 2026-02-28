@@ -96,17 +96,13 @@ namespace bacon
 				m_current->next = block;
 				m_current = block;
 				m_end->prev = m_current;
-
-				// return m_current->new_item();
 			}
 
-			// return new (m_current->new_item()) T();
 			return m_current->new_item();
 		}
 
 		void deallocate(T* ptr)
 		{
-			// ptr->~T();
 			m_free_list.push_back((T*)ptr);
 		}
 

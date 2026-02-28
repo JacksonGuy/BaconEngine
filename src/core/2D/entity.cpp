@@ -43,14 +43,11 @@ namespace bacon
 
 	Entity::Entity() : GameObject()
 	{
-		this->object_type = ObjectType::ENTITY;
 		this->name = "Entity";
 		this->m_texture = {0};
 		this->m_texture_path = "";
 		this->physics_body = {0};
 		this->body_type = BodyType::NONE;
-
-		this->update_buffers();
 	}
 
 	Entity::Entity(uint8_t* bytes)
@@ -76,15 +73,11 @@ namespace bacon
 
 		const Entity& entity = static_cast<const Entity&>(object);
 
-		this->object_type = ObjectType::ENTITY;
-
 		this->body_type = entity.body_type;
 		this->set_texture(entity.m_texture_path);
-
-		update_buffers();
 	}
 
-	Entity* Entity::clone_exact() const
+	Entity* Entity::clone() const
 	{
 		Entity* new_entity = new Entity(*this);
 		return new_entity;
@@ -131,10 +124,6 @@ namespace bacon
 	{
 		b2BodyDef body_def = b2DefaultBodyDef();
 		body_def.rotation = b2MakeRot(this->rotation * DEG2RAD);
-		// body_def.position = (b2Vec2){
-		//     this->position.x + (this->size.x / 2),
-		//     this->position.y + (this->size.y / 2)
-		// };
 		body_def.position = (b2Vec2){this->position.x, this->position.y};
 		b2Polygon box = b2MakeBox(this->size.x / 2, this->size.y / 2);
 
@@ -170,27 +159,35 @@ namespace bacon
 		b2CreatePolygonShape(this->physics_body, &shape, &box);
 	}
 
-	void Entity::update_buffers()
+	void Entity::update_ui_buffer()
 	{
-		update_base_buffers();
+		base_update_ui_buffer();
 
-		m_buffers.texture_path = m_texture_path;
-		m_buffers.body_type = body_type;
+		ui::obj_properties.texture_path = m_texture_path;
+		ui::obj_properties.body_type = body_type;
 	}
 
-	void Entity::update_from_buffers()
+	void Entity::update_from_ui_buffer()
 	{
-		update_from_base_buffers();
+		base_update_from_ui_buffer();
 
 		this->set_size(size.x, size.y);
-		this->set_texture(m_buffers.texture_path);
-		this->body_type = BodyType(m_buffers.body_type);
+		this->set_texture(ui::obj_properties.texture_path);
+		this->body_type = BodyType(ui::obj_properties.body_type);
 	}
 
 	void Entity::draw() const
 	{
 		if (!this->is_visible)
 			return;
+
+		Vector2 draw_pos = this->position;
+		float draw_rot = this->rotation;
+		if (parent != nullptr)
+		{
+			draw_pos = rotate_about_point(draw_pos, parent->position, parent->rotation);
+			draw_rot += parent->rotation;
+		}
 
 		if (m_texture == nullptr)
 		{
@@ -205,9 +202,9 @@ namespace bacon
 			DrawTexturePro(
 				*m_texture,
 				(Rectangle){0, 0, (float)m_texture->width, (float)m_texture->height},
-				(Rectangle){position.x, position.y, size.x, size.y},
-				{this->size.x * 0.5f, this->size.y * 0.5f},
-				rotation,
+				(Rectangle){draw_pos.x, draw_pos.y, size.x, size.y},
+				{size.x * 0.5f, size.y * 0.5f},
+				draw_rot,
 				WHITE);
 		}
 	}
@@ -218,12 +215,18 @@ namespace bacon
 		using namespace event;
 
 		Entity copy_entity(*this);
+		// if (ui::inspect_object_copy->uuid != this->uuid)
+		// {
+		// 	delete ui::inspect_object_copy;
+
+		// 	ui::inspect_object_copy = this->clone();
+		// }
 
 		bool change_made = draw_base_properties();
 
 		// Texture
 		ImGui::ItemLabel("Texture", ItemLabelFlag::Left);
-		ImGui::InputText("##texture", &m_buffers.texture_path);
+		ImGui::InputText("##texture", &ui::obj_properties.texture_path);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -234,7 +237,7 @@ namespace bacon
 			file::asset_t result = file::load_asset_nfd(file::AssetType::TEXTURE);
 			if (result.type != file::AssetType::NONE)
 			{
-				m_buffers.texture_path = result.path;
+				ui::obj_properties.texture_path = result.path;
 
 				globals::has_unsaved_changes = true;
 				change_made = true;
@@ -245,12 +248,12 @@ namespace bacon
 
 		// Physics
 		const char* body_options[] = {"None", "Static", "Dynamic", "Kinematic"};
-		int current_body_option = m_buffers.body_type;
+		int current_body_option = ui::obj_properties.body_type;
 		ImGui::ItemLabel("Physics Body", ItemLabelFlag::Left);
 		if (ImGui::Combo("##physics_body", &current_body_option, body_options, 4))
 		// if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-			m_buffers.body_type = BodyType(current_body_option);
+			ui::obj_properties.body_type = BodyType(current_body_option);
 
 			globals::has_unsaved_changes = true;
 			change_made = true;
@@ -258,10 +261,10 @@ namespace bacon
 
 		if (change_made)
 		{
-			update_from_buffers();
+			update_from_ui_buffer();
 
 			ObjectEvent* event = new ObjectEvent(&copy_entity, this);
-			event->object = this;
+			event->object_uuid = this->uuid;
 			push_event(event);
 		}
 	}
@@ -270,6 +273,7 @@ namespace bacon
 	{
 		GameObject::save_to_json(data);
 
+		data["type"] = "entity";
 		data["body_type"] = body_type;
 		data["texture_path"] = m_texture_path;
 	}
@@ -292,8 +296,6 @@ namespace bacon
 				set_texture(value);
 			}
 		}
-
-		this->update_buffers();
 	}
 
 	size_t Entity::calculate_size() const

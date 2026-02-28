@@ -1,5 +1,6 @@
 #include "editor_ui.h"
 
+#include "core/2D/camera_object.h"
 #include "core/game_state.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -156,7 +157,7 @@ namespace bacon
 							}
 
 							event::TreeEvent* event = new event::TreeEvent();
-							event->object = object;
+							event->object_uuid = object->uuid;
 							event->old_parent = parent;
 							event->new_parent = nullptr;
 
@@ -477,8 +478,6 @@ namespace bacon
 					(Vector2){.x = position_buffer[0], .y = position_buffer[1]};
 				entity->set_size(size_buffer[0], size_buffer[1]);
 
-				entity->update_buffers();
-
 				ui::show_entity_create = false;
 			}
 			ImGui::SameLine();
@@ -515,8 +514,6 @@ namespace bacon
 				text->position =
 					(Vector2){position_buffer[0], position_buffer[1]};
 
-				text->update_buffers();
-
 				ui::show_text_create = false;
 			}
 			ImGui::SameLine();
@@ -545,8 +542,6 @@ namespace bacon
 				camera->add_to_scene();
 
 				camera->name = name_buffer;
-
-				camera->update_buffers();
 
 				ui::show_camera_create = false;
 			}
@@ -824,7 +819,7 @@ namespace bacon
 						source_obj->set_parent(object);
 
 						event::TreeEvent* event = new event::TreeEvent();
-						event->object = source_obj;
+						event->object_uuid = source_obj->uuid;
 						event->old_parent = parent;
 						event->new_parent = object;
 

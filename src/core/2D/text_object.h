@@ -8,15 +8,6 @@
 
 namespace bacon
 {
-	typedef struct
-	{
-		std::string text;
-		std::string font_path;
-		int32_t font_size;
-		int32_t char_spacing;
-		Color color;
-	} TextObjectBuffers;
-
 	class TextObject : public GameObject
 	{
 	public:
@@ -35,7 +26,7 @@ namespace bacon
 		~TextObject() = default;
 
 		void copy(const GameObject& object) override;
-		TextObject* clone_exact() const override;
+		TextObject* clone() const override;
 		TextObject* clone_unique() const override;
 
 		void add_to_scene() override;
@@ -48,8 +39,8 @@ namespace bacon
 		void draw_outline() const override;
 		bool contains_point(Vector2 point) override;
 
-		void update_buffers() override;
-		void update_from_buffers() override;
+		void update_ui_buffer() override;
+		void update_from_ui_buffer() override;
 
 		void draw() const override;
 		void draw_properties_editor() override;
@@ -67,7 +58,6 @@ namespace bacon
 		int32_t m_font_size;
 		int32_t m_char_spacing;
 		Color m_color;
-		TextObjectBuffers m_buffers;
 
 		void update_render_text();
 		float calculate_text_width(const std::string& text);

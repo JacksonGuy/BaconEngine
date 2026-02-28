@@ -5,6 +5,7 @@
 #include <cstdio>
 
 #include "raylib.h"
+#include "raymath.h"
 
 namespace bacon
 {
@@ -24,6 +25,21 @@ namespace bacon
 	inline bool close_enough(float x, float y, float eps = 1)
 	{
 		return std::abs(x - y) <= eps;
+	}
+
+	inline Vector2 rotate_about_point(Vector2 point, Vector2 pivot, float rotation)
+	{
+		float radians = rotation * DEG2RAD;
+		float cosr = cosf(radians);
+		float sinr = sinf(radians);
+
+		Vector2 translated = Vector2Subtract(point, pivot);
+
+		float new_x = translated.x * cosr - translated.y * sinr;
+		float new_y = translated.x * sinr + translated.y * cosr;
+
+		Vector2 new_point = {new_x + pivot.x, new_y + pivot.y};
+		return new_point;
 	}
 
 	inline void DrawRectangleLinesPro(Rectangle rect, float rotation, float thickness, Color color)

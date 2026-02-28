@@ -8,6 +8,7 @@
 #include "core/2D/camera_object.h"
 #include "core/game_state.h"
 #include "core/util.h"
+#include "raylib.h"
 
 namespace bacon
 {
@@ -201,42 +202,50 @@ namespace bacon
 
 	GameObject* Scene2D::find_object_by_uuid(std::string uuid) const
 	{
-		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
+		// for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
+		// {
+		// 	for (size_t i = 0; i < it->size; i++)
+		// 	{
+		// 		Entity* entity = it->get(i);
+
+		// 		if (entity->uuid.get_uuid() == uuid)
+		// 		{
+		// 			return entity;
+		// 		}
+		// 	}
+		// }
+
+		// for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
+		// {
+		// 	for (size_t i = 0; i < it->size; i++)
+		// 	{
+		// 		TextObject* text = it->get(i);
+
+		// 		if (text->uuid.get_uuid() == uuid)
+		// 		{
+		// 			return text;
+		// 		}
+		// 	}
+		// }
+
+		// for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
+		// {
+		// 	for (size_t i = 0; i < it->size; i++)
+		// 	{
+		// 		CameraObject* camera = it->get(i);
+
+		// 		if (camera->uuid.get_uuid() == uuid)
+		// 		{
+		// 			return camera;
+		// 		}
+		// 	}
+		// }
+
+		for (GameObject* object : m_objects)
 		{
-			for (size_t i = 0; i < it->size; i++)
+			if (object->uuid.get_uuid() == uuid)
 			{
-				Entity* entity = it->get(i);
-
-				if (entity->uuid.get_uuid() == uuid)
-				{
-					return entity;
-				}
-			}
-		}
-
-		for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
-		{
-			for (size_t i = 0; i < it->size; i++)
-			{
-				TextObject* text = it->get(i);
-
-				if (text->uuid.get_uuid() == uuid)
-				{
-					return text;
-				}
-			}
-		}
-
-		for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
-		{
-			for (size_t i = 0; i < it->size; i++)
-			{
-				CameraObject* camera = it->get(i);
-
-				if (camera->uuid.get_uuid() == uuid)
-				{
-					return camera;
-				}
+				return object;
 			}
 		}
 
@@ -245,42 +254,50 @@ namespace bacon
 
 	GameObject* Scene2D::find_object_by_uuid(UUID uuid) const
 	{
-		for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
+		// for (auto it = Entity::_allocator.start(); it != Entity::_allocator.end(); it = it->next)
+		// {
+		// 	for (size_t i = 0; i < it->size; i++)
+		// 	{
+		// 		Entity* entity = it->get(i);
+
+		// 		if (entity->uuid == uuid)
+		// 		{
+		// 			return entity;
+		// 		}
+		// 	}
+		// }
+
+		// for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
+		// {
+		// 	for (size_t i = 0; i < it->size; i++)
+		// 	{
+		// 		TextObject* text = it->get(i);
+
+		// 		if (text->uuid == uuid)
+		// 		{
+		// 			return text;
+		// 		}
+		// 	}
+		// }
+
+		// for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
+		// {
+		// 	for (size_t i = 0; i < it->size; i++)
+		// 	{
+		// 		CameraObject* camera = it->get(i);
+
+		// 		if (camera->uuid == uuid)
+		// 		{
+		// 			return camera;
+		// 		}
+		// 	}
+		// }
+
+		for (GameObject* object : m_objects)
 		{
-			for (size_t i = 0; i < it->size; i++)
+			if (object->uuid == uuid)
 			{
-				Entity* entity = it->get(i);
-
-				if (entity->uuid == uuid)
-				{
-					return entity;
-				}
-			}
-		}
-
-		for (auto it = TextObject::_allocator.start(); it != TextObject::_allocator.end(); it = it->next)
-		{
-			for (size_t i = 0; i < it->size; i++)
-			{
-				TextObject* text = it->get(i);
-
-				if (text->uuid == uuid)
-				{
-					return text;
-				}
-			}
-		}
-
-		for (auto it = CameraObject::_allocator.start(); it != CameraObject::_allocator.end(); it = it->next)
-		{
-			for (size_t i = 0; i < it->size; i++)
-			{
-				CameraObject* camera = it->get(i);
-
-				if (camera->uuid == uuid)
-				{
-					return camera;
-				}
+				return object;
 			}
 		}
 
@@ -312,7 +329,10 @@ namespace bacon
 
 		for (Entity* entity : m_entities)
 		{
-			entity->create_body(m_world);
+			if (entity->body_type != BodyType::NONE)
+			{
+				entity->create_body(m_world);
+			}
 		}
 	}
 
@@ -364,12 +384,15 @@ namespace bacon
 		// Perform entity updates
 		for (Entity* entity : this->m_entities)
 		{
+			if (entity->body_type == BodyType::NONE)
+				continue;
+
 			b2Vec2 pos = b2Body_GetPosition(entity->physics_body);
 			b2Rot rotation = b2Body_GetRotation(entity->physics_body);
 			float radians = b2Rot_GetAngle(rotation);
 
-			entity->position = {pos.x, pos.y};
-			entity->rotation = radians * RAD2DEG;
+			entity->set_position({pos.x, pos.y});
+			entity->set_rotation(radians * RAD2DEG);
 		}
 	}
 
@@ -397,8 +420,6 @@ namespace bacon
 		m_camera = nullptr;
 		this->create_physics_world();
 		m_lua_state.reset();
-
-		// Free memory
 
 		m_objects.clear();
 		m_entities.clear();

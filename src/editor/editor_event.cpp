@@ -23,9 +23,8 @@ namespace bacon
 			assert(before->uuid == after->uuid);
 
 			// Allocate new objects
-			this->object = nullptr;
-			this->before = before->clone_exact();
-			this->after = after->clone_exact();
+			this->before = before->clone();
+			this->after = after->clone();
 		}
 
 		ObjectEvent::~ObjectEvent()
@@ -38,18 +37,13 @@ namespace bacon
 		{
 			assert(before != nullptr && after != nullptr);
 			assert(before->uuid == after->uuid);
-			assert(before->object_type == after->object_type);
 			assert(action != EventAction::NONE);
 
+			GameObject* object = GameState::scene.find_object_by_uuid(object_uuid);
 			if (object == nullptr)
 			{
-				object = GameState::scene.find_object_by_uuid(before->uuid);
-
-				if (object == nullptr)
-				{
-					debug_error("Failed to find object!");
-					return;
-				}
+				debug_error("Failed to find object in scene!");
+				return;
 			}
 
 			if (action == EventAction::UNDO)
@@ -64,21 +58,24 @@ namespace bacon
 
 				globals::has_unsaved_changes = true;
 			}
-
-			object->update_buffers();
 		}
 
 		TreeEvent::TreeEvent()
 		{
-			object = nullptr;
 			old_parent = nullptr;
 			new_parent = nullptr;
 		}
 
 		void TreeEvent::apply(EventAction action)
 		{
-			assert(object != nullptr);
 			assert(action != EventAction::NONE);
+
+			GameObject* object = GameState::scene.find_object_by_uuid(object_uuid);
+			if (object == nullptr)
+			{
+				debug_error("Failed to find object in scene!");
+				return;
+			}
 
 			if (action == EventAction::UNDO)
 			{
@@ -138,25 +135,30 @@ namespace bacon
 			ui::set_input_buffers();
 		}
 
+		ObjectCreateEvent::ObjectCreateEvent(const GameObject& object)
+		{
+			this->object_copy = object.clone();
+		}
+
 		ObjectCreateEvent::~ObjectCreateEvent()
 		{
-			delete object;
+			delete object_copy;
 		}
 
 		void ObjectCreateEvent::apply(EventAction action)
 		{
-			assert(object != nullptr);
+			assert(object_copy != nullptr);
 			assert(action != EventAction::NONE);
 
 			if (action == EventAction::UNDO)
 			{
-				GameObject* scene_object = GameState::scene.find_object_by_uuid(object->uuid);
+				GameObject* scene_object = GameState::scene.find_object_by_uuid(object_copy->uuid);
 				scene_object->remove_from_scene();
 				delete scene_object;
 			}
 			else if (action == EventAction::REDO)
 			{
-				object->add_to_scene();
+				object_copy->add_to_scene();
 			}
 		}
 

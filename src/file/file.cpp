@@ -31,8 +31,7 @@ namespace bacon
 			project_data["settings"]["gravity"] = GameState::scene.get_gravity();
 			project_data["settings"]["title"] = globals::project_title;
 
-			const std::vector<GameObject*>& objects =
-				GameState::scene.get_objects();
+			const std::vector<GameObject*>& objects = GameState::scene.get_objects();
 			for (size_t i = 0; i < objects.size(); i++)
 			{
 				GameObject* object = objects[i];
@@ -82,19 +81,19 @@ namespace bacon
 					continue;
 				}
 
-				if (object["type"] == ObjectType::ENTITY)
+				if (object["type"] == "entity")
 				{
 					Entity* entity = new Entity();
 					entity->load_from_json(object);
 					entity->add_to_scene();
 				}
-				else if (object["type"] == ObjectType::TEXT)
+				else if (object["type"] == "text")
 				{
 					TextObject* text = new TextObject();
 					text->load_from_json(object);
 					text->add_to_scene();
 				}
-				else if (object["type"] == ObjectType::CAMERA)
+				else if (object["type"] == "camera")
 				{
 					CameraObject* camera = new CameraObject();
 					camera->load_from_json(object);
@@ -120,9 +119,15 @@ namespace bacon
 					GameObject* child = GameState::scene.find_object_by_uuid(child_uuid);
 					GameObject* parent = GameState::scene.find_object_by_uuid(parent_uuid);
 
-					assert(parent != nullptr);
-					assert(child != nullptr);
-					assert(parent_uuid != child_uuid);
+					// assert(parent != nullptr);
+					// assert(child != nullptr);
+					// assert(parent_uuid != child_uuid);
+
+					if (parent == nullptr || child == nullptr)
+					{
+						debug_error("Failed to find object!");
+						continue;
+					}
 
 					parent->add_child(child);
 					child->set_parent(parent);

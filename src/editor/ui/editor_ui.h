@@ -32,6 +32,36 @@ namespace bacon
 			inline float pixels_per_meter;
 		} // namespace settings
 
+		typedef struct ObjectFields
+		{
+			// GameObject
+			std::string name;
+			std::string tag;
+			float position[2];
+			float size[2];
+			float rotation;
+			bool is_visible;
+			size_t layer;
+
+			// Entity
+			std::string texture_path;
+			BodyType body_type;
+
+			// TextObject
+			std::string text;
+			std::string font_path;
+			int32_t font_size;
+			int32_t char_spacing;
+			Color color;
+
+			// CameraObject
+			bool is_active;
+			float zoom;
+		} ObjectFields;
+
+		inline ObjectFields obj_properties;
+		inline GameObject* inspect_object_copy;
+
 		inline bool show_test = true;
 		inline bool show_object_properties = true;
 		inline bool show_object_tree = true;

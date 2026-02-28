@@ -43,15 +43,12 @@ namespace bacon
 
 	TextObject::TextObject() : GameObject()
 	{
-		this->object_type = ObjectType::TEXT;
 		this->name = "Text";
 		this->m_text = "";
 		this->m_font = {0};
 		this->m_font_size = 12;
 		this->m_char_spacing = 0;
 		this->m_color = BLACK;
-
-		this->update_buffers();
 	}
 
 	TextObject::TextObject(uint8_t* bytes)
@@ -61,8 +58,6 @@ namespace bacon
 
 	TextObject::TextObject(const TextObject& text_object) : GameObject()
 	{
-		this->object_type = ObjectType::TEXT;
-
 		this->copy(text_object);
 	}
 
@@ -86,7 +81,7 @@ namespace bacon
 		set_text(text_object.m_text); // Call last
 	}
 
-	TextObject* TextObject::clone_exact() const
+	TextObject* TextObject::clone() const
 	{
 		TextObject* new_text = new TextObject(*this);
 		return new_text;
@@ -295,26 +290,26 @@ namespace bacon
 		return CheckCollisionPointRec(p, rect);
 	}
 
-	void TextObject::update_buffers()
+	void TextObject::update_ui_buffer()
 	{
-		update_base_buffers();
+		base_update_ui_buffer();
 
-		m_buffers.text = m_text;
-		m_buffers.font_path = m_font_path;
-		m_buffers.font_size = m_font_size;
-		m_buffers.char_spacing = m_char_spacing;
-		m_buffers.color = m_color;
+		ui::obj_properties.text = m_text;
+		ui::obj_properties.font_path = m_font_path;
+		ui::obj_properties.font_size = m_font_size;
+		ui::obj_properties.char_spacing = m_char_spacing;
+		ui::obj_properties.color = m_color;
 	}
 
-	void TextObject::update_from_buffers()
+	void TextObject::update_from_ui_buffer()
 	{
-		update_from_base_buffers();
+		base_update_from_ui_buffer();
 
-		set_text(m_buffers.text);
-		set_font(m_buffers.font_path);
-		set_font_size(m_buffers.font_size);
-		m_char_spacing = m_buffers.char_spacing;
-		m_color = m_buffers.color;
+		set_text(ui::obj_properties.text);
+		set_font(ui::obj_properties.font_path);
+		set_font_size(ui::obj_properties.font_size);
+		m_char_spacing = ui::obj_properties.char_spacing;
+		m_color = ui::obj_properties.color;
 	}
 
 	void TextObject::draw() const
@@ -356,7 +351,7 @@ namespace bacon
 
 		// Text
 		ImGui::ItemLabel("Text", ItemLabelFlag::Left);
-		ImGui::InputTextMultiline("##text", &m_buffers.text);
+		ImGui::InputTextMultiline("##text", &ui::obj_properties.text);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -365,7 +360,7 @@ namespace bacon
 
 		// Font
 		ImGui::ItemLabel("Font", ItemLabelFlag::Left);
-		ImGui::InputText("##font", &m_buffers.font_path);
+		ImGui::InputText("##font", &ui::obj_properties.font_path);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -376,7 +371,7 @@ namespace bacon
 			file::asset_t result = file::load_asset_nfd(file::AssetType::FONT);
 			if (result.type != file::AssetType::NONE)
 			{
-				m_buffers.font_path = result.path;
+				ui::obj_properties.font_path = result.path;
 
 				globals::has_unsaved_changes = true;
 				change_made = true;
@@ -385,7 +380,7 @@ namespace bacon
 
 		// Font size
 		ImGui::ItemLabel("Font Size", ItemLabelFlag::Left);
-		ImGui::InputInt("##font_size", &m_buffers.font_size);
+		ImGui::InputInt("##font_size", &ui::obj_properties.font_size);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -394,7 +389,7 @@ namespace bacon
 
 		// Character spacing
 		ImGui::ItemLabel("Character Spacing", ItemLabelFlag::Left);
-		ImGui::InputInt("##char_spacing", &m_buffers.char_spacing);
+		ImGui::InputInt("##char_spacing", &ui::obj_properties.char_spacing);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
@@ -403,10 +398,10 @@ namespace bacon
 
 		// Color
 		float color[] = {
-			(float)m_buffers.color.r / 255.f,
-			(float)m_buffers.color.g / 255.f,
-			(float)m_buffers.color.b / 255.f,
-			(float)m_buffers.color.a / 255.f};
+			(float)ui::obj_properties.color.r / 255.f,
+			(float)ui::obj_properties.color.g / 255.f,
+			(float)ui::obj_properties.color.b / 255.f,
+			(float)ui::obj_properties.color.a / 255.f};
 		ImGui::ItemLabel("Color", ItemLabelFlag::Left);
 		if (ImGui::ColorEdit4("##color", color))
 		{
@@ -415,7 +410,7 @@ namespace bacon
 			color[2] = std::clamp(color[2], 0.f, 1.f);
 			color[3] = std::clamp(color[3], 0.f, 1.f);
 
-			m_buffers.color = (Color){
+			ui::obj_properties.color = (Color){
 				.r = (unsigned char)(color[0] * 255.f),
 				.g = (unsigned char)(color[1] * 255.f),
 				.b = (unsigned char)(color[2] * 255.f),
@@ -429,10 +424,10 @@ namespace bacon
 
 		if (change_made)
 		{
-			update_from_buffers();
+			update_from_ui_buffer();
 
 			ObjectEvent* event = new ObjectEvent(&copy_text, this);
-			event->object = this;
+			event->object_uuid = this->uuid;
 			push_event(event);
 		}
 	}
@@ -441,6 +436,7 @@ namespace bacon
 	{
 		GameObject::save_to_json(data);
 
+		data["type"] = "text";
 		data["text"] = m_text;
 		data["font_path"] = m_font_path;
 		data["font_size"] = m_font_size;
@@ -482,7 +478,6 @@ namespace bacon
 		}
 
 		this->set_text(m_text);
-		this->update_buffers();
 	}
 
 	size_t TextObject::calculate_size() const

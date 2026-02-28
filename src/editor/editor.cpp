@@ -238,6 +238,7 @@ namespace bacon
 				if (object->contains_point(mouse_position))
 				{
 					ui::view_properties_object = object;
+					object->update_ui_buffer();
 					found = true;
 					break;
 				}
@@ -319,9 +320,9 @@ namespace bacon
 
 				new_object->clone_children(*Editor::copy_object);
 				new_object->add_to_scene();
-				new_object->update_buffers();
 
 				ui::view_properties_object = new_object;
+				new_object->update_ui_buffer();
 			}
 
 			// Delete
@@ -378,6 +379,11 @@ namespace bacon
 			GameObject* inspect_object =
 				GameState::scene.find_object_by_uuid(inspect_uuid);
 			ui::view_properties_object = inspect_object;
+
+			if (inspect_object != nullptr)
+			{
+				inspect_object->update_ui_buffer();
+			}
 		}
 	}
 

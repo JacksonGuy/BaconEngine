@@ -29,7 +29,7 @@ namespace bacon
 
 		typedef struct ObjectEvent : EventBase
 		{
-			GameObject* object;
+			UUID object_uuid;
 			GameObject* before;
 			GameObject* after;
 
@@ -40,7 +40,7 @@ namespace bacon
 
 		typedef struct TreeEvent : EventBase
 		{
-			GameObject* object;
+			UUID object_uuid;
 			GameObject* old_parent;
 			GameObject* new_parent;
 
@@ -61,9 +61,9 @@ namespace bacon
 
 		typedef struct ObjectCreateEvent : EventBase
 		{
-			GameObject* object;
+			GameObject* object_copy;
 
-			ObjectCreateEvent() = default;
+			ObjectCreateEvent(const GameObject& object);
 			~ObjectCreateEvent();
 			void apply(EventAction action) override;
 		} ObjectCreateEvent;

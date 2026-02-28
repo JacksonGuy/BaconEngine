@@ -19,12 +19,6 @@ namespace bacon
 		KINEMATIC
 	};
 
-	typedef struct EntityBuffers
-	{
-		std::string texture_path;
-		BodyType body_type;
-	} EntityBuffers;
-
 	class Entity : public GameObject
 	{
 	public:
@@ -45,7 +39,7 @@ namespace bacon
 		~Entity() = default;
 
 		void copy(const GameObject& object) override;
-		Entity* clone_exact() const override;
+		Entity* clone() const override;
 		Entity* clone_unique() const override;
 
 		void add_to_scene() override;
@@ -54,8 +48,8 @@ namespace bacon
 		void set_texture(const std::string& path);
 		void set_size(float width, float height);
 
-		void update_buffers() override;
-		void update_from_buffers() override;
+		void update_ui_buffer() override;
+		void update_from_ui_buffer() override;
 
 		void draw() const override;
 		void draw_properties_editor() override;
@@ -72,7 +66,6 @@ namespace bacon
 		void create_body(b2WorldId world_id);
 
 	private:
-		EntityBuffers m_buffers;
 		std::shared_ptr<Texture2D> m_texture;
 		std::string m_texture_path;
 	};
