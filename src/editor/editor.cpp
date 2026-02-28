@@ -263,6 +263,27 @@ namespace bacon
 				(mouse_wheel_move * this->camera_zoom_speed);
 		}
 
+		// Delete inspected object
+		if (IsKeyPressed(KEY_DELETE) && ui::view_properties_object != nullptr)
+		{
+			if (Editor::copy_object == ui::view_properties_object)
+			{
+				Editor::copy_object = nullptr;
+			}
+
+			// Create event
+			event::ObjectDeleteEvent* event = new event::ObjectDeleteEvent(*ui::view_properties_object);
+			event::push_event(event);
+
+			// Delete and remove from scene
+			ui::view_properties_object->remove_from_scene();
+			ui::view_properties_object->delete_children();
+			ui::view_properties_object = nullptr;
+			delete ui::view_properties_object;
+
+			globals::has_unsaved_changes = true;
+		}
+
 		if (IsKeyDown(KEY_LEFT_CONTROL))
 		{
 			// Project save
@@ -318,24 +339,17 @@ namespace bacon
 				GameObject* new_object = Editor::copy_object->clone_unique();
 				new_object->position = mouse_position;
 
-				new_object->clone_children(*Editor::copy_object);
+				new_object->clone_children(*Editor::copy_object, true);
 				new_object->add_to_scene();
 
 				ui::view_properties_object = new_object;
 				new_object->update_ui_buffer();
-			}
 
-			// Delete
-			if (IsKeyPressed(KEY_DELETE) && ui::view_properties_object != nullptr)
-			{
-				if (Editor::copy_object == ui::view_properties_object)
-				{
-					Editor::copy_object = nullptr;
-				}
-				ui::view_properties_object->remove_from_scene();
-				ui::view_properties_object = nullptr;
+				// Create event
+				event::ObjectCreateEvent* event = new event::ObjectCreateEvent(*new_object);
+				event::push_event(event);
 
-				delete ui::view_properties_object;
+				globals::has_unsaved_changes = true;
 			}
 		}
 	}

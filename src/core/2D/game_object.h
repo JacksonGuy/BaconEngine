@@ -45,7 +45,8 @@ namespace bacon
 		void set_parent(GameObject* object);
 		void add_child(GameObject* object);
 		void remove_child(GameObject* object);
-		void clone_children(const GameObject& object);
+		void delete_children();
+		void clone_children(const GameObject& object, bool add_to_scene = true);
 		const std::vector<GameObject*>& get_children() const;
 
 		Vector2 get_position_abs() const;

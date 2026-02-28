@@ -169,6 +169,7 @@ namespace bacon
 					ImGui::EndDragDropTarget();
 				}
 
+				// Show root nodes (objects without parent)
 				for (GameObject* obj : GameState::scene.get_objects())
 				{
 					if (obj->get_parent() == nullptr)
@@ -479,6 +480,10 @@ namespace bacon
 				entity->set_size(size_buffer[0], size_buffer[1]);
 
 				ui::show_entity_create = false;
+
+				event::ObjectCreateEvent* event = new event::ObjectCreateEvent(*entity);
+				event::push_event(event);
+				globals::has_unsaved_changes = true;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
@@ -515,6 +520,10 @@ namespace bacon
 					(Vector2){position_buffer[0], position_buffer[1]};
 
 				ui::show_text_create = false;
+
+				event::ObjectCreateEvent* event = new event::ObjectCreateEvent(*text);
+				event::push_event(event);
+				globals::has_unsaved_changes = true;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
@@ -544,6 +553,10 @@ namespace bacon
 				camera->name = name_buffer;
 
 				ui::show_camera_create = false;
+
+				event::ObjectCreateEvent* event = new event::ObjectCreateEvent(*camera);
+				event::push_event(event);
+				globals::has_unsaved_changes = true;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
@@ -787,6 +800,7 @@ namespace bacon
 			if (ImGui::IsItemClicked(1))
 			{
 				view_properties_object = object;
+				object->update_ui_buffer();
 			}
 
 			// Handle mouse drag

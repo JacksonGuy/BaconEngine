@@ -102,18 +102,54 @@ namespace bacon
 		}
 	}
 
-	void GameObject::clone_children(const GameObject& object)
+	void GameObject::delete_children()
+	{
+		auto it = children.begin();
+		while (it != children.end())
+		{
+			GameObject* child = *it;
+
+			child->remove_from_scene();
+			child->delete_children();
+			delete child;
+
+			it = children.erase(it);
+		}
+
+		children.clear();
+	}
+
+	void GameObject::clone_children(const GameObject& object, bool add_to_scene)
 	{
 		for (GameObject* child : object.get_children())
 		{
-			GameObject* new_child = child->clone_unique();
+			// Clone child
+			GameObject* new_child = nullptr;
+			if (add_to_scene)
+			{
+				new_child = child->clone_unique();
+			}
+			else
+			{
+				new_child = child->clone();
+			}
+
+			// Set correct position
+			Vector2 delta = Vector2Subtract(child->position, child->parent->position);
+			Vector2 pos = Vector2Add(this->position, delta);
+			new_child->set_position(pos);
+
+			// Add to object
 			this->children.push_back(new_child);
 			new_child->set_parent(this);
-			new_child->add_to_scene();
+
+			// Add to scene
+			if (add_to_scene)
+				new_child->add_to_scene();
 
 			// Recurse down to copy all children below the
 			// root object being copied.
-			new_child->clone_children(*child);
+			new_child->clone_children(*child, add_to_scene);
 		}
 	}
 

@@ -49,15 +49,13 @@ namespace bacon
 			if (action == EventAction::UNDO)
 			{
 				object->copy(*this->before);
-
-				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
 				object->copy(*this->after);
-
-				globals::has_unsaved_changes = true;
 			}
+
+			globals::has_unsaved_changes = true;
 		}
 
 		TreeEvent::TreeEvent()
@@ -88,8 +86,6 @@ namespace bacon
 				{
 					new_parent->remove_child(object);
 				}
-
-				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
@@ -102,9 +98,9 @@ namespace bacon
 				{
 					old_parent->remove_child(object);
 				}
-
-				globals::has_unsaved_changes = true;
 			}
+
+			globals::has_unsaved_changes = true;
 		}
 
 		EditorEvent::~EditorEvent()
@@ -122,22 +118,20 @@ namespace bacon
 			if (action == EventAction::UNDO)
 			{
 				before->apply();
-
-				globals::has_unsaved_changes = true;
 			}
 			else if (action == EventAction::REDO)
 			{
 				after->apply();
-
-				globals::has_unsaved_changes = true;
 			}
 
 			ui::set_input_buffers();
+			globals::has_unsaved_changes = true;
 		}
 
 		ObjectCreateEvent::ObjectCreateEvent(const GameObject& object)
 		{
 			this->object_copy = object.clone();
+			this->object_copy->clone_children(object, false);
 		}
 
 		ObjectCreateEvent::~ObjectCreateEvent()
@@ -152,14 +146,62 @@ namespace bacon
 
 			if (action == EventAction::UNDO)
 			{
+				if (ui::view_properties_object != nullptr &&
+					ui::view_properties_object->uuid == object_copy->uuid)
+				{
+					ui::view_properties_object = nullptr;
+				}
+
 				GameObject* scene_object = GameState::scene.find_object_by_uuid(object_copy->uuid);
+				assert(scene_object != nullptr);
+
 				scene_object->remove_from_scene();
+				scene_object->delete_children();
 				delete scene_object;
 			}
 			else if (action == EventAction::REDO)
 			{
-				object_copy->add_to_scene();
+				GameObject* new_object = object_copy->clone();
+				new_object->clone_children(*object_copy, true);
+				new_object->add_to_scene();
 			}
+
+			globals::has_unsaved_changes = true;
+		}
+
+		ObjectDeleteEvent::ObjectDeleteEvent(const GameObject& object)
+		{
+			this->object_copy = object.clone();
+			this->object_copy->clone_children(object, false);
+		}
+
+		ObjectDeleteEvent::~ObjectDeleteEvent()
+		{
+			delete object_copy;
+		}
+
+		void ObjectDeleteEvent::apply(EventAction action)
+		{
+			assert(object_copy != nullptr);
+			assert(action != EventAction::NONE);
+
+			if (action == EventAction::UNDO)
+			{
+				GameObject* new_object = object_copy->clone();
+				new_object->clone_children(*object_copy, true);
+				new_object->add_to_scene();
+			}
+			else if (action == EventAction::REDO)
+			{
+				GameObject* scene_object = GameState::scene.find_object_by_uuid(object_copy->uuid);
+				assert(scene_object != nullptr);
+
+				scene_object->remove_from_scene();
+				scene_object->delete_children();
+				delete scene_object;
+			}
+
+			globals::has_unsaved_changes = true;
 		}
 
 		void push_event(EventBase* event)

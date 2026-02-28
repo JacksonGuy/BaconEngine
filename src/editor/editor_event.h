@@ -68,6 +68,15 @@ namespace bacon
 			void apply(EventAction action) override;
 		} ObjectCreateEvent;
 
+		typedef struct ObjectDeleteEvent : EventBase
+		{
+			GameObject* object_copy;
+
+			ObjectDeleteEvent(const GameObject& object);
+			~ObjectDeleteEvent();
+			void apply(EventAction action) override;
+		} ObjectDeleteEvent;
+
 		extern std::stack<EventBase*>
 			undo_stack;
 		extern std::stack<EventBase*> redo_stack;
