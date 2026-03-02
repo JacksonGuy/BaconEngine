@@ -19,3 +19,6 @@
 [submodule "extern/lua"]
 	path = extern/lua
 	url = https://github.com/walterschell/Lua.git
+[submodule "extern/json"]
+	path = extern/json
+	url = https://github.com/nlohmann/json.git

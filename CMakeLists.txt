@@ -13,6 +13,7 @@ add_subdirectory(extern/raylib)
 add_subdirectory(extern/box2d)
 add_subdirectory(extern/nfd)
 add_subdirectory(extern/lua)
+add_subdirectory(extern/json)
 
 # Main project files
 set(SOURCE_FILES
@@ -76,6 +77,7 @@ target_include_directories(main
         extern/imgui/misc/cpp
         extern/rlimgui
         extern/json
+        extern/json/include
         extern/lua
         extern/sol2/include
         src

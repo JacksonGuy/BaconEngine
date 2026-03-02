@@ -4,9 +4,8 @@
 #include <fstream>
 
 #include "core/uuid.h"
-#include "json.hpp"
+#include "nlohmann/json.hpp"
 #include "nfd.h"
-#include "nfd.hpp"
 
 #include "core/2D/entity.h"
 #include "core/2D/game_object.h"
