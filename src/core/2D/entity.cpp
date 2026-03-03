@@ -2,6 +2,7 @@
 
 #include "box2d/box2d.h"
 #include "box2d/collision.h"
+#include "box2d/id.h"
 #include "box2d/types.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -44,11 +45,29 @@ namespace bacon
 	Entity::Entity() : GameObject()
 	{
 		this->name = "Entity";
-		this->m_texture = {0};
-		this->m_texture_path = "";
-		this->physics_body = {0};
-		this->body_type = BodyType::NONE;
-	}
+		m_texture = {0};
+		m_texture_path = "";
+
+		m_physics_body = {0};
+		m_physics_shape = {0};
+
+		m_physics_properties = {
+			.type = BodyType::NONE,
+			.body_center = {0.f, 0.f},
+			.mass = 1.f,
+			.density = 1.f,
+			.friction = 0.f,
+			.restitution = 0.f,
+			.rotational_inertia = 0.f,
+			.linear_damping = 0.f,
+			.angular_damping = 0.f,
+			.gravity_scale = 1.f,
+			.is_sleeping = false,
+			.disabled = false,
+			.fixed_rotation = false,
+			.is_bullet = false,
+		};
+	} // namespace bacon
 
 	Entity::Entity(uint8_t* bytes)
 	{
@@ -73,7 +92,7 @@ namespace bacon
 
 		const Entity& entity = static_cast<const Entity&>(object);
 
-		this->body_type = entity.body_type;
+		this->m_physics_properties = entity.m_physics_properties;
 		this->set_texture(entity.m_texture_path);
 	}
 
@@ -127,7 +146,7 @@ namespace bacon
 		body_def.position = (b2Vec2){this->position.x, this->position.y};
 		b2Polygon box = b2MakeBox(this->size.x / 2, this->size.y / 2);
 
-		switch (this->body_type)
+		switch (m_physics_properties.type)
 		{
 			case STATIC:
 			{
@@ -154,9 +173,42 @@ namespace bacon
 			}
 		}
 
-		this->physics_body = b2CreateBody(world_id, &body_def);
+		body_def.linearDamping = m_physics_properties.linear_damping;
+		body_def.angularDamping = m_physics_properties.angular_damping;
+		body_def.gravityScale = m_physics_properties.gravity_scale;
+		body_def.enableSleep = true;
+		body_def.isAwake = !m_physics_properties.is_sleeping;
+		body_def.motionLocks = {
+			.linearX = false,
+			.linearY = false,
+			.angularZ = m_physics_properties.fixed_rotation,
+		};
+		body_def.isBullet = m_physics_properties.is_bullet;
+		body_def.isEnabled = !m_physics_properties.disabled;
+
+		b2MassData mass_data;
+		mass_data.mass = m_physics_properties.mass;
+		mass_data.center = (b2Vec2){
+			m_physics_properties.body_center[0],
+			m_physics_properties.body_center[1],
+		};
+		mass_data.rotationalInertia = m_physics_properties.rotational_inertia;
+
+		m_physics_body = b2CreateBody(world_id, &body_def);
+		b2Body_SetMassData(m_physics_body, mass_data);
+
 		b2ShapeDef shape = b2DefaultShapeDef();
-		b2CreatePolygonShape(this->physics_body, &shape, &box);
+		shape.density = m_physics_properties.density;
+		shape.material.friction = m_physics_properties.friction;
+		shape.material.restitution = m_physics_properties.restitution;
+
+		b2CreatePolygonShape(this->m_physics_body, &shape, &box);
+	}
+
+	void Entity::destroy_body()
+	{
+		b2DestroyBody(m_physics_body);
+		m_physics_body = b2_nullBodyId;
 	}
 
 	void Entity::update_ui_buffer()
@@ -164,7 +216,21 @@ namespace bacon
 		base_update_ui_buffer();
 
 		ui::obj_properties.texture_path = m_texture_path;
-		ui::obj_properties.body_type = body_type;
+
+		ui::obj_properties.body_type = m_physics_properties.type;
+		ui::obj_properties.body_center[0] = m_physics_properties.body_center[0];
+		ui::obj_properties.body_center[1] = m_physics_properties.body_center[1];
+		ui::obj_properties.mass = m_physics_properties.mass;
+		ui::obj_properties.density = m_physics_properties.density;
+		ui::obj_properties.friction = m_physics_properties.friction;
+		ui::obj_properties.restitution = m_physics_properties.restitution;
+		ui::obj_properties.rotational_inertia = m_physics_properties.rotational_inertia;
+		ui::obj_properties.linear_damping = m_physics_properties.linear_damping;
+		ui::obj_properties.angular_damping = m_physics_properties.angular_damping;
+		ui::obj_properties.gravity_scale = m_physics_properties.gravity_scale;
+		ui::obj_properties.is_sleeping = m_physics_properties.is_sleeping;
+		ui::obj_properties.fixed_rotation = m_physics_properties.fixed_rotation;
+		ui::obj_properties.is_bullet = m_physics_properties.is_bullet;
 	}
 
 	void Entity::update_from_ui_buffer()
@@ -173,7 +239,25 @@ namespace bacon
 
 		this->set_size(size.x, size.y);
 		this->set_texture(ui::obj_properties.texture_path);
-		this->body_type = BodyType(ui::obj_properties.body_type);
+
+		m_physics_properties = (PhysicsProperties){
+			.type = BodyType(ui::obj_properties.body_type),
+			.body_center = {
+				ui::obj_properties.body_center[0],
+				ui::obj_properties.body_center[1],
+			},
+			.mass = ui::obj_properties.mass,
+			.density = ui::obj_properties.density,
+			.friction = ui::obj_properties.friction,
+			.restitution = ui::obj_properties.restitution,
+			.rotational_inertia = ui::obj_properties.rotational_inertia,
+			.linear_damping = ui::obj_properties.linear_damping,
+			.angular_damping = ui::obj_properties.angular_damping,
+			.gravity_scale = ui::obj_properties.gravity_scale,
+			.is_sleeping = ui::obj_properties.is_sleeping,
+			.fixed_rotation = ui::obj_properties.fixed_rotation,
+			.is_bullet = ui::obj_properties.is_bullet,
+		};
 	}
 
 	void Entity::draw() const
@@ -214,13 +298,12 @@ namespace bacon
 		// WARNING!!
 		using namespace event;
 
-		Entity copy_entity(*this);
-		// if (ui::inspect_object_copy->uuid != this->uuid)
-		// {
-		// 	delete ui::inspect_object_copy;
-
-		// 	ui::inspect_object_copy = this->clone();
-		// }
+		if (ui::inspect_object_copy == nullptr ||
+			ui::inspect_object_copy->uuid != this->uuid)
+		{
+			delete ui::inspect_object_copy;
+			ui::inspect_object_copy = this->clone();
+		}
 
 		bool change_made = draw_base_properties();
 
@@ -246,12 +329,15 @@ namespace bacon
 
 		ImGui::Separator();
 
-		// Physics
+		ImGui::BeginTabBar("Properties");
+		// -----------------
+		// Physics variables
+		// -----------------
+		ImGui::BeginTabItem("Physics");
 		const char* body_options[] = {"None", "Static", "Dynamic", "Kinematic"};
 		int current_body_option = ui::obj_properties.body_type;
 		ImGui::ItemLabel("Physics Body", ItemLabelFlag::Left);
 		if (ImGui::Combo("##physics_body", &current_body_option, body_options, 4))
-		// if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			ui::obj_properties.body_type = BodyType(current_body_option);
 
@@ -259,13 +345,124 @@ namespace bacon
 			change_made = true;
 		}
 
+		ImGui::ItemLabel("Mass", ItemLabelFlag::Left);
+		ImGui::InputFloat("##body_mass", &ui::obj_properties.mass);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Density", ItemLabelFlag::Left);
+		ImGui::InputFloat("##density", &ui::obj_properties.density);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Friction", ItemLabelFlag::Left);
+		ImGui::SliderFloat("##shape_friction", &ui::obj_properties.friction, 0.f, 1.f);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Restitution", ItemLabelFlag::Left);
+		ImGui::SliderFloat("##restitution", &ui::obj_properties.restitution, 0.f, 1.f);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Body Center", ItemLabelFlag::Left);
+		ImGui::InputFloat2("##body_center", ui::obj_properties.body_center);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Rotational Inertia", ItemLabelFlag::Left);
+		ImGui::InputFloat("##rotational_inertia", &ui::obj_properties.rotational_inertia);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Linear Damping", ItemLabelFlag::Left);
+		ImGui::SliderFloat("##linear_damping", &ui::obj_properties.linear_damping, 0.0f, 1.0f);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Angular Damping", ItemLabelFlag::Left);
+		ImGui::SliderFloat("##angular_damping", &ui::obj_properties.angular_damping, 0.0f, 1.0f);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Gravity Scale", ItemLabelFlag::Left);
+		ImGui::InputFloat("##gravity_scale", &ui::obj_properties.gravity_scale);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Sleeping?", ItemLabelFlag::Left);
+		ImGui::Checkbox("##is_sleeping", &ui::obj_properties.is_sleeping);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Disabled?", ItemLabelFlag::Left);
+		ImGui::Checkbox("##disabled", &ui::obj_properties.disabled);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Is Bullet?", ItemLabelFlag::Left);
+		ImGui::Checkbox("##is_bullet", &ui::obj_properties.is_bullet);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::ItemLabel("Fixed Rotation", ItemLabelFlag::Left);
+		ImGui::Checkbox("##fixed_rotation", &ui::obj_properties.fixed_rotation);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::EndTabItem();
+		// -----------------
+
+		ImGui::EndTabBar();
+
 		if (change_made)
 		{
 			update_from_ui_buffer();
 
-			ObjectEvent* event = new ObjectEvent(&copy_entity, this);
+			ObjectEvent* event = new ObjectEvent(ui::inspect_object_copy, this);
 			event->object_uuid = this->uuid;
 			push_event(event);
+
+			ui::inspect_object_copy->copy(*this);
 		}
 	}
 
@@ -274,8 +471,20 @@ namespace bacon
 		GameObject::save_to_json(data);
 
 		data["type"] = "entity";
-		data["body_type"] = body_type;
 		data["texture_path"] = m_texture_path;
+
+		data["body_type"] = m_physics_properties.type;
+		data["body_center"] = m_physics_properties.body_center;
+		data["mass"] = m_physics_properties.mass;
+		data["density"] = m_physics_properties.density;
+		data["friction"] = m_physics_properties.friction;
+		data["restituion"] = m_physics_properties.rotational_inertia;
+		data["linear_damping"] = m_physics_properties.linear_damping;
+		data["angular_damping"] = m_physics_properties.angular_damping;
+		data["gravity_scale"] = m_physics_properties.gravity_scale;
+		data["is_asleep"] = m_physics_properties.is_sleeping;
+		data["fixed_rotation"] = m_physics_properties.fixed_rotation;
+		data["is_bullet"] = m_physics_properties.is_bullet;
 	}
 
 	void Entity::load_from_json(nlohmann::json& data)
@@ -287,13 +496,62 @@ namespace bacon
 			std::string key = it.key();
 			auto value = *it;
 
-			if (key == "body_type")
-			{
-				body_type = BodyType(value);
-			}
-			else if (key == "texture_path")
+			if (key == "texture_path")
 			{
 				set_texture(value);
+			}
+			else if (key == "body_type")
+			{
+				m_physics_properties.type = BodyType(value);
+			}
+			else if (key == "body_center")
+			{
+				m_physics_properties.body_center[0] = value[0];
+				m_physics_properties.body_center[1] = value[1];
+			}
+			else if (key == "mass")
+			{
+				m_physics_properties.mass = value;
+			}
+			else if (key == "density")
+			{
+				m_physics_properties.density = value;
+			}
+			else if (key == "friction")
+			{
+				m_physics_properties.friction = value;
+			}
+			else if (key == "restitution")
+			{
+				m_physics_properties.restitution = value;
+			}
+			else if (key == "rotational_inertia")
+			{
+				m_physics_properties.rotational_inertia = value;
+			}
+			else if (key == "linear_damping")
+			{
+				m_physics_properties.linear_damping = value;
+			}
+			else if (key == "angular_damping")
+			{
+				m_physics_properties.angular_damping = value;
+			}
+			else if (key == "gravity_scale")
+			{
+				m_physics_properties.gravity_scale = value;
+			}
+			else if (key == "is_asleep")
+			{
+				m_physics_properties.is_sleeping = value;
+			}
+			else if (key == "fixed_rotation")
+			{
+				m_physics_properties.fixed_rotation = value;
+			}
+			else if (key == "is_bullet")
+			{
+				m_physics_properties.is_bullet = value;
 			}
 		}
 	}

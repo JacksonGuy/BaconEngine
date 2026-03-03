@@ -46,6 +46,19 @@ namespace bacon
 			// Entity
 			std::string texture_path;
 			BodyType body_type;
+			float body_center[2];
+			float linear_damping;
+			float angular_damping;
+			float gravity_scale;
+			bool is_sleeping;
+			bool disabled;
+			bool fixed_rotation;
+			bool is_bullet;
+			float mass;
+			float density;
+			float rotational_inertia;
+			float friction;
+			float restitution;
 
 			// TextObject
 			std::string text;

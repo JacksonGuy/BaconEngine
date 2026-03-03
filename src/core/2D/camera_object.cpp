@@ -147,7 +147,12 @@ namespace bacon
 		// WARNING!!
 		using namespace event;
 
-		CameraObject copy_camera(*this);
+		if (ui::inspect_object_copy == nullptr ||
+			ui::inspect_object_copy->uuid != this->uuid)
+		{
+			delete ui::inspect_object_copy;
+			ui::inspect_object_copy = this->clone();
+		}
 
 		bool change_made = draw_base_properties();
 
@@ -170,9 +175,11 @@ namespace bacon
 		{
 			update_from_ui_buffer();
 
-			ObjectEvent* event = new ObjectEvent(&copy_camera, this);
+			ObjectEvent* event = new ObjectEvent(ui::inspect_object_copy, this);
 			event->object_uuid = this->uuid;
 			event::push_event(event);
+
+			ui::inspect_object_copy->copy(*this);
 		}
 	}
 
