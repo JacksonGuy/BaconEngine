@@ -26,7 +26,7 @@ namespace bacon
 
 	Scene2D::~Scene2D()
 	{
-		this->reset();
+		this->cleanup();
 	}
 
 	const std::vector<GameObject*>& Scene2D::get_objects() const
@@ -342,6 +342,19 @@ namespace bacon
 		this->create_physics_world();
 		m_lua_state.reset();
 
+		for (GameObject* object : m_objects)
+		{
+			delete object;
+		}
+
+		m_objects.clear();
+		m_entities.clear();
+		m_camera_objects.clear();
+		m_text_objects.clear();
+	}
+
+	void Scene2D::cleanup()
+	{
 		for (GameObject* object : m_objects)
 		{
 			delete object;

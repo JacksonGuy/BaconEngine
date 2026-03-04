@@ -16,5 +16,17 @@ namespace bacon
 		{
 			GameState::renderer = new Renderer(width, height);
 		}
+
+		void cleanup()
+		{
+			// Clears all the layers
+			renderer->reset();
+
+			// Deletes all objects from scene
+			scene.cleanup();
+
+			// Unload all assets
+			assets.cleanup();
+		}
 	} // namespace GameState
 } // namespace bacon

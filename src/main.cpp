@@ -78,9 +78,8 @@ int main(int argc, char** argv)
 
 	debug_log("Performing cleanup...");
 	event::event_cleanup();
-	GameState::scene.reset();
+	GameState::cleanup();
 	delete ui::inspect_object_copy;
-	delete ui::view_properties_object;
 
 	rlImGuiShutdown();
 	CloseWindow();

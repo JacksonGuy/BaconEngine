@@ -23,6 +23,7 @@ namespace bacon
 			assert(before->uuid == after->uuid);
 
 			// Allocate new objects
+			this->object_uuid = before->uuid;
 			this->before = before->clone();
 			this->after = after->clone();
 		}

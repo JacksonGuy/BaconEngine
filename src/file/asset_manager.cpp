@@ -10,21 +10,7 @@ namespace bacon
 {
 	AssetManager::~AssetManager()
 	{
-		// Unload textures
-		for (auto it = m_textures.begin(); it != m_textures.end(); it++)
-		{
-			std::shared_ptr<Texture2D> texture = it->second;
-			UnloadTexture(*texture);
-		}
-		m_textures.clear();
-
-		// Unload fonts
-		for (auto it = m_fonts.begin(); it != m_fonts.end(); it++)
-		{
-			std::shared_ptr<Font> font = it->second;
-			UnloadFont(*font);
-		}
-		m_fonts.clear();
+		this->cleanup();
 	}
 
 	std::shared_ptr<Texture2D> AssetManager::load_texture(const std::string& path)
@@ -75,5 +61,24 @@ namespace bacon
 	AssetManager::get_fonts() const
 	{
 		return m_fonts;
+	}
+
+	void AssetManager::cleanup()
+	{
+		// Unload textures
+		for (auto it = m_textures.begin(); it != m_textures.end(); it++)
+		{
+			std::shared_ptr<Texture2D> texture = it->second;
+			UnloadTexture(*texture);
+		}
+		m_textures.clear();
+
+		// Unload fonts
+		for (auto it = m_fonts.begin(); it != m_fonts.end(); it++)
+		{
+			std::shared_ptr<Font> font = it->second;
+			UnloadFont(*font);
+		}
+		m_fonts.clear();
 	}
 } // namespace bacon

@@ -624,12 +624,6 @@ namespace bacon
 							break;
 						}
 
-							// This shouldn't be a case?
-							// case LastEditorAction::PROJECT_SAVE_AS:
-							// {
-							// 	ui::show_save_as_popup = true;
-							// }
-
 						case LastEditorAction::PROJECT_OPEN:
 						{
 							file::load_project(true);
@@ -639,6 +633,12 @@ namespace bacon
 						case LastEditorAction::PROGRAM_EXIT:
 						{
 							globals::program_running = false;
+							break;
+						}
+
+						case LastEditorAction::GAME_PLAY:
+						{
+							editor->start_game();
 							break;
 						}
 

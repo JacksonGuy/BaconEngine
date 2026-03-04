@@ -75,7 +75,6 @@ namespace bacon
 			{
 				this->parent->remove_child(this);
 			}
-			this->parent = nullptr;
 
 			return;
 		}

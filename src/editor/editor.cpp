@@ -7,6 +7,7 @@
 #include "core/game_state.h"
 #include "imgui.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "rlImGui.h"
 
 #include "core/globals.h"
@@ -201,6 +202,11 @@ namespace bacon
 
 		globals::update_window_title();
 
+		if (is_playing && ui::view_properties_object != nullptr)
+		{
+			ui::view_properties_object->update_ui_buffer();
+		}
+
 		rlImGuiEnd();
 	}
 
@@ -246,6 +252,61 @@ namespace bacon
 			if (!found)
 			{
 				ui::view_properties_object = nullptr;
+			}
+		}
+
+		// Left click drag object
+		if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+		{
+			if (ui::view_properties_object != nullptr)
+			{
+				if (ui::view_properties_object->contains_point(mouse_position))
+				{
+					// I don't think this check is necessary. If view_properties_object
+					// is not nullptr, then we must have right clicked an object,
+					// which would have called this same code inside of
+					// draw_properties_editor.
+					if (ui::inspect_object_copy == nullptr ||
+						ui::inspect_object_copy->uuid != ui::view_properties_object->uuid)
+					{
+						delete ui::inspect_object_copy;
+						ui::inspect_object_copy = ui::view_properties_object->clone();
+					}
+
+					Vector2 delta = GetMouseDelta();
+					Vector2 current = ui::view_properties_object->position;
+					Vector2 new_pos = Vector2Add(current, delta);
+
+					if (delta.x != 0.f || delta.y != 0.f)
+					{
+						ui::view_properties_object->set_position(new_pos);
+					}
+				}
+			}
+		}
+
+		// Drag release
+		if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+		{
+			if (ui::view_properties_object != nullptr)
+			{
+				if (ui::inspect_object_copy->uuid == ui::view_properties_object->uuid)
+				{
+					float dist = Vector2Distance(
+						ui::inspect_object_copy->position,
+						ui::view_properties_object->position);
+
+					if (dist > 0)
+					{
+						event::ObjectEvent* event =
+							new event::ObjectEvent(ui::inspect_object_copy, ui::view_properties_object);
+						event::push_event(event);
+
+						ui::inspect_object_copy->copy(*ui::view_properties_object);
+						ui::view_properties_object->update_ui_buffer();
+						globals::has_unsaved_changes = true;
+					}
+				}
 			}
 		}
 
@@ -319,12 +380,34 @@ namespace bacon
 			if (IsKeyPressed(KEY_Z))
 			{
 				event::undo_event();
+
+				if (ui::view_properties_object != nullptr)
+				{
+					ui::view_properties_object->update_ui_buffer();
+
+					if (ui::inspect_object_copy != nullptr &&
+						ui::view_properties_object->uuid == ui::inspect_object_copy->uuid)
+					{
+						ui::inspect_object_copy->copy(*ui::view_properties_object);
+					}
+				}
 			}
 
 			// Redo
 			if (IsKeyPressed(KEY_Y))
 			{
 				event::redo_event();
+
+				if (ui::view_properties_object != nullptr)
+				{
+					ui::view_properties_object->update_ui_buffer();
+
+					if (ui::inspect_object_copy != nullptr &&
+						ui::view_properties_object->uuid == ui::inspect_object_copy->uuid)
+					{
+						ui::inspect_object_copy->copy(*ui::view_properties_object);
+					}
+				}
 			}
 
 			// Copy
@@ -356,11 +439,10 @@ namespace bacon
 
 	void Editor::start_game()
 	{
-		// TODO handle properly
 		if (globals::has_unsaved_changes)
 		{
-			// file::save_project();
 			ui::show_save_confirm_popup = true;
+			ui::last_action = ui::LastEditorAction::GAME_PLAY;
 			return;
 		}
 

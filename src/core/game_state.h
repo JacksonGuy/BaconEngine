@@ -25,5 +25,6 @@ namespace bacon
 		extern Renderer* renderer;
 
 		void initialize_renderer(uint32_t width, uint32_t height);
+		void cleanup();
 	} // namespace GameState
 } // namespace bacon

@@ -26,6 +26,8 @@ namespace bacon
 		const std::unordered_map<std::string, std::shared_ptr<Texture2D>>& get_textures() const;
 		const std::unordered_map<std::string, std::shared_ptr<Font>>& get_fonts() const;
 
+		void cleanup();
+
 	private:
 		std::unordered_map<std::string, std::shared_ptr<Texture2D>> m_textures;
 		std::unordered_map<std::string, std::shared_ptr<Font>> m_fonts;

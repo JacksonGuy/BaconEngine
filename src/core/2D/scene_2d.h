@@ -51,6 +51,7 @@ namespace bacon
 		void draw_entities(Camera2D* camera = nullptr) const;
 
 		void reset();
+		void cleanup();
 
 	private:
 		std::vector<GameObject*> m_objects;

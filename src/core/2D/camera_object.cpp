@@ -176,7 +176,6 @@ namespace bacon
 			update_from_ui_buffer();
 
 			ObjectEvent* event = new ObjectEvent(ui::inspect_object_copy, this);
-			event->object_uuid = this->uuid;
 			event::push_event(event);
 
 			ui::inspect_object_copy->copy(*this);
