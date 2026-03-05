@@ -11,6 +11,7 @@
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
 #include "lib/pool_allocator.h"
+#include "raymath.h"
 
 namespace bacon
 {
@@ -39,9 +40,12 @@ namespace bacon
 	CameraObject::CameraObject() : GameObject()
 	{
 		this->name = "Camera";
-		this->camera = {0};
+		this->camera = {};
 		this->is_active = false;
 		this->zoom = 1.0f;
+
+		// Camera specific overrides
+		this->size = {0, 0};
 	}
 
 	CameraObject::CameraObject(uint8_t* bytes)
@@ -110,10 +114,24 @@ namespace bacon
 		this->camera.target = position;
 	}
 
-	void CameraObject::adjust_frame_size(Vector2 window_size)
+	void CameraObject::draw_outline() const
 	{
-		this->size = {window_size.x * this->camera.zoom,
-					  window_size.y * this->camera.zoom};
+		// Get size from zoom
+		Vector2 frame_size = {
+			ui::window_size.x / this->camera.zoom,
+			ui::window_size.y / this->camera.zoom,
+		};
+
+		DrawRectangleLinesPro(
+			{
+				position.x + (frame_size.x / 2.f),
+				position.y + (frame_size.y / 2.f),
+				frame_size.x,
+				frame_size.y,
+			},
+			this->rotation,
+			3.f,
+			Color{0, 255, 0, 255});
 	}
 
 	void CameraObject::update_ui_buffer()
@@ -128,16 +146,20 @@ namespace bacon
 	{
 		base_update_from_ui_buffer();
 
-		is_active = ui::obj_properties.is_active;
-		zoom = ui::obj_properties.zoom;
+		// Update zoom from zoom field
+		this->zoom = ui::obj_properties.zoom;
 
+		// Set active
+		is_active = ui::obj_properties.is_active;
 		if (this->is_active)
 		{
 			GameState::scene.set_active_camera(this);
 		}
+
+		// Adjust camera
 		this->camera.target = this->position;
 		this->camera.rotation = this->rotation;
-		this->camera.zoom = zoom;
+		this->camera.zoom = this->zoom;
 	}
 
 	void CameraObject::draw() const {}
@@ -154,7 +176,56 @@ namespace bacon
 			ui::inspect_object_copy = this->clone();
 		}
 
-		bool change_made = draw_base_properties();
+		// We don't use draw_base_properties() here
+		// since certain fields do not apply to camera.
+
+		bool change_made = false;
+
+		// Name
+		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
+		ImGui::InputText("##name", &ui::obj_properties.name);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+		// ImGui::SameLine();
+		ImGui::HelpMarker("ID: " + this->uuid.get_uuid());
+
+		// Tag
+		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
+		ImGui::InputText("##tag", &ui::obj_properties.tag);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Position
+		ImGui::ItemLabel("Position", ItemLabelFlag::Left);
+		ImGui::InputFloat2("##position", ui::obj_properties.position);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		// Rotation
+		ImGui::ItemLabel("Rotation", ItemLabelFlag::Left);
+		ImGui::InputFloat("##rotation", &ui::obj_properties.rotation);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			ui::obj_properties.rotation = b_fmod(ui::obj_properties.rotation, 360);
+
+			globals::has_unsaved_changes = true;
+			change_made = true;
+		}
+
+		ImGui::Separator();
+
+		// ----------------------
+		// Camera Fields
+		// ----------------------
 
 		ImGui::ItemLabel("Active", ItemLabelFlag::Left);
 		if (ImGui::Checkbox("##is_active", &ui::obj_properties.is_active))

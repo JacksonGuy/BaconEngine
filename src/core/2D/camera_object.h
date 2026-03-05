@@ -35,7 +35,8 @@ namespace bacon
 
 		void move_camera(Vector2 delta);
 		void set_position(Vector2 position);
-		void adjust_frame_size(Vector2 window_size);
+
+		void draw_outline() const override;
 
 		void update_ui_buffer() override;
 		void update_from_ui_buffer() override;

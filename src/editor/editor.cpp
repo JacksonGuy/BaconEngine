@@ -45,6 +45,7 @@ namespace bacon
 	}
 
 	// Editor static variables
+	bool Editor::cursor_inside_scene_preview = false;
 	GameObject* Editor::copy_object = nullptr;
 
 	Editor::Editor()
@@ -81,6 +82,12 @@ namespace bacon
 
 	Editor::~Editor()
 	{
+		if (Editor::copy_object != nullptr)
+		{
+			Editor::copy_object->delete_children();
+			delete Editor::copy_object;
+			Editor::copy_object = nullptr;
+		}
 	}
 
 	void Editor::create_config_file()
@@ -233,8 +240,10 @@ namespace bacon
 			}
 		}
 
-		// Right click inspect
-		if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+		// Inspect
+		if (Editor::cursor_inside_scene_preview &&
+			(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) ||
+			IsMouseLeftDoubleClick()))
 		{
 			// TODO This can be optimized by using iterator over
 			// the object allocators. It's verbose, but faster.
@@ -253,10 +262,12 @@ namespace bacon
 			{
 				ui::view_properties_object = nullptr;
 			}
+
+			ImGui::SetWindowFocus(NULL);
 		}
 
 		// Left click drag object
-		if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+		if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && Editor::cursor_inside_scene_preview)
 		{
 			if (ui::view_properties_object != nullptr)
 			{
@@ -281,6 +292,10 @@ namespace bacon
 					{
 						ui::view_properties_object->set_position(new_pos);
 					}
+				}
+				else
+				{
+					ui::view_properties_object = nullptr;
 				}
 			}
 		}
@@ -311,27 +326,33 @@ namespace bacon
 		}
 
 		// Camera pan
-		if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+		if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON) && Editor::cursor_inside_scene_preview)
 		{
-			this->camera.target.x -= (mouse_delta.x * this->camera_move_speed);
-			this->camera.target.y -= (mouse_delta.y * this->camera_move_speed);
+			this->camera.target.x -= (mouse_delta.x *
+				(1 / this->camera.zoom) * this->camera_move_speed);
+			this->camera.target.y -= (mouse_delta.y *
+				(1 / this->camera.zoom) * this->camera_move_speed);
 		}
 
 		// Camera zoom
-		if (mouse_wheel_move != 0)
+		if (mouse_wheel_move != 0 && Editor::cursor_inside_scene_preview)
 		{
-			this->camera.zoom +=
-				(mouse_wheel_move * this->camera_zoom_speed);
+			Vector2 screen_mouse = GetWorldToScreen2D(mouse_position, this->camera);
+
+			float scale_factor = mouse_wheel_move * this->camera_zoom_speed;
+			float zoom_val = expf(logf(this->camera.zoom) + scale_factor);
+			this->camera.zoom = std::clamp(zoom_val, 0.1f, 5.0f);
+
+			// Adjust camera position
+			Vector2 post_zoom_mouse = GetScreenToWorld2D(screen_mouse, this->camera);
+			Vector2 delta = Vector2Subtract(mouse_position, post_zoom_mouse);
+			this->camera.target.x += delta.x;
+			this->camera.target.y += delta.y;
 		}
 
 		// Delete inspected object
 		if (IsKeyPressed(KEY_DELETE) && ui::view_properties_object != nullptr)
 		{
-			if (Editor::copy_object == ui::view_properties_object)
-			{
-				Editor::copy_object = nullptr;
-			}
-
 			// Create event
 			event::ObjectDeleteEvent* event = new event::ObjectDeleteEvent(*ui::view_properties_object);
 			event::push_event(event);
@@ -413,7 +434,8 @@ namespace bacon
 			// Copy
 			if (IsKeyPressed(KEY_C) && ui::view_properties_object != nullptr)
 			{
-				Editor::copy_object = ui::view_properties_object;
+				Editor::copy_object = ui::view_properties_object->clone();
+				Editor::copy_object->clone_children(*ui::view_properties_object, false);
 			}
 
 			// Paste

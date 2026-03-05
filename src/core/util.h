@@ -73,6 +73,27 @@ namespace bacon
 		}
 	}
 
+	inline bool IsMouseLeftDoubleClick()
+	{
+		static double last_click_time = 0.0f;
+		static double double_click_interval = 0.3f; // Seconds
+
+		bool double_click = false;
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			double current_time = GetTime();
+			if ((current_time - last_click_time) < double_click_interval)
+			{
+				double_click = true;
+			}
+
+			last_click_time = current_time;
+		}
+
+		return double_click;
+	}
+
 	inline double b_fmod(double x, double y)
 	{
 		double result = std::fmod(x, y);

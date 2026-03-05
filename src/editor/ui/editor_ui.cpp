@@ -190,13 +190,14 @@ namespace bacon
 
 			ImGui::Begin("Scene", &show_scene_display, global_window_flags);
 
+			// Get window details
 			ui::window_position = ImGui::GetWindowPos();
 			ui::window_size = ImGui::GetContentRegionAvail();
-
 			ImGuiWindow* window = ImGui::GetCurrentWindow();
 			const ImRect title_bar = window->TitleBarRect();
 			const float title_bar_height = title_bar.Max.y - title_bar.Min.y;
 
+			// Get mouse position
 			ImVec2 mouse_pos = ImGui::GetMousePos();
 			ImVec2 padding = ImGui::GetStyle().WindowPadding;
 			ImVec2 relative_mouse_pos = ImVec2(
@@ -205,6 +206,8 @@ namespace bacon
 			ui::window_mouse_position = GetScreenToWorld2D(
 				(Vector2){relative_mouse_pos.x, relative_mouse_pos.y},
 				globals::editor_ref->camera);
+
+			Editor::cursor_inside_scene_preview = ImGui::IsWindowHovered();
 
 			// Resize frame to correct window size
 			if (renderer->get_width() != window_size.x ||
@@ -775,6 +778,8 @@ namespace bacon
 			if (object == nullptr)
 				return;
 
+			bool will_delete = false;
+
 			// TODO This might be bad.
 			ImGui::PushID(object);
 
@@ -796,11 +801,36 @@ namespace bacon
 				is_open = ImGui::TreeNodeEx(object->name.c_str(), parentFlags);
 			}
 
-			// View object properties if right clicked
-			if (ImGui::IsItemClicked(1))
+			// View object properties if left clicked
+			if (ImGui::IsItemClicked(0))
 			{
 				view_properties_object = object;
 				object->update_ui_buffer();
+			}
+
+			// Right click popup menu
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::Selectable("Copy"))
+				{
+					delete Editor::copy_object;
+					Editor::copy_object = object->clone();
+					Editor::copy_object->clone_children(*object, false);
+				}
+
+				if (ImGui::Selectable("Delete"))
+				{
+					// Create event
+					event::ObjectDeleteEvent* event = new event::ObjectDeleteEvent(*object);
+					event::push_event(event);
+
+					// Remove from scene
+					object->remove_from_scene();
+					object->delete_children();
+					will_delete = true;
+				}
+
+				ImGui::EndPopup();
 			}
 
 			// Handle mouse drag
@@ -862,6 +892,12 @@ namespace bacon
 			if (is_open)
 				ImGui::TreePop();
 			ImGui::PopID();
+
+			// Defer object delete until end of function
+			if (will_delete)
+			{
+				delete object;
+			}
 		}
 
 		void editor_new_project()

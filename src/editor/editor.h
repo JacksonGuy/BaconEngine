@@ -40,6 +40,7 @@ namespace bacon
 	class Editor
 	{
 	public:
+		static bool cursor_inside_scene_preview;
 		static GameObject* copy_object;
 
 		uint32_t screen_width;
