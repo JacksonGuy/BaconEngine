@@ -126,6 +126,8 @@ namespace bacon
 		void editor_save_project_as();
 		void editor_open_project(Editor* editor);
 
+		void editor_create_from_prefab();
+
 		void SetImGuiStyle();
 	} // namespace ui
 } // namespace bacon

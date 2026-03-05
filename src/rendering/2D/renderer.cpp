@@ -52,7 +52,8 @@ namespace bacon
 		RenderLayer* layer = &this->m_layers[current_layer];
 		for (auto it = layer->objects.begin(); it != layer->objects.end(); it++)
 		{
-			if (*it == object)
+			GameObject* obj = *it;
+			if (obj->uuid == object->uuid)
 			{
 				layer->objects.erase(it);
 				found = true;

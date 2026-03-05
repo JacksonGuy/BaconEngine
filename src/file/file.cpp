@@ -31,10 +31,15 @@ namespace bacon
 			project_data["settings"]["title"] = globals::project_title;
 
 			const std::vector<GameObject*>& objects = GameState::scene.get_objects();
-			for (size_t i = 0; i < objects.size(); i++)
+			for (GameObject* object : objects)
 			{
-				GameObject* object = objects[i];
-				object->save_to_json(project_data["objects"][i]);
+				// GameObject* object = objects[idx];
+				if (object->get_parent() == nullptr)
+				{
+					json obj_data;
+					object->save_to_json(obj_data);
+					project_data["objects"].push_back(obj_data);
+				}
 			}
 
 			outfile << std::setw(4) << project_data;
@@ -101,38 +106,38 @@ namespace bacon
 			}
 		}
 
-		void construct_object_tree(nlohmann::json& json)
-		{
-			for (auto& object : json)
-			{
-				if (object.is_null())
-				{
-					debug_log("Null object encountered.");
-					continue;
-				}
+		// void construct_object_tree(nlohmann::json& json)
+		// {
+		// 	for (auto& object : json)
+		// 	{
+		// 		if (object.is_null())
+		// 		{
+		// 			debug_log("Null object encountered.");
+		// 			continue;
+		// 		}
 
-				if (object["parent"] != "null")
-				{
-					UUID child_uuid = UUID(object["uuid"]);
-					UUID parent_uuid = UUID(object["parent"]);
-					GameObject* child = GameState::scene.find_object_by_uuid(child_uuid);
-					GameObject* parent = GameState::scene.find_object_by_uuid(parent_uuid);
+		// 		if (object["parent"] != "null")
+		// 		{
+		// 			UUID child_uuid = UUID(object["uuid"]);
+		// 			UUID parent_uuid = UUID(object["parent"]);
+		// 			GameObject* child = GameState::scene.find_object_by_uuid(child_uuid);
+		// 			GameObject* parent = GameState::scene.find_object_by_uuid(parent_uuid);
 
-					// assert(parent != nullptr);
-					// assert(child != nullptr);
-					// assert(parent_uuid != child_uuid);
+		// 			// assert(parent != nullptr);
+		// 			// assert(child != nullptr);
+		// 			// assert(parent_uuid != child_uuid);
 
-					if (parent == nullptr || child == nullptr)
-					{
-						debug_error("Failed to find object!");
-						continue;
-					}
+		// 			if (parent == nullptr || child == nullptr)
+		// 			{
+		// 				debug_error("Failed to find object!");
+		// 				continue;
+		// 			}
 
-					parent->add_child(child);
-					child->set_parent(parent);
-				}
-			}
-		}
+		// 			parent->add_child(child);
+		// 			child->set_parent(parent);
+		// 		}
+		// 	}
+		// }
 
 		nfdresult_t load_project(bool show_dialog)
 		{
@@ -201,7 +206,6 @@ namespace bacon
 				else if (key == "objects")
 				{
 					parse_project_objects(file_data["objects"]);
-					construct_object_tree(file_data["objects"]);
 				}
 			}
 
@@ -243,6 +247,68 @@ namespace bacon
 			globals::update_window_title();
 
 			ui::set_input_buffers();
+
+			return NFD_OKAY;
+		}
+
+		nfdresult_t save_object_prefab(const GameObject& object)
+		{
+			using json = nlohmann::json;
+			namespace fs = std::filesystem;
+
+			nfdu8char_t* path = NULL;
+			nfdu8filteritem_t filters[] = {{"Prefab Files", "json"}};
+			nfdsavedialogu8args_t args = {0};
+			args.filterCount = 1;
+			args.filterList = filters;
+			args.defaultName = "prefab.json";
+			nfdresult_t result = NFD_SaveDialogU8_With(&path, &args);
+
+			if (result == NFD_ERROR)
+			{
+				NFD_FreePathU8(path);
+				return result;
+			}
+			else if (result == NFD_CANCEL)
+			{
+				NFD_FreePathU8(path);
+				return result;
+			}
+
+			std::ofstream outfile(path);
+			json data;
+			object.save_to_json(data);
+			outfile << std::setw(4) << data;
+
+			debug_log("Saved object to prefab file.");
+
+			NFD_FreePathU8(path);
+			return NFD_OKAY;
+		}
+
+		nfdresult_t load_from_prefab(const std::string& path, GameObject& object)
+		{
+			using json = nlohmann::json;
+
+			std::ifstream infile(path);
+			if (!infile.is_open())
+			{
+				debug_error("Failed to open prefab file!");
+				return NFD_ERROR;
+			}
+
+			json data = json::parse(infile);
+			object.load_from_json(data);
+
+			// Create new UUIDs for things.
+			// load_from_json preserves UUIDs.
+			object.uuid = UUID();
+			for (GameObject* child : object.get_children())
+			{
+				child->uuid = UUID();
+			}
+
+			debug_log("Object loaded from prefab.");
 
 			return NFD_OKAY;
 		}

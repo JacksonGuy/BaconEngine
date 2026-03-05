@@ -25,16 +25,21 @@ namespace bacon
 		this->layer = 0;
 
 		this->parent = nullptr;
+		in_scene = false;
 	}
 
 	GameObject::GameObject(uint8_t* bytes)
 	{
 		this->deserialize(bytes);
+
+		in_scene = false;
 	}
 
 	GameObject::GameObject(const GameObject& obj)
 	{
 		this->copy(obj);
+
+		in_scene = false;
 	}
 
 	GameObject& GameObject::operator=(const GameObject& obj)
@@ -53,12 +58,6 @@ namespace bacon
 		this->size = obj.size;
 		this->rotation = obj.rotation;
 		this->is_visible = obj.is_visible;
-
-		// TODO this is a problem !!!
-		// Just setting layer doesn't do anything when
-		// we need a unique copy. But using set_layer
-		// breaks functionality with inspecting object...
-		// set_layer(obj.layer);
 		this->layer = obj.layer;
 	}
 
@@ -108,8 +107,8 @@ namespace bacon
 		{
 			GameObject* child = *it;
 
-			child->remove_from_scene();
-			child->delete_children();
+			// child->remove_from_scene();
+			// child->delete_children();
 			delete child;
 
 			it = children.erase(it);
@@ -365,6 +364,12 @@ namespace bacon
 		{
 			data["parent"] = "null";
 		}
+
+		for (size_t i = 0; i < children.size(); i++)
+		{
+			GameObject* child = children[i];
+			child->save_to_json(data["children"][i]);
+		}
 	}
 
 	void GameObject::load_from_json(nlohmann::json& data)
@@ -405,6 +410,44 @@ namespace bacon
 			else if (key == "layer")
 			{
 				this->layer = value;
+			}
+			else if (key == "children")
+			{
+				for (auto child : value)
+				{
+					if (child["type"] == "entity")
+					{
+						Entity* entity = new Entity();
+						entity->load_from_json(child);
+						entity->add_to_scene();
+
+						entity->set_parent(this);
+						this->add_child(entity);
+					}
+					else if (child["type"] == "text")
+					{
+						TextObject* text = new TextObject();
+						text->load_from_json(child);
+						text->add_to_scene();
+
+						text->set_parent(this);
+						this->add_child(text);
+					}
+					else if (child["type"] == "camera")
+					{
+						CameraObject* camera = new CameraObject();
+						camera->load_from_json(child);
+						camera->add_to_scene();
+
+						camera->set_parent(this);
+						this->add_child(camera);
+					}
+					else
+					{
+						debug_error("Unknown child type!");
+						continue;
+					}
+				}
 			}
 		}
 	}

@@ -86,6 +86,16 @@ namespace bacon
 		return *this;
 	}
 
+	Entity::~Entity()
+	{
+		if (in_scene)
+		{
+			this->remove_from_scene();
+		}
+
+		this->delete_children();
+	}
+
 	void Entity::copy(const GameObject& object)
 	{
 		GameObject::copy(object);
@@ -111,14 +121,20 @@ namespace bacon
 
 	void Entity::add_to_scene()
 	{
+		if (in_scene) return;
+
 		GameState::scene.add_entity(this);
 		GameState::renderer->add_to_layer(this, layer);
+		in_scene = true;
 	}
 
 	void Entity::remove_from_scene()
 	{
+		if (!in_scene) return;
+
 		GameState::scene.remove_entity(this);
 		GameState::renderer->remove_from_layer(this);
+		in_scene = false;
 	}
 
 	void Entity::set_texture(const std::string& path)

@@ -1,10 +1,11 @@
 #include "editor_ui.h"
 
-#include "core/2D/camera_object.h"
-#include "core/game_state.h"
+#include <fstream>
+
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
+#include "nfd.h"
 #include "raylib.h"
 #include "rlImGui.h"
 
@@ -15,6 +16,8 @@
 #include "editor/editor_event.h"
 #include "editor/ui/imgui_extras.h"
 #include "file/file.h"
+#include "core/2D/camera_object.h"
+#include "core/game_state.h"
 
 namespace bacon
 {
@@ -100,6 +103,13 @@ namespace bacon
 				ImGui::MenuItem("Entity", NULL, &show_entity_create);
 				ImGui::MenuItem("Text", NULL, &show_text_create);
 				ImGui::MenuItem("Camera", NULL, &show_camera_create);
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("From Prefab"))
+				{
+					editor_create_from_prefab();
+				}
 
 				ImGui::EndMenu();
 			}
@@ -455,7 +465,6 @@ namespace bacon
 		void draw_entity_create()
 		{
 			static char name_buffer[256];
-			static char texture_path_buffer[512];
 			static float position_buffer[] = {0.f, 0.f};
 			static float size_buffer[] = {32.f, 32.f};
 
@@ -478,6 +487,7 @@ namespace bacon
 				Entity* entity = new Entity();
 				entity->add_to_scene();
 
+				entity->name = name_buffer;
 				entity->position =
 					(Vector2){.x = position_buffer[0], .y = position_buffer[1]};
 				entity->set_size(size_buffer[0], size_buffer[1]);
@@ -825,9 +835,16 @@ namespace bacon
 					event::push_event(event);
 
 					// Remove from scene
-					object->remove_from_scene();
-					object->delete_children();
+					// object->remove_from_scene();
+					// object->delete_children();
 					will_delete = true;
+				}
+
+				ImGui::Separator();
+
+				if (ImGui::Selectable("Save to Prefab"))
+				{
+					file::save_object_prefab(*object);
 				}
 
 				ImGui::EndPopup();
@@ -960,6 +977,63 @@ namespace bacon
 			{
 				file::load_project(true);
 			}
+		}
+
+		void editor_create_from_prefab()
+		{
+			nfdu8char_t* path = NULL;
+			nfdu8filteritem_t filters[] = {{"Prefab Files", "json"}};
+			nfdopendialogu8args_t args = {0};
+			args.filterCount = 1;
+			args.filterList = filters;
+			nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+
+			if (result != NFD_OKAY)
+			{
+				NFD_FreePathU8(path);
+				return;
+			}
+
+			std::ifstream infile(path);
+			nlohmann::json json = nlohmann::json::parse(infile);
+
+			GameObject* object = nullptr;
+
+			if (json["type"] == "entity")
+			{
+				object = new Entity();
+			}
+			else if (json["type"] == "text")
+			{
+				object = new TextObject;
+			}
+			else if (json["type"] == "camera")
+			{
+				object = new CameraObject();
+			}
+			else
+			{
+				debug_error("Prefab has invalid object type!");
+			}
+
+			if (object != nullptr)
+			{
+				object->load_from_json(json);
+				object->add_to_scene();
+
+				// Create prefab object in the center of the screen
+				Vector2 camera_pos = globals::editor_ref->camera.target;
+				object->set_position({
+					camera_pos.x + (ui::window_size.x / 2),
+					camera_pos.y + (ui::window_size.y / 2)
+				});
+
+				event::ObjectCreateEvent* event = new event::ObjectCreateEvent(*object);
+				event::push_event(event);
+				globals::has_unsaved_changes = true;
+			}
+
+			NFD_FreePathU8(path);
 		}
 
 		void SetImGuiStyle()

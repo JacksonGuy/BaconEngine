@@ -68,6 +68,16 @@ namespace bacon
 		return *this;
 	}
 
+	TextObject::~TextObject()
+	{
+		if (in_scene)
+		{
+			remove_from_scene();
+		}
+
+		delete_children();
+	}
+
 	void TextObject::copy(const GameObject& object)
 	{
 		GameObject::copy(object);
@@ -96,14 +106,20 @@ namespace bacon
 
 	void TextObject::add_to_scene()
 	{
+		if (in_scene) return;
+
 		GameState::scene.add_text_object(this);
 		GameState::renderer->add_to_layer(this, layer);
+		in_scene = true;
 	}
 
 	void TextObject::remove_from_scene()
 	{
+		if (!in_scene) return;
+
 		GameState::scene.remove_text_object(this);
 		GameState::renderer->remove_from_layer(this);
+		in_scene = false;
 	}
 
 	void TextObject::set_text(const std::string& text)

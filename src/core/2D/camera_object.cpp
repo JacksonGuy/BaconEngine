@@ -65,6 +65,16 @@ namespace bacon
 		return *this;
 	}
 
+	CameraObject::~CameraObject()
+	{
+		if (in_scene)
+		{
+			remove_from_scene();
+		}
+
+		delete_children();
+	}
+
 	void CameraObject::copy(const GameObject& object)
 	{
 		GameObject::copy(object);
@@ -91,14 +101,20 @@ namespace bacon
 
 	void CameraObject::add_to_scene()
 	{
+		if (in_scene) return;
+
 		GameState::scene.add_camera(this);
 		GameState::renderer->add_to_layer(this, layer);
+		in_scene = true;
 	}
 
 	void CameraObject::remove_from_scene()
 	{
+		if (!in_scene) return;
+
 		GameState::scene.remove_camera(this);
 		GameState::renderer->remove_from_layer(this);
+		in_scene = false;
 	}
 
 	void CameraObject::move_camera(Vector2 delta)

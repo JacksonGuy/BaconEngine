@@ -84,7 +84,7 @@ namespace bacon
 	{
 		if (Editor::copy_object != nullptr)
 		{
-			Editor::copy_object->delete_children();
+			// Editor::copy_object->delete_children();
 			delete Editor::copy_object;
 			Editor::copy_object = nullptr;
 		}
@@ -219,11 +219,15 @@ namespace bacon
 
 	void Editor::editor_input()
 	{
+		static GameObject* click_drag_object = nullptr;
+		static Vector2 last_mouse_position = {0.f, 0.f};
+
 		Vector2 mouse_position = (Vector2){
 			ui::window_mouse_position.x,
 			ui::window_mouse_position.y,
 		};
 		Vector2 mouse_delta = GetMouseDelta();
+		Vector2 abs_mouse_delta = Vector2Subtract(mouse_position, last_mouse_position);
 		float mouse_wheel_move = GetMouseWheelMove();
 
 		// Confirm changes on program exit
@@ -273,29 +277,18 @@ namespace bacon
 			{
 				if (ui::view_properties_object->contains_point(mouse_position))
 				{
-					// I don't think this check is necessary. If view_properties_object
-					// is not nullptr, then we must have right clicked an object,
-					// which would have called this same code inside of
-					// draw_properties_editor.
-					if (ui::inspect_object_copy == nullptr ||
-						ui::inspect_object_copy->uuid != ui::view_properties_object->uuid)
-					{
-						delete ui::inspect_object_copy;
-						ui::inspect_object_copy = ui::view_properties_object->clone();
-					}
-
-					Vector2 delta = GetMouseDelta();
-					Vector2 current = ui::view_properties_object->position;
-					Vector2 new_pos = Vector2Add(current, delta);
-
-					if (delta.x != 0.f || delta.y != 0.f)
-					{
-						ui::view_properties_object->set_position(new_pos);
-					}
+					click_drag_object = ui::view_properties_object;
 				}
-				else
+
+				if (click_drag_object != nullptr)
 				{
-					ui::view_properties_object = nullptr;
+					if (mouse_delta.x != 0.f || mouse_delta.y != 0.f)
+					{
+						Vector2 current = click_drag_object->position;
+						Vector2 new_pos = Vector2Add(current, abs_mouse_delta);
+
+						click_drag_object->set_position(new_pos);
+					}
 				}
 			}
 		}
@@ -303,6 +296,8 @@ namespace bacon
 		// Drag release
 		if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
 		{
+			click_drag_object = nullptr;
+
 			if (ui::view_properties_object != nullptr)
 			{
 				if (ui::inspect_object_copy->uuid == ui::view_properties_object->uuid)
@@ -322,6 +317,26 @@ namespace bacon
 						globals::has_unsaved_changes = true;
 					}
 				}
+			}
+		}
+
+		// Left click deselect
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			bool found = false;
+			for (GameObject* object : GameState::scene.get_objects())
+			{
+				if (object->contains_point(mouse_position))
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ui::view_properties_object = nullptr;
+				click_drag_object = nullptr;
 			}
 		}
 
@@ -358,10 +373,10 @@ namespace bacon
 			event::push_event(event);
 
 			// Delete and remove from scene
-			ui::view_properties_object->remove_from_scene();
-			ui::view_properties_object->delete_children();
-			ui::view_properties_object = nullptr;
+			// ui::view_properties_object->remove_from_scene();
+			// ui::view_properties_object->delete_children();
 			delete ui::view_properties_object;
+			ui::view_properties_object = nullptr;
 
 			globals::has_unsaved_changes = true;
 		}
@@ -457,6 +472,8 @@ namespace bacon
 				globals::has_unsaved_changes = true;
 			}
 		}
+
+		last_mouse_position = mouse_position;
 	}
 
 	void Editor::start_game()

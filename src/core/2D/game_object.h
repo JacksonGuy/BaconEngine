@@ -57,6 +57,7 @@ namespace bacon
 
 		size_t get_layer() const;
 		void set_layer(size_t layer);
+		bool is_in_scene() const { return in_scene; }
 
 		virtual void draw_outline() const;
 		virtual bool contains_point(Vector2 point);
@@ -77,6 +78,7 @@ namespace bacon
 		GameObject* parent;
 		std::vector<GameObject*> children;
 		size_t layer;
+		bool in_scene;
 
 		void base_update_ui_buffer();
 		void base_update_from_ui_buffer();

@@ -24,7 +24,7 @@ namespace bacon
 		CameraObject& operator=(const CameraObject& camera);
 		CameraObject(CameraObject&& camera) = delete;
 		CameraObject& operator=(CameraObject&& camera) = delete;
-		~CameraObject() = default;
+		~CameraObject();
 
 		void copy(const GameObject& object) override;
 		CameraObject* clone() const override;

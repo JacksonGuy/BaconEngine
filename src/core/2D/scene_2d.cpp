@@ -57,6 +57,8 @@ namespace bacon
 
 	void Scene2D::remove_entity(Entity* entity)
 	{
+		if (!entity->is_in_scene()) return;
+
 		bool found = false;
 
 		// Remove from objects list
@@ -72,7 +74,7 @@ namespace bacon
 		}
 		if (!found)
 		{
-			debug_error("Failed to remove entity from objects list!");
+			return;
 		}
 
 		found = false;
@@ -90,7 +92,7 @@ namespace bacon
 		}
 		if (!found)
 		{
-			debug_error("Failed to remove entity from entity list!");
+			return;
 		}
 
 		// Destroy physics body
@@ -111,6 +113,8 @@ namespace bacon
 
 	void Scene2D::remove_text_object(TextObject* text)
 	{
+		if (!text->is_in_scene()) return;
+
 		bool found = false;
 
 		// Remove from objects list
@@ -126,7 +130,7 @@ namespace bacon
 		}
 		if (!found)
 		{
-			debug_error("Failed to remove text object from objects list!");
+			return;
 		}
 
 		found = false;
@@ -144,7 +148,7 @@ namespace bacon
 		}
 		if (!found)
 		{
-			debug_error("Failed to remove text object from text objects list!");
+			return;
 		}
 	}
 
@@ -156,6 +160,8 @@ namespace bacon
 
 	void Scene2D::remove_camera(CameraObject* camera)
 	{
+		if (!camera->is_in_scene()) return;
+
 		if (camera->is_active)
 		{
 			m_camera = nullptr;
@@ -176,12 +182,12 @@ namespace bacon
 		}
 		if (!found)
 		{
-			debug_error("Failed to remove camera from objects list!");
+			return;
 		}
 
 		found = false;
 
-		// Remove from text objects list
+		// Remove from camera objects list
 		for (auto it = m_camera_objects.begin(); it != m_camera_objects.end();
 			 it++)
 		{
@@ -195,7 +201,7 @@ namespace bacon
 		}
 		if (!found)
 		{
-			debug_error("Failed to remove camera from cameras list!");
+			return;
 		}
 	}
 
@@ -341,28 +347,25 @@ namespace bacon
 		m_camera = nullptr;
 		this->create_physics_world();
 		m_lua_state.reset();
-
-		for (GameObject* object : m_objects)
-		{
-			delete object;
-		}
-
-		m_objects.clear();
-		m_entities.clear();
-		m_camera_objects.clear();
-		m_text_objects.clear();
 	}
 
 	void Scene2D::cleanup()
 	{
+		std::vector<GameObject*> roots;
 		for (GameObject* object : m_objects)
 		{
-			delete object;
+			if (object->get_parent() == nullptr)
+				roots.push_back(object);
 		}
 
 		m_objects.clear();
 		m_entities.clear();
 		m_camera_objects.clear();
 		m_text_objects.clear();
+
+		for (GameObject* root : roots)
+		{
+			delete root;
+		}
 	}
 } // namespace bacon

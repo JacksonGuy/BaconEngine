@@ -51,7 +51,7 @@ namespace bacon
 		Entity& operator=(const Entity& entity);
 		Entity(Entity&& entity) = delete;
 		Entity& operator=(Entity&& entity) = delete;
-		~Entity() = default;
+		~Entity();
 
 		void copy(const GameObject& object) override;
 		Entity* clone() const override;

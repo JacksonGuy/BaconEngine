@@ -22,7 +22,7 @@ namespace bacon
 		TextObject& operator=(const TextObject& text_object);
 		TextObject(TextObject&& text_object) = delete;
 		TextObject& operator=(TextObject&& text_object) = delete;
-		~TextObject() = default;
+		~TextObject();
 
 		void copy(const GameObject& object) override;
 		TextObject* clone() const override;
