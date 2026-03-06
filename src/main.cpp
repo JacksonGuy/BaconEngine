@@ -7,6 +7,7 @@
 #include "lib/pool_allocator.h"
 #include "nfd.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "rlImGui.h"
 
 #include "core/2D/entity.h"
@@ -21,6 +22,7 @@
 int main(int argc, char** argv)
 {
 	using namespace bacon;
+
 	debug_log("Starting BaconEngine...");
 
 	globals::engine_version = "v0.1";
@@ -79,7 +81,11 @@ int main(int argc, char** argv)
 	debug_log("Performing cleanup...");
 	event::event_cleanup();
 	GameState::cleanup();
-	delete ui::inspect_object_copy;
+	if (ui::inspect_object_copy)
+	{
+		ui::inspect_object_copy->delete_children();
+		delete ui::inspect_object_copy;
+	}
 
 	rlImGuiShutdown();
 	CloseWindow();

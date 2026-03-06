@@ -82,9 +82,9 @@ namespace bacon
 
 	Editor::~Editor()
 	{
-		if (Editor::copy_object != nullptr)
+		if (Editor::copy_object)
 		{
-			// Editor::copy_object->delete_children();
+			Editor::copy_object->delete_children();
 			delete Editor::copy_object;
 			Editor::copy_object = nullptr;
 		}
@@ -373,8 +373,7 @@ namespace bacon
 			event::push_event(event);
 
 			// Delete and remove from scene
-			// ui::view_properties_object->remove_from_scene();
-			// ui::view_properties_object->delete_children();
+			ui::view_properties_object->destroy();
 			delete ui::view_properties_object;
 			ui::view_properties_object = nullptr;
 

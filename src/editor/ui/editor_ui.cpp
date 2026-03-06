@@ -835,8 +835,7 @@ namespace bacon
 					event::push_event(event);
 
 					// Remove from scene
-					// object->remove_from_scene();
-					// object->delete_children();
+					object->destroy();
 					will_delete = true;
 				}
 

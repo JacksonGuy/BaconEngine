@@ -19,13 +19,14 @@ namespace bacon
 		float zoom;
 
 		CameraObject();
-		CameraObject(uint8_t* bytes);
+		CameraObject(ByteStream& bytes);
 		CameraObject(const CameraObject& camera);
 		CameraObject& operator=(const CameraObject& camera);
 		CameraObject(CameraObject&& camera) = delete;
 		CameraObject& operator=(CameraObject&& camera) = delete;
-		~CameraObject();
+		~CameraObject() = default;
 
+		void destroy() override;
 		void copy(const GameObject& object) override;
 		CameraObject* clone() const override;
 		CameraObject* clone_unique() const override;
@@ -46,7 +47,9 @@ namespace bacon
 		void save_to_json(nlohmann::json& data) const override;
 		void load_from_json(nlohmann::json& data) override;
 		size_t calculate_size() const override;
-		uint8_t* serialize() const override;
-		void deserialize(uint8_t* bytes) override;
+		ByteStream serialize() const override;
+
+	protected:
+		void deserialize(ByteStream& bytes) override;
 	};
 } // namespace bacon

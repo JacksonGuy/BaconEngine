@@ -1,9 +1,10 @@
 #include "camera_object.h"
 
-#include "core/2D/game_object.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
+#include "raymath.h"
 
+#include "core/2D/game_object.h"
 #include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
@@ -11,7 +12,6 @@
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
 #include "lib/pool_allocator.h"
-#include "raymath.h"
 
 namespace bacon
 {
@@ -39,6 +39,7 @@ namespace bacon
 
 	CameraObject::CameraObject() : GameObject()
 	{
+		this->object_type = ObjectType::CAMERA;
 		this->name = "Camera";
 		this->camera = {};
 		this->is_active = false;
@@ -48,13 +49,15 @@ namespace bacon
 		this->size = {0, 0};
 	}
 
-	CameraObject::CameraObject(uint8_t* bytes)
+	CameraObject::CameraObject(ByteStream& bytes) : GameObject()
 	{
+		this->object_type = ObjectType::CAMERA;
 		this->deserialize(bytes);
 	}
 
 	CameraObject::CameraObject(const CameraObject& camera) : GameObject()
 	{
+		this->object_type = ObjectType::CAMERA;
 		this->copy(camera);
 	}
 
@@ -65,7 +68,7 @@ namespace bacon
 		return *this;
 	}
 
-	CameraObject::~CameraObject()
+	void CameraObject::destroy()
 	{
 		if (in_scene)
 		{
@@ -106,6 +109,8 @@ namespace bacon
 		GameState::scene.add_camera(this);
 		GameState::renderer->add_to_layer(this, layer);
 		in_scene = true;
+
+		add_children_to_scene();
 	}
 
 	void CameraObject::remove_from_scene()
@@ -115,6 +120,8 @@ namespace bacon
 		GameState::scene.remove_camera(this);
 		GameState::renderer->remove_from_layer(this);
 		in_scene = false;
+
+		remove_children_from_scene();
 	}
 
 	void CameraObject::move_camera(Vector2 delta)
@@ -312,14 +319,21 @@ namespace bacon
 		return 0;
 	}
 
-	uint8_t* CameraObject::serialize() const
+	ByteStream CameraObject::serialize() const
 	{
-		debug_error("This function has not been implemented yet.");
-		return nullptr;
+		ByteStream bytes = GameObject::serialize();
+
+		bytes << this->is_active;
+		bytes << this->zoom;
+
+		return bytes;
 	}
 
-	void CameraObject::deserialize(uint8_t* bytes)
+	void CameraObject::deserialize(ByteStream& bytes)
 	{
-		debug_error("This function has not been implemented yet.");
+		GameObject::deserialize(bytes);
+
+		bytes >> this->is_active;
+		bytes >> this->zoom;
 	}
 } // namespace bacon

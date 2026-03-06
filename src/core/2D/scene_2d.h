@@ -19,7 +19,7 @@ namespace bacon
 		Scene2D& operator=(const Scene2D& scene) = delete;
 		Scene2D(Scene2D&& scene) = delete;
 		Scene2D& operator=(Scene2D&& scene) = delete;
-		~Scene2D();
+		~Scene2D() = default;
 
 		const std::vector<GameObject*>& get_objects() const;
 		const std::vector<Entity*>& get_entities() const;

@@ -10,14 +10,26 @@
 #include "raylib.h"
 
 #include "core/uuid.h"
+#include "lib/byte_stream.h"
 
 namespace bacon
 {
+	enum class ObjectType : uint8_t
+	{
+		OBJECT = 0,
+		ENTITY,
+		TEXT,
+		CAMERA,
+	};
+
 	class GameObject
 	{
 	public:
 		friend class Renderer;
 
+		static GameObject* create_object(ByteStream& bytes);
+
+		ObjectType object_type;
 		UUID uuid;
 		std::string name;
 		std::string tag;
@@ -27,19 +39,21 @@ namespace bacon
 		bool is_visible;
 
 		GameObject();
-		GameObject(uint8_t* bytes);
 		GameObject(const GameObject& obj);
 		GameObject& operator=(const GameObject& obj);
 		GameObject(GameObject&& obj) = delete;
 		GameObject& operator=(GameObject&& obj) = delete;
 		virtual ~GameObject() = default;
 
+		virtual void destroy() = 0;
 		virtual void copy(const GameObject& obj);
 		virtual GameObject* clone() const = 0;
 		virtual GameObject* clone_unique() const = 0;
 
 		virtual void add_to_scene() = 0;
 		virtual void remove_from_scene() = 0;
+		void add_children_to_scene();
+		void remove_children_from_scene();
 
 		GameObject* get_parent() const;
 		void set_parent(GameObject* object);
@@ -56,7 +70,6 @@ namespace bacon
 		void set_visibility(bool visibility);
 
 		size_t get_layer() const;
-		void set_layer(size_t layer);
 		bool is_in_scene() const { return in_scene; }
 
 		virtual void draw_outline() const;
@@ -71,8 +84,7 @@ namespace bacon
 		virtual void save_to_json(nlohmann::json& data) const;
 		virtual void load_from_json(nlohmann::json& data);
 		virtual size_t calculate_size() const;
-		virtual uint8_t* serialize() const;
-		virtual void deserialize(uint8_t* bytes);
+		virtual ByteStream serialize() const;
 
 	protected:
 		GameObject* parent;
@@ -84,5 +96,7 @@ namespace bacon
 		void base_update_from_ui_buffer();
 
 		bool draw_base_properties();
+
+		virtual void deserialize(ByteStream& bytes);
 	};
 } // namespace bacon

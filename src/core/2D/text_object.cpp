@@ -43,6 +43,7 @@ namespace bacon
 
 	TextObject::TextObject() : GameObject()
 	{
+		this->object_type = ObjectType::TEXT;
 		this->name = "Text";
 		this->m_text = "";
 		this->m_font = {0};
@@ -51,13 +52,15 @@ namespace bacon
 		this->m_color = BLACK;
 	}
 
-	TextObject::TextObject(uint8_t* bytes)
+	TextObject::TextObject(ByteStream& bytes) : GameObject()
 	{
+		this->object_type = ObjectType::TEXT;
 		this->deserialize(bytes);
 	}
 
 	TextObject::TextObject(const TextObject& text_object) : GameObject()
 	{
+		this->object_type = ObjectType::TEXT;
 		this->copy(text_object);
 	}
 
@@ -68,7 +71,7 @@ namespace bacon
 		return *this;
 	}
 
-	TextObject::~TextObject()
+	void TextObject::destroy()
 	{
 		if (in_scene)
 		{
@@ -111,6 +114,8 @@ namespace bacon
 		GameState::scene.add_text_object(this);
 		GameState::renderer->add_to_layer(this, layer);
 		in_scene = true;
+
+		add_children_to_scene();
 	}
 
 	void TextObject::remove_from_scene()
@@ -120,6 +125,8 @@ namespace bacon
 		GameState::scene.remove_text_object(this);
 		GameState::renderer->remove_from_layer(this);
 		in_scene = false;
+
+		remove_children_from_scene();
 	}
 
 	void TextObject::set_text(const std::string& text)
@@ -508,14 +515,27 @@ namespace bacon
 		return 0;
 	}
 
-	uint8_t* TextObject::serialize() const
+	ByteStream TextObject::serialize() const
 	{
-		debug_error("This function has not been implemented yet.");
-		return nullptr;
+		ByteStream bytes = GameObject::serialize();
+
+		bytes << m_text;
+		bytes << m_font_path;
+		bytes << m_font_size;
+		bytes << m_char_spacing;
+		bytes << m_color.r << m_color.g << m_color.b << m_color.a;
+
+		return bytes;
 	}
 
-	void TextObject::deserialize(uint8_t* bytes)
+	void TextObject::deserialize(ByteStream& bytes)
 	{
-		debug_error("This function has not been implemented yet.");
+		GameObject::deserialize(bytes);
+
+		bytes >> m_text;
+		bytes >> m_font_path;
+		bytes >> m_font_size;
+		bytes >> m_char_spacing;
+		bytes >> m_color.r >> m_color.g >> m_color.b >> m_color.a;
 	}
 } // namespace bacon

@@ -44,6 +44,7 @@ namespace bacon
 
 	Entity::Entity() : GameObject()
 	{
+		this->object_type = ObjectType::ENTITY;
 		this->name = "Entity";
 		m_texture = {0};
 		m_texture_path = "";
@@ -69,28 +70,38 @@ namespace bacon
 		};
 	}
 
-	Entity::Entity(uint8_t* bytes)
+	Entity::Entity(ByteStream& bytes) : GameObject()
 	{
+		this->object_type = ObjectType::ENTITY;
 		this->deserialize(bytes);
 	}
 
 	Entity::Entity(const Entity& entity) : GameObject()
 	{
+		this->object_type = ObjectType::ENTITY;
 		this->copy(entity);
 	}
 
 	Entity& Entity::operator=(const Entity& entity)
 	{
+		this->object_type = ObjectType::ENTITY;
 		this->copy(entity);
 
 		return *this;
 	}
 
-	Entity::~Entity()
+	void Entity::destroy()
 	{
+		// Remove from scene (removes from render layer too)
 		if (in_scene)
 		{
 			this->remove_from_scene();
+		}
+
+		// Destroy physics body if it exists
+		if (b2Body_IsValid(m_physics_body))
+		{
+			b2DestroyBody(m_physics_body);
 		}
 
 		this->delete_children();
@@ -126,6 +137,8 @@ namespace bacon
 		GameState::scene.add_entity(this);
 		GameState::renderer->add_to_layer(this, layer);
 		in_scene = true;
+
+		add_children_to_scene();
 	}
 
 	void Entity::remove_from_scene()
@@ -135,6 +148,8 @@ namespace bacon
 		GameState::scene.remove_entity(this);
 		GameState::renderer->remove_from_layer(this);
 		in_scene = false;
+
+		remove_children_from_scene();
 	}
 
 	void Entity::set_texture(const std::string& path)
@@ -577,14 +592,55 @@ namespace bacon
 		return 0;
 	}
 
-	uint8_t* Entity::serialize() const
+	ByteStream Entity::serialize() const
 	{
-		debug_error("This function has not been implemented yet.");
-		return nullptr;
+		ByteStream bytes = GameObject::serialize();
+
+		bytes << m_texture_path;
+		bytes << static_cast<uint8_t>(m_physics_properties.type);
+		bytes << m_physics_properties.body_center[0];
+		bytes << m_physics_properties.body_center[1];
+		bytes << m_physics_properties.mass;
+		bytes << m_physics_properties.density;
+		bytes << m_physics_properties.friction;
+		bytes << m_physics_properties.restitution;
+		bytes << m_physics_properties.rotational_inertia;
+		bytes << m_physics_properties.linear_damping;
+		bytes << m_physics_properties.angular_damping;
+		bytes << m_physics_properties.gravity_scale;
+		bytes << m_physics_properties.is_sleeping;
+		bytes << m_physics_properties.disabled;
+		bytes << m_physics_properties.fixed_rotation;
+		bytes << m_physics_properties.is_bullet;
+
+		return bytes;
 	}
 
-	void Entity::deserialize(uint8_t* bytes)
+	void Entity::deserialize(ByteStream& bytes)
 	{
-		debug_error("This function has not been implemented yet.");
+		GameObject::deserialize(bytes);
+
+		std::string texture_path;
+		bytes >> texture_path;
+		this->set_texture(texture_path);
+
+		uint8_t body_type;
+		bytes >> body_type;
+		m_physics_properties.type = static_cast<BodyType>(body_type);
+
+		bytes >> m_physics_properties.body_center[0];
+		bytes >> m_physics_properties.body_center[1];
+		bytes >> m_physics_properties.mass;
+		bytes >> m_physics_properties.density;
+		bytes >> m_physics_properties.friction;
+		bytes >> m_physics_properties.restitution;
+		bytes >> m_physics_properties.rotational_inertia;
+		bytes >> m_physics_properties.linear_damping;
+		bytes >> m_physics_properties.angular_damping;
+		bytes >> m_physics_properties.gravity_scale;
+		bytes >> m_physics_properties.is_sleeping;
+		bytes >> m_physics_properties.disabled;
+		bytes >> m_physics_properties.fixed_rotation;
+		bytes >> m_physics_properties.is_bullet;
 	}
 } // namespace bacon

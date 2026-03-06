@@ -1,5 +1,6 @@
 #pragma once
 
+#include "lib/byte_stream.h"
 #include "raylib.h"
 
 #include "core/2D/game_object.h"
@@ -17,13 +18,14 @@ namespace bacon
 		static void operator delete(void* ptr, size_t size);
 
 		TextObject();
-		TextObject(uint8_t* bytes);
+		TextObject(ByteStream& bytes);
 		TextObject(const TextObject& text_object);
 		TextObject& operator=(const TextObject& text_object);
 		TextObject(TextObject&& text_object) = delete;
 		TextObject& operator=(TextObject&& text_object) = delete;
-		~TextObject();
+		~TextObject() = default;
 
+		void destroy() override;
 		void copy(const GameObject& object) override;
 		TextObject* clone() const override;
 		TextObject* clone_unique() const override;
@@ -46,8 +48,10 @@ namespace bacon
 		void save_to_json(nlohmann::json& data) const override;
 		void load_from_json(nlohmann::json& data) override;
 		size_t calculate_size() const override;
-		uint8_t* serialize() const override;
-		void deserialize(uint8_t* bytes) override;
+		ByteStream serialize() const override;
+
+	protected:
+		void deserialize(ByteStream& bytes) override;
 
 	private:
 		std::string m_text;

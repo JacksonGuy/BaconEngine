@@ -24,11 +24,6 @@ namespace bacon
 		m_lua_state = std::make_unique<sol::state>();
 	}
 
-	Scene2D::~Scene2D()
-	{
-		this->cleanup();
-	}
-
 	const std::vector<GameObject*>& Scene2D::get_objects() const
 	{
 		return m_objects;
@@ -344,28 +339,52 @@ namespace bacon
 	{
 		GameState::renderer->reset();
 
+		// Destroy bodies
+		for (Entity* entity : m_entities)
+		{
+			if (b2Body_IsValid(entity->get_body_id()))
+			{
+				b2DestroyBody(entity->get_body_id());
+			}
+		}
+
+		// Delete objects
+		for (GameObject* object : m_objects)
+		{
+			delete object;
+		}
+		m_objects.clear();
+		m_entities.clear();
+		m_camera_objects.clear();
+		m_text_objects.clear();
+
 		m_camera = nullptr;
+
 		this->create_physics_world();
 		m_lua_state.reset();
 	}
 
 	void Scene2D::cleanup()
 	{
-		std::vector<GameObject*> roots;
+		// Destroy bodies
+		for (Entity* entity : m_entities)
+		{
+			if (b2Body_IsValid(entity->get_body_id()))
+			{
+				b2DestroyBody(entity->get_body_id());
+			}
+		}
+		b2DestroyWorld(m_world);
+
+		// Delete objects
 		for (GameObject* object : m_objects)
 		{
-			if (object->get_parent() == nullptr)
-				roots.push_back(object);
+			delete object;
 		}
 
 		m_objects.clear();
 		m_entities.clear();
 		m_camera_objects.clear();
 		m_text_objects.clear();
-
-		for (GameObject* root : roots)
-		{
-			delete root;
-		}
 	}
 } // namespace bacon

@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
+#include "lib/byte_stream.h"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -16,6 +17,7 @@ namespace bacon
 {
 	GameObject::GameObject()
 	{
+		this->object_type = ObjectType::OBJECT;
 		this->name = "Object";
 		this->tag = "Default";
 		this->position = {0.f, 0.f};
@@ -25,18 +27,13 @@ namespace bacon
 		this->layer = 0;
 
 		this->parent = nullptr;
-		in_scene = false;
-	}
-
-	GameObject::GameObject(uint8_t* bytes)
-	{
-		this->deserialize(bytes);
 
 		in_scene = false;
 	}
 
 	GameObject::GameObject(const GameObject& obj)
 	{
+		this->object_type = ObjectType::OBJECT;
 		this->copy(obj);
 
 		in_scene = false;
@@ -44,6 +41,7 @@ namespace bacon
 
 	GameObject& GameObject::operator=(const GameObject& obj)
 	{
+		this->object_type = ObjectType::OBJECT;
 		this->copy(obj);
 
 		return *this;
@@ -60,6 +58,23 @@ namespace bacon
 		this->is_visible = obj.is_visible;
 		this->layer = obj.layer;
 	}
+
+	void GameObject::add_children_to_scene()
+	{
+		for (GameObject* child : children)
+		{
+			child->add_to_scene();
+		}
+	}
+
+	void GameObject::remove_children_from_scene()
+	{
+		for (GameObject* child : children)
+		{
+			child->remove_from_scene();
+		}
+	}
+
 
 	GameObject* GameObject::get_parent() const
 	{
@@ -107,8 +122,7 @@ namespace bacon
 		{
 			GameObject* child = *it;
 
-			// child->remove_from_scene();
-			// child->delete_children();
+			child->destroy();
 			delete child;
 
 			it = children.erase(it);
@@ -201,12 +215,6 @@ namespace bacon
 		return this->layer;
 	}
 
-	void GameObject::set_layer(size_t layer)
-	{
-		GameState::renderer->remove_from_layer(this);
-		GameState::renderer->add_to_layer(this, layer);
-	}
-
 	void GameObject::draw_outline() const
 	{
 		Vector2 draw_pos = this->position;
@@ -267,9 +275,15 @@ namespace bacon
 		this->set_rotation(ui::obj_properties.rotation);
 		this->set_visibility(ui::obj_properties.is_visible);
 
-		this->set_layer(ui::obj_properties.layer);
+		GameState::renderer->remove_from_layer(this);
+		GameState::renderer->add_to_layer(this, this->layer);
 	}
 
+	// We have this separate from draw_properties_editor()
+	// so that we can return bool without forcing that on
+	// derived classes. It's only needed here for determining
+	// if the object's base properties have been modified.
+	// Probably not the most efficient solution, but it works.
 	bool GameObject::draw_base_properties()
 	{
 		bool change_made = false;
@@ -452,20 +466,87 @@ namespace bacon
 		}
 	}
 
+	GameObject* GameObject::create_object(ByteStream& bytes)
+	{
+		uint8_t type;
+		bytes >> type;
+
+		switch (ObjectType(type))
+		{
+			case ObjectType::ENTITY:
+				return new Entity(bytes);
+			case ObjectType::TEXT:
+				return new TextObject(bytes);
+			case ObjectType::CAMERA:
+				return new CameraObject(bytes);
+			default:
+				debug_error("Unknown object type!");
+				return nullptr;
+		}
+	}
+
 	size_t GameObject::calculate_size() const
 	{
 		debug_error("default calculate_size has not been implemented yet.");
 		return 0;
 	}
 
-	uint8_t* GameObject::serialize() const
+	ByteStream GameObject::serialize() const
 	{
-		debug_error("default serialize has not been implemented yet.");
-		return nullptr;
+		ByteStream stream;
+
+		stream << static_cast<uint8_t>(object_type);
+		stream << uuid.get_uuid();
+		stream << name;
+		stream << tag;
+		stream << position.x << position.y;
+		stream << size.x << size.y;
+		stream << rotation;
+		stream << is_visible;
+		stream << layer;
+
+		stream << children.size();
+		for (GameObject* child : children)
+		{
+			stream << child->serialize().raw();
+		}
+
+		return stream;
 	}
 
-	void GameObject::deserialize(uint8_t* bytes)
+	void GameObject::deserialize(ByteStream& bytes)
 	{
-		debug_error("default deserialize has not been implemented yet.");
+		std::string uuid_str;
+		bytes >> uuid_str;
+		this->uuid = UUID(uuid_str);
+
+		bytes >> name;
+		bytes >> tag;
+		bytes >> position.x >> position.y;
+		bytes >> size.x >> size.y;
+		bytes >> rotation;
+		bytes >> is_visible;
+		bytes >> layer;
+
+		size_t child_count = 0;
+		bytes >> child_count;
+		children.reserve(child_count);
+		for (size_t i = 0; i < child_count; ++i)
+		{
+			// When we write byte arrays to ByteStream,
+			// we include the size of the array first.
+			// That isn't needed here, so just ignore this.
+			size_t child_size;
+			bytes >> child_size;
+
+			GameObject* child = GameObject::create_object(bytes);
+			if (!child)
+			{
+				debug_error("Failed to deserialize child object!");
+				return;
+			}
+			child->set_parent(this);
+			this->add_child(child);
+		}
 	}
 } // namespace bacon
