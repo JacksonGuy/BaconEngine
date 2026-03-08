@@ -2,10 +2,10 @@
 
 #include "sol/sol.hpp"
 
-#include "camera_object.h"
-#include "entity.h"
-#include "game_object.h"
-#include "text_object.h"
+#include "core/2D/object_2d.h"
+#include "core/2D/camera_object.h"
+#include "core/2D/entity.h"
+#include "core/2D/text_object.h"
 
 namespace bacon
 {
@@ -21,7 +21,7 @@ namespace bacon
 		Scene2D& operator=(Scene2D&& scene) = delete;
 		~Scene2D() = default;
 
-		const std::vector<GameObject*>& get_objects() const;
+		const std::vector<Object2D*>& get_objects() const;
 		const std::vector<Entity*>& get_entities() const;
 		const std::vector<TextObject*>& get_text_objects() const;
 		const std::vector<CameraObject*>& get_cameras() const;
@@ -33,8 +33,8 @@ namespace bacon
 		void add_camera(CameraObject* camera);
 		void remove_camera(CameraObject* camera);
 
-		GameObject* find_object_by_uuid(std::string uuid) const;
-		GameObject* find_object_by_uuid(UUID uuid) const;
+		Object2D* find_object_by_uuid(std::string uuid) const;
+		Object2D* find_object_by_uuid(UUID uuid) const;
 
 		void set_active_camera(CameraObject* camera);
 		CameraObject* get_active_camera() const;
@@ -54,7 +54,7 @@ namespace bacon
 		void cleanup();
 
 	private:
-		std::vector<GameObject*> m_objects;
+		std::vector<Object2D*> m_objects;
 		std::vector<Entity*> m_entities;
 		std::vector<TextObject*> m_text_objects;
 		std::vector<CameraObject*> m_camera_objects;

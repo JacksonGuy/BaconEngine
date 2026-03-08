@@ -15,11 +15,11 @@ namespace bacon
 	 * We use shared_ptr instead of copying to prevent undefined behavior.
 	 */
 
-	class AssetManager
+	class AssetManager2D
 	{
 	public:
-		AssetManager() = default;
-		~AssetManager();
+		AssetManager2D() = default;
+		~AssetManager2D();
 
 		std::shared_ptr<Texture2D> load_texture(const std::string& path);
 		std::shared_ptr<Font> load_font(const std::string& path);

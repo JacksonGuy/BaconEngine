@@ -25,7 +25,7 @@ set(SOURCE_FILES
     extern/imgui/misc/cpp/imgui_stdlib.cpp
 
     src/core/uuid.cpp
-    src/core/game_state.cpp
+    src/core/2D/game_state_2d.cpp
     src/core/2D/scene_2d.cpp
     src/core/2D/game_object.cpp
     src/core/2D/entity.cpp
@@ -37,10 +37,10 @@ set(SOURCE_FILES
     src/editor/ui/imgui_extras.cpp
     src/editor/ui/editor_ui.cpp
 
-    src/rendering/2D/renderer.cpp
+    src/rendering/2D/renderer_2d.cpp
 
     src/file/file.cpp
-    src/file/asset_manager.cpp
+    src/file/asset_manager_2d.cpp
 
     src/main.cpp
 )

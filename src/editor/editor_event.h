@@ -3,10 +3,7 @@
 #include <cstdint>
 #include <stack>
 
-#include "core/2D/game_object.h"
-#include "core/2D/entity.h"
-#include "core/2D/text_object.h"
-#include "core/2D/camera_object.h"
+#include "core/game_object.h"
 #include "editor/editor.h"
 
 namespace bacon

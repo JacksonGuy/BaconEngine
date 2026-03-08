@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "core/2D/scene_2d.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
@@ -23,7 +24,7 @@ namespace bacon
 {
 	namespace ui
 	{
-		void init(uint32_t width, uint32_t height)
+		void init()
 		{
 			rlImGuiSetup(true);
 			ImGuiIO& io = ImGui::GetIO();
@@ -43,9 +44,13 @@ namespace bacon
 		{
 			// Settings window buffers
 			settings::project_title = globals::project_title;
-			settings::gravity = GameState::scene.get_gravity();
-			settings::physics_steps = GameState::scene.physics_steps;
-			settings::pixels_per_meter = GameState::scene.get_unit_length();
+			if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+			{
+				settings::gravity = GameState::state_2d->scene->get_gravity();
+				settings::physics_steps = GameState::state_2d->scene->physics_steps;
+				settings::pixels_per_meter =
+					GameState::state_2d->scene->get_unit_length();
+			}
 		}
 
 		void draw_top_bar(Editor* editor)
@@ -154,7 +159,12 @@ namespace bacon
 					{
 						// Find object
 						UUID source_uuid = *(UUID*)payload->Data;
-						GameObject* object = GameState::scene.find_object_by_uuid(source_uuid);
+						GameObject* object = nullptr;
+						if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+						{
+							object =
+								GameState::state_2d->scene->find_object_by_uuid(source_uuid);
+						}
 
 						if (object != nullptr)
 						{
@@ -167,7 +177,7 @@ namespace bacon
 							}
 
 							event::TreeEvent* event = new event::TreeEvent();
-							event->object_uuid = object->uuid;
+							event->object_uuid = object->get_uuid();
 							event->old_parent = parent;
 							event->new_parent = nullptr;
 
@@ -180,12 +190,15 @@ namespace bacon
 				}
 
 				// Show root nodes (objects without parent)
-				for (GameObject* obj : GameState::scene.get_objects())
+				if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+				{
+					for (GameObject* obj : GameState::state_2d->scene->get_objects())
 				{
 					if (obj->get_parent() == nullptr)
 					{
 						game_object_tree_recurse(obj);
 					}
+				}
 				}
 
 				ImGui::TreePop();
@@ -196,7 +209,8 @@ namespace bacon
 
 		void draw_scene_display()
 		{
-			Renderer* renderer = GameState::renderer;
+			Renderer2D* renderer =
+				(GameState::state_2d != nullptr) ? GameState::state_2d->renderer : nullptr;
 
 			ImGui::Begin("Scene", &show_scene_display, global_window_flags);
 
@@ -219,14 +233,17 @@ namespace bacon
 
 			Editor::cursor_inside_scene_preview = ImGui::IsWindowHovered();
 
-			// Resize frame to correct window size
-			if (renderer->get_width() != window_size.x ||
-				renderer->get_height() != window_size.y)
+			if (renderer != nullptr)
 			{
-				renderer->create_frame(window_size.x, window_size.y);
-			}
+				// Resize frame to correct window size
+				if (renderer->get_width() != window_size.x ||
+					renderer->get_height() != window_size.y)
+				{
+					renderer->create_frame(window_size.x, window_size.y);
+				}
 
-			rlImGuiImageRenderTexture(&renderer->frame);
+				rlImGuiImageRenderTexture(&renderer->frame);
+			}
 			ImGui::End();
 		}
 
@@ -298,6 +315,8 @@ namespace bacon
 			if (!ui::show_settings)
 				return;
 
+			Scene2D* scene = (GameState::state_2d != nullptr) ? GameState::state_2d->scene : nullptr;
+
 			ImGuiWindowFlags settings_flags = global_window_flags;
 			if (!move_windows)
 			{
@@ -366,7 +385,7 @@ namespace bacon
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
-						GameState::scene.set_gravity(settings::gravity);
+						scene->set_gravity(settings::gravity);
 
 						event->after = new EditorSnapshot();
 						push_event(event);
@@ -380,7 +399,7 @@ namespace bacon
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
-						GameState::scene.physics_steps = settings::physics_steps;
+						scene->physics_steps = settings::physics_steps;
 
 						event->after = new EditorSnapshot();
 						push_event(event);
@@ -394,7 +413,7 @@ namespace bacon
 						EditorEvent* event = new EditorEvent();
 						event->before = new EditorSnapshot();
 
-						GameState::scene.set_unit_length(settings::pixels_per_meter);
+						scene->set_unit_length(settings::pixels_per_meter);
 
 						event->after = new EditorSnapshot();
 						push_event(event);
@@ -862,7 +881,12 @@ namespace bacon
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("OBJECT_UUID"))
 				{
 					UUID source_uuid = *(UUID*)payload->Data;
-					GameObject* source_obj = GameState::scene.find_object_by_uuid(source_uuid);
+					GameObject* source_obj = nullptr;
+					if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+					{
+						source_obj =
+							GameState::state_2d->scene->find_object_by_uuid(source_uuid);
+					}
 
 					if (source_obj != nullptr)
 					{

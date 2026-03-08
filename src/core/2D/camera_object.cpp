@@ -4,7 +4,6 @@
 #include "imgui_stdlib.h"
 #include "raymath.h"
 
-#include "core/2D/game_object.h"
 #include "core/game_state.h"
 #include "core/globals.h"
 #include "core/util.h"
@@ -37,40 +36,42 @@ namespace bacon
 		CameraObject::_allocator.deallocate((CameraObject*)ptr);
 	}
 
-	CameraObject::CameraObject() : GameObject()
+	CameraObject::CameraObject() : Object2D()
 	{
-		this->object_type = ObjectType::CAMERA;
-		this->name = "Camera";
+		m_object_type = ObjectType::CAMERA;
+		set_name("Camera");
+
 		this->camera = {};
 		this->is_active = false;
 		this->zoom = 1.0f;
 
 		// Camera specific overrides
-		this->size = {0, 0};
+		set_size({0, 0});
 	}
 
-	CameraObject::CameraObject(ByteStream& bytes) : GameObject()
+	CameraObject::CameraObject(ByteStream& bytes) : Object2D()
 	{
-		this->object_type = ObjectType::CAMERA;
-		this->deserialize(bytes);
+		m_object_type = ObjectType::CAMERA;
+		deserialize(bytes);
 	}
 
-	CameraObject::CameraObject(const CameraObject& camera) : GameObject()
+	CameraObject::CameraObject(const CameraObject& camera) : Object2D()
 	{
-		this->object_type = ObjectType::CAMERA;
-		this->copy(camera);
+		m_object_type = ObjectType::CAMERA;
+		copy(camera);
 	}
 
 	CameraObject& CameraObject::operator=(const CameraObject& camera)
 	{
-		this->copy(camera);
+		m_object_type = ObjectType::CAMERA;
+		copy(camera);
 
 		return *this;
 	}
 
 	void CameraObject::destroy()
 	{
-		if (in_scene)
+		if (get_in_scene())
 		{
 			remove_from_scene();
 		}
@@ -80,7 +81,7 @@ namespace bacon
 
 	void CameraObject::copy(const GameObject& object)
 	{
-		GameObject::copy(object);
+		Object2D::copy(object);
 
 		const CameraObject& camera = static_cast<const CameraObject&>(object);
 
@@ -98,42 +99,42 @@ namespace bacon
 	CameraObject* CameraObject::clone_unique() const
 	{
 		CameraObject* new_camera = new CameraObject(*this);
-		new_camera->uuid = UUID();
+		new_camera->set_uuid(UUID());
 		return new_camera;
 	}
 
 	void CameraObject::add_to_scene()
 	{
-		if (in_scene) return;
+		if (get_in_scene()) return;
 
-		GameState::scene.add_camera(this);
-		GameState::renderer->add_to_layer(this, layer);
-		in_scene = true;
+		GameState::state_2d->scene->add_camera(this);
+		GameState::state_2d->renderer->add_to_layer(this, get_layer());
+		set_in_scene(true);
 
 		add_children_to_scene();
 	}
 
 	void CameraObject::remove_from_scene()
 	{
-		if (!in_scene) return;
+		if (!get_in_scene()) return;
 
-		GameState::scene.remove_camera(this);
-		GameState::renderer->remove_from_layer(this);
-		in_scene = false;
+		GameState::state_2d->scene->remove_camera(this);
+		GameState::state_2d->renderer->remove_from_layer(this);
+		set_in_scene(false);
 
 		remove_children_from_scene();
 	}
 
 	void CameraObject::move_camera(Vector2 delta)
 	{
-		this->position.x += delta.x;
-		this->position.y += delta.y;
-		this->camera.target = this->position;
+		Vector2 new_pos = Vector2Add(get_position(), delta);
+		set_position(new_pos);
+		this->camera.target = new_pos;
 	}
 
-	void CameraObject::set_position(Vector2 position)
+	void CameraObject::set_camera_position(Vector2 position)
 	{
-		this->position = position;
+		set_position(position);
 		this->camera.target = position;
 	}
 
@@ -147,19 +148,19 @@ namespace bacon
 
 		DrawRectangleLinesPro(
 			{
-				position.x + (frame_size.x / 2.f),
-				position.y + (frame_size.y / 2.f),
+				get_position().x + (frame_size.x / 2.f),
+				get_position().y + (frame_size.y / 2.f),
 				frame_size.x,
 				frame_size.y,
 			},
-			this->rotation,
+			get_rotation(),
 			3.f,
 			Color{0, 255, 0, 255});
 	}
 
-	void CameraObject::update_ui_buffer()
+	void CameraObject::update_ui_buffer() const
 	{
-		base_update_ui_buffer();
+		Object2D::update_ui_buffer();
 
 		ui::obj_properties.is_active = is_active;
 		ui::obj_properties.zoom = zoom;
@@ -167,7 +168,7 @@ namespace bacon
 
 	void CameraObject::update_from_ui_buffer()
 	{
-		base_update_from_ui_buffer();
+		Object2D::update_from_ui_buffer();
 
 		// Update zoom from zoom field
 		this->zoom = ui::obj_properties.zoom;
@@ -176,12 +177,12 @@ namespace bacon
 		is_active = ui::obj_properties.is_active;
 		if (this->is_active)
 		{
-			GameState::scene.set_active_camera(this);
+			GameState::state_2d->scene->set_active_camera(this);
 		}
 
 		// Adjust camera
-		this->camera.target = this->position;
-		this->camera.rotation = this->rotation;
+		this->camera.target = get_position();
+		this->camera.rotation = get_rotation();
 		this->camera.zoom = this->zoom;
 	}
 
@@ -193,7 +194,7 @@ namespace bacon
 		using namespace event;
 
 		if (ui::inspect_object_copy == nullptr ||
-			ui::inspect_object_copy->uuid != this->uuid)
+			ui::inspect_object_copy->get_uuid() != get_uuid())
 		{
 			delete ui::inspect_object_copy;
 			ui::inspect_object_copy = this->clone();
@@ -202,18 +203,16 @@ namespace bacon
 		// We don't use draw_base_properties() here
 		// since certain fields do not apply to camera.
 
-		bool change_made = false;
-
 		// Name
 		ImGui::ItemLabel("Name", ItemLabelFlag::Left);
 		ImGui::InputText("##name", &ui::obj_properties.name);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 		// ImGui::SameLine();
-		ImGui::HelpMarker("ID: " + this->uuid.get_uuid());
+		ImGui::HelpMarker("ID: " + get_uuid().as_string());
 
 		// Tag
 		ImGui::ItemLabel("Tag", ItemLabelFlag::Left);
@@ -221,7 +220,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		// Position
@@ -230,7 +229,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		// Rotation
@@ -241,7 +240,7 @@ namespace bacon
 			ui::obj_properties.rotation = b_fmod(ui::obj_properties.rotation, 360);
 
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::Separator();
@@ -254,7 +253,7 @@ namespace bacon
 		if (ImGui::Checkbox("##is_active", &ui::obj_properties.is_active))
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Zoom", ItemLabelFlag::Left);
@@ -262,10 +261,10 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
-		if (change_made)
+		if (ui::properties_changes_made)
 		{
 			update_from_ui_buffer();
 
@@ -278,50 +277,32 @@ namespace bacon
 
 	void CameraObject::save_to_json(nlohmann::json& data) const
 	{
-		GameObject::save_to_json(data);
+		Object2D::save_to_json(data);
 
 		data["type"] = "camera";
 		data["is_active"] = this->is_active;
 		data["zoom"] = this->zoom;
 	}
 
-	void CameraObject::load_from_json(nlohmann::json& data)
+	void CameraObject::load_from_json(const nlohmann::json& data)
 	{
-		GameObject::load_from_json(data);
+		Object2D::load_from_json(data);
 
-		for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
-		{
-			std::string key = it.key();
-			auto value = *it;
-
-			if (key == "is_active")
-			{
-				this->is_active = value;
-			}
-			else if (key == "zoom")
-			{
-				this->zoom = value;
-				this->camera.zoom = value;
-			}
-		}
+		is_active = json_read_bool(data, "is_active");
+		zoom = json_read_float(data, "zoom");
 
 		if (this->is_active)
 		{
-			GameState::scene.set_active_camera(this);
+			GameState::state_2d->scene->set_active_camera(this);
 		}
-		this->camera.target = this->position;
-		this->camera.rotation = this->rotation;
-	}
 
-	size_t CameraObject::calculate_size() const
-	{
-		debug_error("This function has not been implemented yet.");
-		return 0;
+		camera.target = get_position();
+		camera.rotation = get_rotation();
 	}
 
 	ByteStream CameraObject::serialize() const
 	{
-		ByteStream bytes = GameObject::serialize();
+		ByteStream bytes = Object2D::serialize();
 
 		bytes << this->is_active;
 		bytes << this->zoom;
@@ -331,7 +312,7 @@ namespace bacon
 
 	void CameraObject::deserialize(ByteStream& bytes)
 	{
-		GameObject::deserialize(bytes);
+		Object2D::deserialize(bytes);
 
 		bytes >> this->is_active;
 		bytes >> this->zoom;

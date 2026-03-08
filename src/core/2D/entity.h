@@ -5,7 +5,7 @@
 #include "box2d/id.h"
 #include "raylib.h"
 
-#include "game_object.h"
+#include "core/2D/object_2d.h"
 #include "lib/pool_allocator.h"
 
 namespace bacon
@@ -36,7 +36,7 @@ namespace bacon
 		bool is_bullet;
 	} PhysicsProperties;
 
-	class Entity : public GameObject
+	class Entity : public Object2D
 	{
 	public:
 		static PoolAllocator<Entity> _allocator;
@@ -51,7 +51,7 @@ namespace bacon
 		Entity& operator=(const Entity& entity);
 		Entity(Entity&& entity) = delete;
 		Entity& operator=(Entity&& entity) = delete;
-		~Entity() = default;
+		~Entity();
 
 		void destroy() override;
 		void copy(const GameObject& object) override;
@@ -63,7 +63,6 @@ namespace bacon
 
 		void set_texture(const std::string& path);
 		std::string get_texture_path() const { return m_texture_path; }
-		void set_size(float width, float height);
 
 		b2BodyId get_body_id() const { return m_physics_body; }
 		b2ShapeId get_shape_id() const { return m_physics_shape; }
@@ -71,14 +70,13 @@ namespace bacon
 		void create_body(b2WorldId world_id);
 		void destroy_body();
 
-		void update_ui_buffer() override;
+		void update_ui_buffer() const override;
 		void update_from_ui_buffer() override;
 
 		void draw() const override;
 		void draw_properties_editor() override;
 		void save_to_json(nlohmann::json& data) const override;
-		void load_from_json(nlohmann::json& data) override;
-		size_t calculate_size() const override;
+		void load_from_json(const nlohmann::json& data) override;
 		ByteStream serialize() const override;
 
 	protected:

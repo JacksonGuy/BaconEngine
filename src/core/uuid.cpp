@@ -16,7 +16,21 @@ namespace bacon
 
     UUID::UUID(std::string uuid)
     {
+        if (uuid.empty())
+        {
+            m_p1 = _uniform_dist(_random_engine);
+            m_p2 = _uniform_dist(_random_engine);
+            return;
+        }
+
         size_t pos = uuid.find("_");
+        if (pos == std::string::npos)
+        {
+            m_p1 = _uniform_dist(_random_engine);
+            m_p2 = _uniform_dist(_random_engine);
+            return;
+        }
+
         std::string p1 = uuid.substr(0, pos);
         std::string p2 = uuid.substr(pos + 1);
 
@@ -29,7 +43,7 @@ namespace bacon
         return ((m_p1 == uuid.get_left()) && (m_p2 == uuid.get_right()));
     }
 
-    std::string UUID::get_uuid() const
+    std::string UUID::as_string() const
     {
         return std::to_string(m_p1) + "_" + std::to_string(m_p2);
     }

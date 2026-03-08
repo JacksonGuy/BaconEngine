@@ -7,7 +7,7 @@
 #include "nfd.h"
 #include "raylib.h"
 
-#include "core/2D/game_object.h"
+#include "core/game_object.h"
 
 namespace bacon
 {

@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "core/game_state.h"
+#include "core/2D/game_state_2d.h"
 #include "imgui.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -24,9 +25,12 @@ namespace bacon
 		project_title = globals::project_title;
 		editor_font_path = globals::editor_font_path;
 
-		gravity = GameState::scene.get_gravity();
-		physics_steps = GameState::scene.physics_steps;
-		pixels_per_meter = GameState::scene.get_unit_length();
+		if (GameState::game_type == GameState::GameType::GAME_2D)
+		{
+			gravity = GameState::state_2d->scene->get_gravity();
+			physics_steps = GameState::state_2d->scene->physics_steps;
+			pixels_per_meter = GameState::state_2d->scene->get_unit_length();
+		}
 	}
 
 	void EditorSnapshot::apply()
@@ -37,9 +41,12 @@ namespace bacon
 		globals::project_title = project_title;
 		globals::editor_font_path = editor_font_path;
 
-		GameState::scene.set_gravity(gravity);
-		GameState::scene.physics_steps = physics_steps;
-		GameState::scene.set_unit_length(pixels_per_meter);
+		if (GameState::game_type == GameState::GameType::GAME_2D)
+		{
+			GameState::state_2d->scene->set_gravity(gravity);
+			GameState::state_2d->scene->physics_steps = physics_steps;
+			GameState::state_2d->scene->set_unit_length(pixels_per_meter);
+		}
 
 		ui::SetImGuiStyle(); // For UI font update
 	}
@@ -76,15 +83,16 @@ namespace bacon
 		this->load_config_file();
 
 		// TODO change default
-		ui::init(800, 600);
-		GameState::initialize_renderer(800, 600);
+		ui::init();
+
+		// Initialize 2D game state (assets, scene, renderer)
+		GameState::state_2d = new GameState2D();
 	}
 
 	Editor::~Editor()
 	{
 		if (Editor::copy_object)
 		{
-			Editor::copy_object->delete_children();
 			delete Editor::copy_object;
 			Editor::copy_object = nullptr;
 		}
@@ -217,10 +225,17 @@ namespace bacon
 		rlImGuiEnd();
 	}
 
-	void Editor::editor_input()
+	void Editor::editor_input_2d()
 	{
-		static GameObject* click_drag_object = nullptr;
+		static Object2D* click_drag_object = nullptr;
 		static Vector2 last_mouse_position = {0.f, 0.f};
+
+		if (GameState::state_2d == nullptr || GameState::state_2d->scene == nullptr)
+		{
+			return;
+		}
+
+		Object2D* inspect_object = (Object2D*)ui::view_properties_object;
 
 		Vector2 mouse_position = (Vector2){
 			ui::window_mouse_position.x,
@@ -252,7 +267,7 @@ namespace bacon
 			// TODO This can be optimized by using iterator over
 			// the object allocators. It's verbose, but faster.
 			bool found = false;
-			for (GameObject* object : GameState::scene.get_objects())
+			for (Object2D* object : GameState::state_2d->scene->get_objects())
 			{
 				if (object->contains_point(mouse_position))
 				{
@@ -273,18 +288,18 @@ namespace bacon
 		// Left click drag object
 		if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && Editor::cursor_inside_scene_preview)
 		{
-			if (ui::view_properties_object != nullptr)
+			if (inspect_object != nullptr)
 			{
-				if (ui::view_properties_object->contains_point(mouse_position))
+				if (inspect_object->contains_point(mouse_position))
 				{
-					click_drag_object = ui::view_properties_object;
+					click_drag_object = inspect_object;
 				}
 
 				if (click_drag_object != nullptr)
 				{
 					if (mouse_delta.x != 0.f || mouse_delta.y != 0.f)
 					{
-						Vector2 current = click_drag_object->position;
+						Vector2 current = click_drag_object->get_position();
 						Vector2 new_pos = Vector2Add(current, abs_mouse_delta);
 
 						click_drag_object->set_position(new_pos);
@@ -300,11 +315,12 @@ namespace bacon
 
 			if (ui::view_properties_object != nullptr)
 			{
-				if (ui::inspect_object_copy->uuid == ui::view_properties_object->uuid)
+				if (ui::inspect_object_copy->get_uuid() == ui::view_properties_object->get_uuid())
 				{
+					Object2D* inspect_object_copy = (Object2D*)ui::inspect_object_copy;
 					float dist = Vector2Distance(
-						ui::inspect_object_copy->position,
-						ui::view_properties_object->position);
+						inspect_object_copy->get_position(),
+						inspect_object->get_position());
 
 					if (dist > 0)
 					{
@@ -324,7 +340,7 @@ namespace bacon
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
 			bool found = false;
-			for (GameObject* object : GameState::scene.get_objects())
+			for (Object2D* object : GameState::state_2d->scene->get_objects())
 			{
 				if (object->contains_point(mouse_position))
 				{
@@ -421,7 +437,7 @@ namespace bacon
 					ui::view_properties_object->update_ui_buffer();
 
 					if (ui::inspect_object_copy != nullptr &&
-						ui::view_properties_object->uuid == ui::inspect_object_copy->uuid)
+						ui::view_properties_object->get_uuid() == ui::inspect_object_copy->get_uuid())
 					{
 						ui::inspect_object_copy->copy(*ui::view_properties_object);
 					}
@@ -438,7 +454,7 @@ namespace bacon
 					ui::view_properties_object->update_ui_buffer();
 
 					if (ui::inspect_object_copy != nullptr &&
-						ui::view_properties_object->uuid == ui::inspect_object_copy->uuid)
+						ui::view_properties_object->get_uuid() == ui::inspect_object_copy->get_uuid())
 					{
 						ui::inspect_object_copy->copy(*ui::view_properties_object);
 					}
@@ -446,19 +462,21 @@ namespace bacon
 			}
 
 			// Copy
-			if (IsKeyPressed(KEY_C) && ui::view_properties_object != nullptr)
+			if (IsKeyPressed(KEY_C) && inspect_object != nullptr)
 			{
-				Editor::copy_object = ui::view_properties_object->clone();
-				Editor::copy_object->clone_children(*ui::view_properties_object, false);
+				Object2D* copy = inspect_object->clone();
+				copy->clone_children(*inspect_object);
+				Editor::copy_object = copy;
 			}
 
 			// Paste
 			if (IsKeyPressed(KEY_V) && Editor::copy_object != nullptr)
 			{
-				GameObject* new_object = Editor::copy_object->clone_unique();
-				new_object->position = mouse_position;
+				Object2D* copy_cast = (Object2D*)Editor::copy_object;
+				Object2D* new_object = copy_cast->clone_unique();
+				new_object->set_position(mouse_position);
 
-				new_object->clone_children(*Editor::copy_object, true);
+				new_object->clone_children(*copy_cast, true);
 				new_object->add_to_scene();
 
 				ui::view_properties_object = new_object;
@@ -486,7 +504,10 @@ namespace bacon
 
 		this->is_playing = true;
 
-		GameState::scene.create_physics_bodies();
+		if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+		{
+			GameState::state_2d->scene->create_physics_bodies();
+		}
 	}
 
 	void Editor::end_game()
@@ -497,7 +518,7 @@ namespace bacon
 		std::string inspect_uuid = "";
 		if (ui::view_properties_object != nullptr)
 		{
-			inspect_uuid = ui::view_properties_object->uuid.get_uuid();
+			inspect_uuid = ui::view_properties_object->get_uuid().as_string();
 		}
 		ui::view_properties_object = nullptr;
 
@@ -510,8 +531,12 @@ namespace bacon
 		// Restore inspected object
 		if (inspect_uuid.length() > 0)
 		{
-			GameObject* inspect_object =
-				GameState::scene.find_object_by_uuid(inspect_uuid);
+			GameObject* inspect_object = nullptr;
+			if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+			{
+				inspect_object =
+					GameState::state_2d->scene->find_object_by_uuid(inspect_uuid);
+			}
 			ui::view_properties_object = inspect_object;
 
 			if (inspect_object != nullptr)

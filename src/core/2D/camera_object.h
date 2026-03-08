@@ -1,11 +1,11 @@
 #pragma once
 
-#include "core/2D/game_object.h"
+#include "core/2D/object_2d.h"
 #include "lib/pool_allocator.h"
 
 namespace bacon
 {
-	class CameraObject : public GameObject
+	class CameraObject : public Object2D
 	{
 	public:
 		static PoolAllocator<CameraObject> _allocator;
@@ -35,18 +35,17 @@ namespace bacon
 		void remove_from_scene() override;
 
 		void move_camera(Vector2 delta);
-		void set_position(Vector2 position);
+		void set_camera_position(Vector2 position);
 
 		void draw_outline() const override;
 
-		void update_ui_buffer() override;
+		void update_ui_buffer() const override;
 		void update_from_ui_buffer() override;
 
 		void draw() const override;
 		void draw_properties_editor() override;
 		void save_to_json(nlohmann::json& data) const override;
-		void load_from_json(nlohmann::json& data) override;
-		size_t calculate_size() const override;
+		void load_from_json(const nlohmann::json& data) override;
 		ByteStream serialize() const override;
 
 	protected:

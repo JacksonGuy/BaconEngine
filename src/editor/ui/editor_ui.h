@@ -1,8 +1,5 @@
 #pragma once
 
-#include "core/2D/game_object.h"
-#include "core/2D/text_object.h"
-#include "core/game_state.h"
 #include "editor/editor.h"
 
 namespace bacon
@@ -73,7 +70,9 @@ namespace bacon
 		} ObjectFields;
 
 		inline ObjectFields obj_properties;
-		inline GameObject* inspect_object_copy;
+		inline GameObject* view_properties_object = nullptr;
+		inline GameObject* inspect_object_copy = nullptr;
+		inline bool properties_changes_made = false;
 
 		inline bool show_test = true;
 		inline bool show_object_properties = true;
@@ -92,7 +91,6 @@ namespace bacon
 		inline bool show_save_confirm_popup = false;
 		inline bool show_save_as_popup = false;
 
-		inline GameObject* view_properties_object = nullptr;
 		inline ImVec2 window_position;
 		inline ImVec2 window_size;
 		inline Vector2 window_mouse_position;
@@ -100,7 +98,7 @@ namespace bacon
 		inline ImGuiWindowFlags global_window_flags;
 		inline bool move_windows = false;
 
-		void init(uint32_t width, uint32_t height);
+		void init();
 		void set_input_buffers();
 
 		void draw_top_bar(Editor* editor);

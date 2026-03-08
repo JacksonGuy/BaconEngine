@@ -11,7 +11,7 @@ namespace bacon
 		UUID();
 		UUID(std::string uuid);
 		bool operator==(UUID uuid) const;
-		std::string get_uuid() const;
+		std::string as_string() const;
 		uint64_t get_left() const;
 		uint64_t get_right() const;
 

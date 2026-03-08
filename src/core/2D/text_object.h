@@ -3,12 +3,12 @@
 #include "lib/byte_stream.h"
 #include "raylib.h"
 
-#include "core/2D/game_object.h"
+#include "core/2D/object_2d.h"
 #include "lib/pool_allocator.h"
 
 namespace bacon
 {
-	class TextObject : public GameObject
+	class TextObject : public Object2D
 	{
 	public:
 		static PoolAllocator<TextObject> _allocator;
@@ -40,14 +40,13 @@ namespace bacon
 		void draw_outline() const override;
 		bool contains_point(Vector2 point) override;
 
-		void update_ui_buffer() override;
+		void update_ui_buffer() const override;
 		void update_from_ui_buffer() override;
 
 		void draw() const override;
 		void draw_properties_editor() override;
 		void save_to_json(nlohmann::json& data) const override;
-		void load_from_json(nlohmann::json& data) override;
-		size_t calculate_size() const override;
+		void load_from_json(const nlohmann::json& data) override;
 		ByteStream serialize() const override;
 
 	protected:

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <sstream>
 
+#include "core/2D/object_2d.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
@@ -41,39 +42,41 @@ namespace bacon
 		TextObject::_allocator.deallocate((TextObject*)ptr);
 	}
 
-	TextObject::TextObject() : GameObject()
+	TextObject::TextObject() : Object2D()
 	{
-		this->object_type = ObjectType::TEXT;
-		this->name = "Text";
-		this->m_text = "";
-		this->m_font = {0};
-		this->m_font_size = 12;
-		this->m_char_spacing = 0;
-		this->m_color = BLACK;
+		m_object_type = ObjectType::TEXT;
+		set_name("Text");
+
+		m_text = "";
+		m_font = {0};
+		m_font_size = 12;
+		m_char_spacing = 0;
+		m_color = BLACK;
 	}
 
-	TextObject::TextObject(ByteStream& bytes) : GameObject()
+	TextObject::TextObject(ByteStream& bytes) : Object2D()
 	{
-		this->object_type = ObjectType::TEXT;
-		this->deserialize(bytes);
+		m_object_type = ObjectType::TEXT;
+		deserialize(bytes);
 	}
 
-	TextObject::TextObject(const TextObject& text_object) : GameObject()
+	TextObject::TextObject(const TextObject& text_object) : Object2D()
 	{
-		this->object_type = ObjectType::TEXT;
-		this->copy(text_object);
+		m_object_type = ObjectType::TEXT;
+		copy(text_object);
 	}
 
 	TextObject& TextObject::operator=(const TextObject& text_object)
 	{
-		this->copy(text_object);
+		m_object_type = ObjectType::TEXT;
+		copy(text_object);
 
 		return *this;
 	}
 
 	void TextObject::destroy()
 	{
-		if (in_scene)
+		if (get_in_scene())
 		{
 			remove_from_scene();
 		}
@@ -83,7 +86,7 @@ namespace bacon
 
 	void TextObject::copy(const GameObject& object)
 	{
-		GameObject::copy(object);
+		Object2D::copy(object);
 
 		const TextObject& text_object = static_cast<const TextObject&>(object);
 
@@ -103,28 +106,28 @@ namespace bacon
 	TextObject* TextObject::clone_unique() const
 	{
 		TextObject* new_text = new TextObject(*this);
-		new_text->uuid = UUID();
+		new_text->set_uuid(UUID());
 		return new_text;
 	}
 
 	void TextObject::add_to_scene()
 	{
-		if (in_scene) return;
+		if (get_in_scene()) return;
 
-		GameState::scene.add_text_object(this);
-		GameState::renderer->add_to_layer(this, layer);
-		in_scene = true;
+		GameState::state_2d->scene->add_text_object(this);
+		GameState::state_2d->renderer->add_to_layer(this, get_layer());
+		set_in_scene(true);
 
 		add_children_to_scene();
 	}
 
 	void TextObject::remove_from_scene()
 	{
-		if (!in_scene) return;
+		if (!get_in_scene()) return;
 
-		GameState::scene.remove_text_object(this);
-		GameState::renderer->remove_from_layer(this);
-		in_scene = false;
+		GameState::state_2d->scene->remove_text_object(this);
+		GameState::state_2d->renderer->remove_from_layer(this);
+		set_in_scene(false);
 
 		remove_children_from_scene();
 	}
@@ -132,7 +135,7 @@ namespace bacon
 	void TextObject::set_text(const std::string& text)
 	{
 		m_text = text;
-		this->update_render_text();
+		update_render_text();
 	}
 
 	void TextObject::set_font(const std::string& font_path)
@@ -146,7 +149,7 @@ namespace bacon
 			return;
 		}
 
-		this->m_font = GameState::assets.load_font(font_path.c_str());
+		m_font = GameState::state_2d->assets->load_font(font_path.c_str());
 		if (m_font == nullptr)
 		{
 			m_font_path = "";
@@ -156,20 +159,20 @@ namespace bacon
 			m_font_path = font_path;
 		}
 
-		this->update_render_text();
+		update_render_text();
 	}
 
 	void TextObject::set_font_size(int32_t size)
 	{
-		this->m_font_size = size;
-		this->update_render_text();
+		m_font_size = size;
+		update_render_text();
 	}
 
 	void TextObject::update_render_text()
 	{
-		float text_width = this->calculate_text_width(m_text);
+		float text_width = calculate_text_width(m_text);
 
-		if (text_width > this->size.x)
+		if (text_width > get_size().x)
 		{
 			m_render_text = this->get_wrapped_text(m_text);
 		}
@@ -230,7 +233,7 @@ namespace bacon
 
 				float current_width = calculate_text_width(current_line);
 
-				if (current_width <= this->size.x)
+				if (current_width <= get_size().x)
 				{
 					line = current_line;
 				}
@@ -241,13 +244,13 @@ namespace bacon
 						wrapped_paragraph += '\n';
 					}
 
-					if (calculate_text_width(word) > this->size.x)
+					if (calculate_text_width(word) > get_size().x)
 					{
 						std::string broken;
 						for (char c : word)
 						{
 							std::string test = broken + c;
-							if (calculate_text_width(test) > this->size.x)
+							if (calculate_text_width(test) > get_size().x)
 							{
 								wrapped_paragraph += broken + '\n';
 								broken.clear();
@@ -287,6 +290,10 @@ namespace bacon
 
 	void TextObject::draw_outline() const
 	{
+		Vector2 position = get_position();
+		Vector2 size = get_size();
+		float rotation = get_rotation();
+
 		DrawRectangleLinesPro(
 			{
 				position.x + (size.x / 2.f),
@@ -294,28 +301,29 @@ namespace bacon
 				size.x,
 				size.y,
 			},
-			this->rotation,
+			rotation,
 			3.f,
-			Color{0, 255, 0, 255});
+			Color{0, 255, 0, 255}
+		);
 	}
 
 	bool TextObject::contains_point(Vector2 point)
 	{
-		Vector2 point_relative = Vector2Subtract(point, position);
-		Vector2 p = Vector2Rotate(point_relative, -this->rotation * DEG2RAD);
+		Vector2 point_relative = Vector2Subtract(point, get_position());
+		Vector2 p = Vector2Rotate(point_relative, -get_rotation() * DEG2RAD);
 		Rectangle rect = {
 			0,
 			0,
-			size.x,
-			size.y,
+			get_size().x,
+			get_size().y,
 		};
 
 		return CheckCollisionPointRec(p, rect);
 	}
 
-	void TextObject::update_ui_buffer()
+	void TextObject::update_ui_buffer() const
 	{
-		base_update_ui_buffer();
+		Object2D::update_ui_buffer();
 
 		ui::obj_properties.text = m_text;
 		ui::obj_properties.font_path = m_font_path;
@@ -326,7 +334,7 @@ namespace bacon
 
 	void TextObject::update_from_ui_buffer()
 	{
-		base_update_from_ui_buffer();
+		Object2D::update_from_ui_buffer();
 
 		set_text(ui::obj_properties.text);
 		set_font(ui::obj_properties.font_path);
@@ -342,9 +350,9 @@ namespace bacon
 			DrawTextPro(
 				GetFontDefault(),
 				m_render_text.c_str(),
-				position,
+				get_position(),
 				{0, 0},
-				rotation,
+				get_rotation(),
 				m_font_size,
 				m_char_spacing,
 				m_color);
@@ -352,14 +360,14 @@ namespace bacon
 		else
 		{
 			DrawTextPro(
-				*this->m_font,
-				this->m_render_text.c_str(),
-				position,
+				*m_font,
+				m_render_text.c_str(),
+				get_position(),
 				{0, 0},
-				this->rotation,
-				this->m_font_size,
-				this->m_char_spacing,
-				this->m_color);
+				get_rotation(),
+				m_font_size,
+				m_char_spacing,
+				m_color);
 		}
 	}
 
@@ -369,13 +377,13 @@ namespace bacon
 		using namespace event;
 
 		if (ui::inspect_object_copy == nullptr ||
-			ui::inspect_object_copy->uuid != this->uuid)
+			ui::inspect_object_copy->get_uuid() != get_uuid())
 		{
 			delete ui::inspect_object_copy;
 			ui::inspect_object_copy = this->clone();
 		}
 
-		bool change_made = draw_base_properties();
+		Object2D::draw_properties_editor();
 
 		// Text
 		ImGui::ItemLabel("Text", ItemLabelFlag::Left);
@@ -383,7 +391,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		// Font
@@ -392,7 +400,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 		if (ImGui::Button("Select"))
 		{
@@ -402,7 +410,7 @@ namespace bacon
 				ui::obj_properties.font_path = result.path;
 
 				globals::has_unsaved_changes = true;
-				change_made = true;
+				ui::properties_changes_made = true;
 			}
 		}
 
@@ -412,7 +420,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		// Character spacing
@@ -421,7 +429,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		// Color
@@ -447,10 +455,10 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
-		if (change_made)
+		if (ui::properties_changes_made)
 		{
 			update_from_ui_buffer();
 
@@ -458,14 +466,14 @@ namespace bacon
 			push_event(event);
 
 			ui::inspect_object_copy->copy(*this);
+			ui::properties_changes_made = false;
 		}
 	}
 
 	void TextObject::save_to_json(nlohmann::json& data) const
 	{
-		GameObject::save_to_json(data);
+		Object2D::save_to_json(data);
 
-		data["type"] = "text";
 		data["text"] = m_text;
 		data["font_path"] = m_font_path;
 		data["font_size"] = m_font_size;
@@ -473,51 +481,22 @@ namespace bacon
 		data["color"] = {m_color.r, m_color.g, m_color.b, m_color.a};
 	}
 
-	void TextObject::load_from_json(nlohmann::json& data)
+	void TextObject::load_from_json(const nlohmann::json& data)
 	{
-		GameObject::load_from_json(data);
+		Object2D::load_from_json(data);
 
-		for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
-		{
-			std::string key = it.key();
-			auto value = *it;
-
-			if (key == "text")
-			{
-				// set_text(value);
-				this->m_text = value;
-			}
-			else if (key == "font_path")
-			{
-				set_font(value);
-			}
-			else if (key == "font_size")
-			{
-				set_font_size(value);
-			}
-			else if (key == "char_spacing")
-			{
-				this->m_char_spacing = value;
-			}
-			else if (key == "color")
-			{
-				this->m_color = (Color){
-					.r = value[0], .g = value[1], .b = value[2], .a = value[3]};
-			}
-		}
+		m_text = json_read_string(data, "text");
+		m_font_path = json_read_string(data, "font_path");
+		m_font_size = json_read_int32(data, "font_size");
+		m_char_spacing = json_read_int32(data, "char_spacing");
+		m_color = json_read_color(data, "color");
 
 		this->set_text(m_text);
 	}
 
-	size_t TextObject::calculate_size() const
-	{
-		debug_error("This function has not been implemented yet.");
-		return 0;
-	}
-
 	ByteStream TextObject::serialize() const
 	{
-		ByteStream bytes = GameObject::serialize();
+		ByteStream bytes = Object2D::serialize();
 
 		bytes << m_text;
 		bytes << m_font_path;
@@ -530,7 +509,7 @@ namespace bacon
 
 	void TextObject::deserialize(ByteStream& bytes)
 	{
-		GameObject::deserialize(bytes);
+		Object2D::deserialize(bytes);
 
 		bytes >> m_text;
 		bytes >> m_font_path;

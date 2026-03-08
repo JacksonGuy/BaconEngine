@@ -1,32 +1,20 @@
-#include "game_state.h"
-
-#include "core/2D/scene_2d.h"
-#include "core/util.h"
-#include "file/asset_manager.h"
+#include "core/game_state.h"
 
 namespace bacon
 {
-	namespace GameState
+	GameObject* GameState::find_object_by_uuid(UUID uuid)
 	{
-		AssetManager assets;
-		Scene2D scene;
-		Renderer* renderer = nullptr;
+		if (game_type == GameType::GAME_2D)
+			return GameState::state_2d->scene->find_object_by_uuid(uuid);
+		else if (game_type == GameType::GAME_3D)
+			// TODO
+			// return state_3d->find_object_by_uuid(uuid);
+			return nullptr;
+		return nullptr;
+	}
 
-		void initialize_renderer(uint32_t width, uint32_t height)
-		{
-			GameState::renderer = new Renderer(width, height);
-		}
-
-		void cleanup()
-		{
-			// Clears all the layers
-			renderer->reset();
-
-			// Deletes all objects from scene
-			scene.cleanup();
-
-			// Unload all assets
-			assets.cleanup();
-		}
-	} // namespace GameState
-} // namespace bacon
+	GameObject* GameState::find_object_by_uuid(std::string uuid)
+	{
+		return find_object_by_uuid(UUID(uuid));
+	}
+}

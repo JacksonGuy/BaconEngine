@@ -5,8 +5,7 @@
 
 #include "raylib.h"
 
-#include "core/2D/camera_object.h"
-#include "core/2D/game_object.h"
+#include "core/2D/object_2d.h"
 
 namespace bacon
 {
@@ -14,22 +13,22 @@ namespace bacon
     {
         size_t layer_num;
         bool visible;
-        std::vector<GameObject*> objects;
+        std::vector<Object2D*> objects;
     } RenderLayer;
 
-    class Renderer
+    class Renderer2D
     {
-         public:
+    public:
         static constexpr size_t _MAX_LAYERS = 10;
 
         RenderTexture2D frame;
 
-        Renderer(uint32_t width, uint32_t height);
-        ~Renderer() = default;
+        Renderer2D(uint32_t width, uint32_t height);
+        ~Renderer2D() = default;
 
         void create_frame(uint32_t width, uint32_t height);
-        void add_to_layer(GameObject* object, size_t layer);
-        void remove_from_layer(GameObject* object);
+        void add_to_layer(Object2D* object, size_t layer);
+        void remove_from_layer(Object2D* object);
         void draw(Camera2D* camera) const;
 
         void reset();
@@ -37,7 +36,7 @@ namespace bacon
         uint32_t get_width() const;
         uint32_t get_height() const;
 
-         private:
+    private:
         uint32_t m_frame_width = 0;
         uint32_t m_frame_height = 0;
         std::array<RenderLayer, _MAX_LAYERS> m_layers;

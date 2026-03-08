@@ -1,4 +1,4 @@
-#include "rendering/2D/renderer.h"
+#include "rendering/2D/renderer_2d.h"
 
 #include <vector>
 
@@ -9,18 +9,18 @@
 
 namespace bacon
 {
-	Renderer::Renderer(uint32_t width, uint32_t height)
+	Renderer2D::Renderer2D(uint32_t width, uint32_t height)
 	{
 		this->create_frame(width, height);
 
 		for (size_t i = 0; i < _MAX_LAYERS; i++)
 		{
 			this->m_layers[i] =
-				(RenderLayer){i, true, std::vector<GameObject*>()};
+				(RenderLayer){i, true, std::vector<Object2D*>()};
 		}
 	}
 
-	void Renderer::create_frame(uint32_t width, uint32_t height)
+	void Renderer2D::create_frame(uint32_t width, uint32_t height)
 	{
 		this->m_frame_width = width;
 		this->m_frame_height = height;
@@ -32,7 +32,7 @@ namespace bacon
 		this->frame = LoadRenderTexture(m_frame_width, m_frame_height);
 	}
 
-	void Renderer::add_to_layer(GameObject* object, size_t layer)
+	void Renderer2D::add_to_layer(Object2D* object, size_t layer)
 	{
 		if (layer < 0 || layer >= _MAX_LAYERS)
 		{
@@ -40,20 +40,19 @@ namespace bacon
 		}
 
 		size_t layer_val = std::clamp(layer, (size_t)0, _MAX_LAYERS);
-		object->layer = layer_val;
 		this->m_layers[layer_val].objects.push_back(object);
 	}
 
-	void Renderer::remove_from_layer(GameObject* object)
+	void Renderer2D::remove_from_layer(Object2D* object)
 	{
-		size_t current_layer = object->layer;
+		size_t current_layer = object->get_layer();
 
 		bool found = false;
 		RenderLayer* layer = &this->m_layers[current_layer];
 		for (auto it = layer->objects.begin(); it != layer->objects.end(); it++)
 		{
-			GameObject* obj = *it;
-			if (obj->uuid == object->uuid)
+			Object2D* obj = *it;
+			if (obj->get_uuid() == object->get_uuid())
 			{
 				layer->objects.erase(it);
 				found = true;
@@ -68,7 +67,7 @@ namespace bacon
 		}
 	}
 
-	void Renderer::draw(Camera2D* camera) const
+	void Renderer2D::draw(Camera2D* camera) const
 	{
 		BeginTextureMode(this->frame);
 		ClearBackground(DARKGRAY);
@@ -76,7 +75,7 @@ namespace bacon
 		BeginMode2D(*camera);
 		for (const RenderLayer& layer : this->m_layers)
 		{
-			for (GameObject* object : layer.objects)
+			for (Object2D* object : layer.objects)
 			{
 				object->draw();
 
@@ -91,7 +90,7 @@ namespace bacon
 		EndTextureMode();
 	}
 
-	void Renderer::reset()
+	void Renderer2D::reset()
 	{
 		for (RenderLayer& layer : this->m_layers)
 		{
@@ -99,12 +98,12 @@ namespace bacon
 		}
 	}
 
-	uint32_t Renderer::get_width() const
+	uint32_t Renderer2D::get_width() const
 	{
 		return this->m_frame_width;
 	}
 
-	uint32_t Renderer::get_height() const
+	uint32_t Renderer2D::get_height() const
 	{
 		return this->m_frame_height;
 	}

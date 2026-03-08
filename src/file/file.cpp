@@ -3,13 +3,12 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/game_state.h"
 #include "core/uuid.h"
 #include "nlohmann/json.hpp"
 #include "nfd.h"
 
 #include "core/2D/entity.h"
-#include "core/2D/game_object.h"
-#include "core/game_state.h"
 #include "editor/ui/editor_ui.h"
 #include "core/globals.h"
 #include "core/util.h"
@@ -27,19 +26,27 @@ namespace bacon
 			json project_data;
 
 			project_data["settings"]["version"] = globals::engine_version;
-			project_data["settings"]["gravity"] = GameState::scene.get_gravity();
 			project_data["settings"]["title"] = globals::project_title;
 
-			const std::vector<GameObject*>& objects = GameState::scene.get_objects();
-			for (GameObject* object : objects)
+			if (GameState::game_type == GameState::GameType::GAME_2D)
 			{
-				// GameObject* object = objects[idx];
-				if (object->get_parent() == nullptr)
+				project_data["settings"]["type"] = "2D";
+				project_data["settings"]["gravity"] = GameState::state_2d->scene->get_gravity();
+
+				const std::vector<Object2D*>& objects = GameState::state_2d->scene->get_objects();
+				for (Object2D* object : objects)
 				{
-					json obj_data;
-					object->save_to_json(obj_data);
-					project_data["objects"].push_back(obj_data);
+					if (object->get_parent() == nullptr)
+					{
+						json obj_data;
+						object->save_to_json(obj_data);
+						project_data["objects"].push_back(obj_data);
+					}
 				}
+			}
+			else if (GameState::game_type == GameState::GameType::GAME_3D)
+			{
+				project_data["settings"]["type"] = "3D";
 			}
 
 			outfile << std::setw(4) << project_data;
@@ -52,30 +59,30 @@ namespace bacon
 			return NFD_OKAY;
 		}
 
-		void parse_project_settings(nlohmann::json json)
+		void parse_project_settings(const nlohmann::json& json)
 		{
-			for (auto it = json.begin(); it != json.end(); it++)
-			{
-				std::string key = it.key();
-				auto value = *it;
+			GameState::game_type = (GameState::GameType)json_read_uint8(json, "type");
+			globals::engine_version = json_read_string(json, "version");
+			globals::project_title = json_read_string(json, "title");
 
-				if (key == "version")
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				if (GameState::state_2d != nullptr)
 				{
-					globals::engine_version = value;
+					delete GameState::state_2d;
 				}
-				else if (key == "gravity")
-				{
-					float gravity = value;
-					GameState::scene.set_gravity(gravity);
-				}
-				else if (key == "title")
-				{
-					globals::project_title = value;
-				}
+				GameState::state_2d = new GameState2D();
+
+				GameState::state_2d->scene->set_gravity(json_read_float(json, "gravity"));
+			}
+			else if (GameState::game_type == GameState::GameType::GAME_3D)
+			{
+				// TODO
+				// GameState::state_3d = new GameState3D();
 			}
 		}
 
-		void parse_project_objects(nlohmann::json json)
+		void parse_project_objects(const nlohmann::json& json)
 		{
 			for (auto& object : json)
 			{
@@ -105,39 +112,6 @@ namespace bacon
 				}
 			}
 		}
-
-		// void construct_object_tree(nlohmann::json& json)
-		// {
-		// 	for (auto& object : json)
-		// 	{
-		// 		if (object.is_null())
-		// 		{
-		// 			debug_log("Null object encountered.");
-		// 			continue;
-		// 		}
-
-		// 		if (object["parent"] != "null")
-		// 		{
-		// 			UUID child_uuid = UUID(object["uuid"]);
-		// 			UUID parent_uuid = UUID(object["parent"]);
-		// 			GameObject* child = GameState::scene.find_object_by_uuid(child_uuid);
-		// 			GameObject* parent = GameState::scene.find_object_by_uuid(parent_uuid);
-
-		// 			// assert(parent != nullptr);
-		// 			// assert(child != nullptr);
-		// 			// assert(parent_uuid != child_uuid);
-
-		// 			if (parent == nullptr || child == nullptr)
-		// 			{
-		// 				debug_error("Failed to find object!");
-		// 				continue;
-		// 			}
-
-		// 			parent->add_child(child);
-		// 			child->set_parent(parent);
-		// 		}
-		// 	}
-		// }
 
 		nfdresult_t load_project(bool show_dialog)
 		{
@@ -190,7 +164,10 @@ namespace bacon
 			globals::is_project_loaded = true;
 
 			// Delete scene data
-			GameState::scene.reset();
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				GameState::state_2d->scene->reset();
+			}
 
 			// Load JSON data and parse
 			json file_data = json::parse(infile);
@@ -226,7 +203,7 @@ namespace bacon
 			json data;
 
 			// Write basic data to project file
-			data["settings"]["gravity"] = GameState::scene.get_gravity();
+			data["settings"]["gravity"] = 9.80;
 			data["settings"]["version"] = globals::engine_version;
 			data["settings"]["title"] = globals::project_title;
 			outfile << std::setw(4) << data;
@@ -302,10 +279,15 @@ namespace bacon
 
 			// Create new UUIDs for things.
 			// load_from_json preserves UUIDs.
-			object.uuid = UUID();
-			for (GameObject* child : object.get_children())
+			object.set_uuid(UUID());
+			if (GameState::game_type == GameState::GameType::GAME_2D)
 			{
-				child->uuid = UUID();
+				Object2D& object2d = (Object2D&)object;
+
+				for (Object2D* child : object2d.get_children())
+				{
+					child->set_uuid(UUID());
+				}
 			}
 
 			debug_log("Object loaded from prefab.");

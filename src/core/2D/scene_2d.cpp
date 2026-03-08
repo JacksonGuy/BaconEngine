@@ -24,7 +24,7 @@ namespace bacon
 		m_lua_state = std::make_unique<sol::state>();
 	}
 
-	const std::vector<GameObject*>& Scene2D::get_objects() const
+	const std::vector<Object2D*>& Scene2D::get_objects() const
 	{
 		return m_objects;
 	}
@@ -52,15 +52,15 @@ namespace bacon
 
 	void Scene2D::remove_entity(Entity* entity)
 	{
-		if (!entity->is_in_scene()) return;
+		if (!entity->get_in_scene()) return;
 
 		bool found = false;
 
 		// Remove from objects list
 		for (auto it = m_objects.begin(); it != m_objects.end(); it++)
 		{
-			GameObject* object = *it;
-			if (object->uuid == entity->uuid)
+			Object2D* object = *it;
+			if (object->get_uuid() == entity->get_uuid())
 			{
 				m_objects.erase(it);
 				found = true;
@@ -78,7 +78,7 @@ namespace bacon
 		for (auto it = m_entities.begin(); it != m_entities.end(); it++)
 		{
 			Entity* ent = *it;
-			if (ent->uuid == entity->uuid)
+			if (ent->get_uuid() == entity->get_uuid())
 			{
 				m_entities.erase(it);
 				found = true;
@@ -97,7 +97,10 @@ namespace bacon
 		}
 
 		// Remove from render layer
-		GameState::renderer->remove_from_layer(entity);
+		if (GameState::state_2d != nullptr && GameState::state_2d->renderer != nullptr)
+		{
+			GameState::state_2d->renderer->remove_from_layer(entity);
+		}
 	}
 
 	void Scene2D::add_text_object(TextObject* text)
@@ -108,15 +111,15 @@ namespace bacon
 
 	void Scene2D::remove_text_object(TextObject* text)
 	{
-		if (!text->is_in_scene()) return;
+		if (!text->get_in_scene()) return;
 
 		bool found = false;
 
 		// Remove from objects list
 		for (auto it = m_objects.begin(); it != m_objects.end(); it++)
 		{
-			GameObject* object = *it;
-			if (object->uuid == text->uuid)
+			Object2D* object = *it;
+			if (object->get_uuid() == text->get_uuid())
 			{
 				m_objects.erase(it);
 				found = true;
@@ -134,7 +137,7 @@ namespace bacon
 		for (auto it = m_text_objects.begin(); it != m_text_objects.end(); it++)
 		{
 			TextObject* txt = *it;
-			if (txt->uuid == text->uuid)
+			if (txt->get_uuid() == text->get_uuid())
 			{
 				m_text_objects.erase(it);
 				found = true;
@@ -155,7 +158,7 @@ namespace bacon
 
 	void Scene2D::remove_camera(CameraObject* camera)
 	{
-		if (!camera->is_in_scene()) return;
+		if (!camera->get_in_scene()) return;
 
 		if (camera->is_active)
 		{
@@ -167,8 +170,8 @@ namespace bacon
 		// Remove from objects list
 		for (auto it = m_objects.begin(); it != m_objects.end(); it++)
 		{
-			GameObject* object = *it;
-			if (object->uuid == camera->uuid)
+			Object2D* object = *it;
+			if (object->get_uuid() == camera->get_uuid())
 			{
 				m_objects.erase(it);
 				found = true;
@@ -187,7 +190,7 @@ namespace bacon
 			 it++)
 		{
 			CameraObject* cam = *it;
-			if (cam->uuid == camera->uuid)
+			if (cam->get_uuid() == camera->get_uuid())
 			{
 				m_camera_objects.erase(it);
 				found = true;
@@ -200,11 +203,11 @@ namespace bacon
 		}
 	}
 
-	GameObject* Scene2D::find_object_by_uuid(std::string uuid) const
+	Object2D* Scene2D::find_object_by_uuid(std::string uuid) const
 	{
-		for (GameObject* object : m_objects)
+		for (Object2D* object : m_objects)
 		{
-			if (object->uuid.get_uuid() == uuid)
+			if (object->get_uuid().as_string() == uuid)
 			{
 				return object;
 			}
@@ -213,11 +216,11 @@ namespace bacon
 		return nullptr;
 	}
 
-	GameObject* Scene2D::find_object_by_uuid(UUID uuid) const
+	Object2D* Scene2D::find_object_by_uuid(UUID uuid) const
 	{
-		for (GameObject* object : m_objects)
+		for (Object2D* object : m_objects)
 		{
-			if (object->uuid == uuid)
+			if (object->get_uuid() == uuid)
 			{
 				return object;
 			}
@@ -322,7 +325,10 @@ namespace bacon
 	{
 		if (camera != nullptr)
 		{
-			GameState::renderer->draw(camera);
+			if (GameState::state_2d != nullptr && GameState::state_2d->renderer != nullptr)
+			{
+				GameState::state_2d->renderer->draw(camera);
+			}
 			return;
 		}
 
@@ -332,12 +338,18 @@ namespace bacon
 			return;
 		}
 
-		GameState::renderer->draw(&this->m_camera->camera);
+		if (GameState::state_2d != nullptr && GameState::state_2d->renderer != nullptr)
+		{
+			GameState::state_2d->renderer->draw(&this->m_camera->camera);
+		}
 	}
 
 	void Scene2D::reset()
 	{
-		GameState::renderer->reset();
+		if (GameState::state_2d != nullptr && GameState::state_2d->renderer != nullptr)
+		{
+			GameState::state_2d->renderer->reset();
+		}
 
 		// Destroy bodies
 		for (Entity* entity : m_entities)

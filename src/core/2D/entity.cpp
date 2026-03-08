@@ -4,6 +4,7 @@
 #include "box2d/collision.h"
 #include "box2d/id.h"
 #include "box2d/types.h"
+#include "core/2D/object_2d.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
@@ -16,7 +17,6 @@
 #include "editor/editor_event.h"
 #include "editor/ui/editor_ui.h"
 #include "editor/ui/imgui_extras.h"
-#include "core/2D/game_object.h"
 
 namespace bacon
 {
@@ -42,10 +42,11 @@ namespace bacon
 		Entity::_allocator.deallocate((Entity*)ptr);
 	}
 
-	Entity::Entity() : GameObject()
+	Entity::Entity() : Object2D()
 	{
-		this->object_type = ObjectType::ENTITY;
-		this->name = "Entity";
+		m_object_type = ObjectType::ENTITY;
+		set_name("Entity");
+
 		m_texture = {0};
 		m_texture_path = "";
 
@@ -70,46 +71,45 @@ namespace bacon
 		};
 	}
 
-	Entity::Entity(ByteStream& bytes) : GameObject()
+	Entity::Entity(ByteStream& bytes) : Object2D()
 	{
-		this->object_type = ObjectType::ENTITY;
-		this->deserialize(bytes);
+		m_object_type = ObjectType::ENTITY;
+		deserialize(bytes);
 	}
 
-	Entity::Entity(const Entity& entity) : GameObject()
+	Entity::Entity(const Entity& entity) : Object2D()
 	{
-		this->object_type = ObjectType::ENTITY;
-		this->copy(entity);
+		m_object_type = ObjectType::ENTITY;
+		copy(entity);
 	}
 
 	Entity& Entity::operator=(const Entity& entity)
 	{
-		this->object_type = ObjectType::ENTITY;
-		this->copy(entity);
+		m_object_type = ObjectType::ENTITY;
+		copy(entity);
 
 		return *this;
 	}
 
+	Entity::~Entity()
+	{
+		destroy();
+	}
+
 	void Entity::destroy()
 	{
-		// Remove from scene (removes from render layer too)
-		if (in_scene)
-		{
-			this->remove_from_scene();
-		}
+		Object2D::destroy();
 
 		// Destroy physics body if it exists
 		if (b2Body_IsValid(m_physics_body))
 		{
 			b2DestroyBody(m_physics_body);
 		}
-
-		this->delete_children();
 	}
 
 	void Entity::copy(const GameObject& object)
 	{
-		GameObject::copy(object);
+		Object2D::copy(object);
 
 		const Entity& entity = static_cast<const Entity&>(object);
 
@@ -126,28 +126,28 @@ namespace bacon
 	Entity* Entity::clone_unique() const
 	{
 		Entity* new_entity = new Entity(*this);
-		new_entity->uuid = UUID();
+		new_entity->set_uuid(UUID());
 		return new_entity;
 	}
 
 	void Entity::add_to_scene()
 	{
-		if (in_scene) return;
+		if (get_in_scene()) return;
 
-		GameState::scene.add_entity(this);
-		GameState::renderer->add_to_layer(this, layer);
-		in_scene = true;
+		GameState::state_2d->scene->add_entity(this);
+		GameState::state_2d->renderer->add_to_layer(this, get_layer());
+		set_in_scene(true);
 
 		add_children_to_scene();
 	}
 
 	void Entity::remove_from_scene()
 	{
-		if (!in_scene) return;
+		if (!get_in_scene()) return;
 
-		GameState::scene.remove_entity(this);
-		GameState::renderer->remove_from_layer(this);
-		in_scene = false;
+		GameState::state_2d->scene->remove_entity(this);
+		GameState::state_2d->renderer->remove_from_layer(this);
+		set_in_scene(false);
 
 		remove_children_from_scene();
 	}
@@ -162,20 +162,18 @@ namespace bacon
 		}
 
 		m_texture_path = path;
-		m_texture = GameState::assets.load_texture(path);
-	}
-
-	void Entity::set_size(float width, float height)
-	{
-		this->size = (Vector2){width, height};
+		if (GameState::state_2d != nullptr && GameState::state_2d->assets != nullptr)
+		{
+			m_texture = GameState::state_2d->assets->load_texture(path);
+		}
 	}
 
 	void Entity::create_body(b2WorldId world_id)
 	{
 		b2BodyDef body_def = b2DefaultBodyDef();
-		body_def.rotation = b2MakeRot(this->rotation * DEG2RAD);
-		body_def.position = (b2Vec2){this->position.x, this->position.y};
-		b2Polygon box = b2MakeBox(this->size.x / 2, this->size.y / 2);
+		body_def.rotation = b2MakeRot(get_rotation() * DEG2RAD);
+		body_def.position = (b2Vec2){get_position().x, get_position().y};
+		b2Polygon box = b2MakeBox(get_size().x / 2, get_size().y / 2);
 
 		switch (m_physics_properties.type)
 		{
@@ -242,9 +240,9 @@ namespace bacon
 		m_physics_body = b2_nullBodyId;
 	}
 
-	void Entity::update_ui_buffer()
+	void Entity::update_ui_buffer() const
 	{
-		base_update_ui_buffer();
+		Object2D::update_ui_buffer();
 
 		ui::obj_properties.texture_path = m_texture_path;
 
@@ -266,9 +264,9 @@ namespace bacon
 
 	void Entity::update_from_ui_buffer()
 	{
-		base_update_from_ui_buffer();
+		Object2D::update_from_ui_buffer();
 
-		this->set_size(size.x, size.y);
+		this->set_size({ui::obj_properties.size[0], ui::obj_properties.size[1]});
 		this->set_texture(ui::obj_properties.texture_path);
 
 		m_physics_properties = (PhysicsProperties){
@@ -293,23 +291,25 @@ namespace bacon
 
 	void Entity::draw() const
 	{
-		if (!this->is_visible)
+		if (!get_visible())
 			return;
 
-		Vector2 draw_pos = this->position;
-		float draw_rot = this->rotation;
-		if (parent != nullptr)
+		Vector2 draw_pos = get_position();
+		float draw_rot = get_rotation();
+		Vector2 draw_size = get_size();
+
+		if (get_parent() != nullptr)
 		{
-			draw_pos = rotate_about_point(draw_pos, parent->position, parent->rotation);
-			draw_rot += parent->rotation;
+			draw_pos = rotate_about_point(draw_pos, get_parent()->get_position(), get_parent()->get_rotation());
+			draw_rot += get_parent()->get_rotation();
 		}
 
 		if (m_texture == nullptr)
 		{
 			DrawRectanglePro(
-				{position.x, position.y, size.x, size.y},
-				{size.x * 0.5f, size.y * 0.5f},
-				this->rotation,
+				{draw_pos.x, draw_pos.y, draw_size.x, draw_size.y},
+				{draw_size.x * 0.5f, draw_size.y * 0.5f},
+				draw_rot,
 				RED);
 		}
 		else
@@ -317,8 +317,8 @@ namespace bacon
 			DrawTexturePro(
 				*m_texture,
 				(Rectangle){0, 0, (float)m_texture->width, (float)m_texture->height},
-				(Rectangle){draw_pos.x, draw_pos.y, size.x, size.y},
-				{size.x * 0.5f, size.y * 0.5f},
+				(Rectangle){draw_pos.x, draw_pos.y, draw_size.x, draw_size.y},
+				{draw_size.x * 0.5f, draw_size.y * 0.5f},
 				draw_rot,
 				WHITE);
 		}
@@ -330,13 +330,13 @@ namespace bacon
 		using namespace event;
 
 		if (ui::inspect_object_copy == nullptr ||
-			ui::inspect_object_copy->uuid != this->uuid)
+			ui::inspect_object_copy->get_uuid() != get_uuid())
 		{
 			delete ui::inspect_object_copy;
 			ui::inspect_object_copy = this->clone();
 		}
 
-		bool change_made = draw_base_properties();
+		Object2D::draw_properties_editor();
 
 		// Texture
 		ImGui::ItemLabel("Texture", ItemLabelFlag::Left);
@@ -344,7 +344,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 		if (ImGui::Button("Select"))
 		{
@@ -354,7 +354,7 @@ namespace bacon
 				ui::obj_properties.texture_path = result.path;
 
 				globals::has_unsaved_changes = true;
-				change_made = true;
+				ui::properties_changes_made = true;
 			}
 		}
 
@@ -373,7 +373,7 @@ namespace bacon
 			ui::obj_properties.body_type = BodyType(current_body_option);
 
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Mass", ItemLabelFlag::Left);
@@ -381,7 +381,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Density", ItemLabelFlag::Left);
@@ -389,7 +389,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Friction", ItemLabelFlag::Left);
@@ -397,7 +397,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Restitution", ItemLabelFlag::Left);
@@ -405,7 +405,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Body Center", ItemLabelFlag::Left);
@@ -413,7 +413,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Rotational Inertia", ItemLabelFlag::Left);
@@ -421,7 +421,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Linear Damping", ItemLabelFlag::Left);
@@ -429,7 +429,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Angular Damping", ItemLabelFlag::Left);
@@ -437,7 +437,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Gravity Scale", ItemLabelFlag::Left);
@@ -445,7 +445,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Sleeping?", ItemLabelFlag::Left);
@@ -453,7 +453,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Disabled?", ItemLabelFlag::Left);
@@ -461,7 +461,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Is Bullet?", ItemLabelFlag::Left);
@@ -469,7 +469,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::ItemLabel("Fixed Rotation", ItemLabelFlag::Left);
@@ -477,7 +477,7 @@ namespace bacon
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			globals::has_unsaved_changes = true;
-			change_made = true;
+			ui::properties_changes_made = true;
 		}
 
 		ImGui::EndTabItem();
@@ -485,7 +485,7 @@ namespace bacon
 
 		ImGui::EndTabBar();
 
-		if (change_made)
+		if (ui::properties_changes_made)
 		{
 			update_from_ui_buffer();
 
@@ -493,14 +493,14 @@ namespace bacon
 			push_event(event);
 
 			ui::inspect_object_copy->copy(*this);
+			ui::properties_changes_made = false;
 		}
 	}
 
 	void Entity::save_to_json(nlohmann::json& data) const
 	{
-		GameObject::save_to_json(data);
+		Object2D::save_to_json(data);
 
-		data["type"] = "entity";
 		data["texture_path"] = m_texture_path;
 
 		data["body_type"] = m_physics_properties.type;
@@ -517,84 +517,31 @@ namespace bacon
 		data["is_bullet"] = m_physics_properties.is_bullet;
 	}
 
-	void Entity::load_from_json(nlohmann::json& data)
+	void Entity::load_from_json(const nlohmann::json& data)
 	{
-		GameObject::load_from_json(data);
+		Object2D::load_from_json(data);
 
-		for (nlohmann::json::iterator it = data.begin(); it != data.end(); it++)
-		{
-			std::string key = it.key();
-			auto value = *it;
+		m_texture_path = json_read_string(data, "texture_path");
 
-			if (key == "texture_path")
-			{
-				set_texture(value);
-			}
-			else if (key == "body_type")
-			{
-				m_physics_properties.type = BodyType(value);
-			}
-			else if (key == "body_center")
-			{
-				m_physics_properties.body_center[0] = value[0];
-				m_physics_properties.body_center[1] = value[1];
-			}
-			else if (key == "mass")
-			{
-				m_physics_properties.mass = value;
-			}
-			else if (key == "density")
-			{
-				m_physics_properties.density = value;
-			}
-			else if (key == "friction")
-			{
-				m_physics_properties.friction = value;
-			}
-			else if (key == "restitution")
-			{
-				m_physics_properties.restitution = value;
-			}
-			else if (key == "rotational_inertia")
-			{
-				m_physics_properties.rotational_inertia = value;
-			}
-			else if (key == "linear_damping")
-			{
-				m_physics_properties.linear_damping = value;
-			}
-			else if (key == "angular_damping")
-			{
-				m_physics_properties.angular_damping = value;
-			}
-			else if (key == "gravity_scale")
-			{
-				m_physics_properties.gravity_scale = value;
-			}
-			else if (key == "is_asleep")
-			{
-				m_physics_properties.is_sleeping = value;
-			}
-			else if (key == "fixed_rotation")
-			{
-				m_physics_properties.fixed_rotation = value;
-			}
-			else if (key == "is_bullet")
-			{
-				m_physics_properties.is_bullet = value;
-			}
-		}
-	}
-
-	size_t Entity::calculate_size() const
-	{
-		debug_error("This function has not been implemented yet.");
-		return 0;
+		m_physics_properties.type = BodyType(json_read_uint8(data, "body_type"));
+		m_physics_properties.body_center[0] = json_read_string(data, "body_center")[0];
+		m_physics_properties.body_center[1] = json_read_string(data, "body_center")[1];
+		m_physics_properties.mass = json_read_float(data, "mass");
+		m_physics_properties.density = json_read_float(data, "density");
+		m_physics_properties.friction = json_read_float(data, "friction");
+		m_physics_properties.restitution = json_read_float(data, "restitution");
+		m_physics_properties.rotational_inertia = json_read_float(data, "rotational_inertia");
+		m_physics_properties.linear_damping = json_read_float(data, "linear_damping");
+		m_physics_properties.angular_damping = json_read_float(data, "angular_damping");
+		m_physics_properties.gravity_scale = json_read_float(data, "gravity_scale");
+		m_physics_properties.is_sleeping = json_read_bool(data, "is_asleep");
+		m_physics_properties.fixed_rotation = json_read_bool(data, "fixed_rotation");
+		m_physics_properties.is_bullet = json_read_bool(data, "is_bullet");
 	}
 
 	ByteStream Entity::serialize() const
 	{
-		ByteStream bytes = GameObject::serialize();
+		ByteStream bytes = Object2D::serialize();
 
 		bytes << m_texture_path;
 		bytes << static_cast<uint8_t>(m_physics_properties.type);
@@ -618,7 +565,7 @@ namespace bacon
 
 	void Entity::deserialize(ByteStream& bytes)
 	{
-		GameObject::deserialize(bytes);
+		Object2D::deserialize(bytes);
 
 		std::string texture_path;
 		bytes >> texture_path;

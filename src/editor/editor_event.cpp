@@ -1,9 +1,5 @@
 #include "editor_event.h"
 
-#include "core/2D/camera_object.h"
-#include "core/2D/entity.h"
-#include "core/2D/game_object.h"
-#include "core/2D/text_object.h"
 #include "core/util.h"
 #include "core/game_state.h"
 #include "core/globals.h"
@@ -20,10 +16,10 @@ namespace bacon
 		ObjectEvent::ObjectEvent(GameObject* before, GameObject* after)
 		{
 			assert(before != nullptr && after != nullptr);
-			assert(before->uuid == after->uuid);
+			assert(before->get_uuid() == after->get_uuid());
 
 			// Allocate new objects
-			this->object_uuid = before->uuid;
+			this->object_uuid = before->get_uuid();
 			this->before = before->clone();
 			this->after = after->clone();
 		}
@@ -37,10 +33,10 @@ namespace bacon
 		void ObjectEvent::apply(EventAction action)
 		{
 			assert(before != nullptr && after != nullptr);
-			assert(before->uuid == after->uuid);
+			assert(before->get_uuid() == after->get_uuid());
 			assert(action != EventAction::NONE);
 
-			GameObject* object = GameState::scene.find_object_by_uuid(object_uuid);
+			GameObject* object = GameState::find_object_by_uuid(object_uuid);
 			if (object == nullptr)
 			{
 				debug_error("Failed to find object in scene!");
@@ -69,7 +65,7 @@ namespace bacon
 		{
 			assert(action != EventAction::NONE);
 
-			GameObject* object = GameState::scene.find_object_by_uuid(object_uuid);
+			GameObject* object = GameState::find_object_by_uuid(object_uuid);
 			if (object == nullptr)
 			{
 				debug_error("Failed to find object in scene!");
@@ -78,26 +74,36 @@ namespace bacon
 
 			if (action == EventAction::UNDO)
 			{
-				object->set_parent(old_parent);
-				if (old_parent != nullptr)
+				if (GameState::game_type == GameState::GameType::GAME_2D)
 				{
-					old_parent->add_child(object);
-				}
-				if (new_parent != nullptr)
-				{
-					new_parent->remove_child(object);
+					Object2D* object2d = (Object2D*)object;
+
+					object2d->set_parent((Object2D*)old_parent);
+					if (old_parent != nullptr)
+					{
+						((Object2D*)old_parent)->add_child(object2d);
+					}
+					if (new_parent != nullptr)
+					{
+						((Object2D*)new_parent)->remove_child(object2d);
+					}
 				}
 			}
 			else if (action == EventAction::REDO)
 			{
-				object->set_parent(new_parent);
-				if (new_parent != nullptr)
+				if (GameState::game_type == GameState::GameType::GAME_2D)
 				{
-					new_parent->add_child(object);
-				}
-				if (old_parent != nullptr)
-				{
-					old_parent->remove_child(object);
+					Object2D* object2d = (Object2D*)object;
+
+					object2d->set_parent((Object2D*)new_parent);
+					if (new_parent != nullptr)
+					{
+						((Object2D*)new_parent)->add_child(object2d);
+					}
+					if (old_parent != nullptr)
+					{
+						((Object2D*)old_parent)->remove_child(object2d);
+					}
 				}
 			}
 
@@ -132,12 +138,14 @@ namespace bacon
 		ObjectCreateEvent::ObjectCreateEvent(const GameObject& object)
 		{
 			this->object_copy = object.clone();
-			this->object_copy->clone_children(object, false);
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				((Object2D*)object_copy)->clone_children((Object2D&)object, false);
+			}
 		}
 
 		ObjectCreateEvent::~ObjectCreateEvent()
 		{
-			object_copy->delete_children();
 			delete object_copy;
 		}
 
@@ -149,22 +157,25 @@ namespace bacon
 			if (action == EventAction::UNDO)
 			{
 				if (ui::view_properties_object != nullptr &&
-					ui::view_properties_object->uuid == object_copy->uuid)
+					ui::view_properties_object->get_uuid() == object_copy->get_uuid())
 				{
 					ui::view_properties_object = nullptr;
 				}
 
-				GameObject* scene_object = GameState::scene.find_object_by_uuid(object_copy->uuid);
+				GameObject* scene_object = GameState::find_object_by_uuid(object_copy->get_uuid());
 				assert(scene_object != nullptr);
 
-				scene_object->destroy();
 				delete scene_object;
 			}
 			else if (action == EventAction::REDO)
 			{
 				GameObject* new_object = object_copy->clone();
-				new_object->clone_children(*object_copy, true);
 				new_object->add_to_scene();
+				if (GameState::game_type == GameState::GameType::GAME_2D)
+				{
+					((Object2D*)new_object)->clone_children((Object2D&)object_copy, true);
+				}
+
 			}
 
 			globals::has_unsaved_changes = true;
@@ -172,13 +183,15 @@ namespace bacon
 
 		ObjectDeleteEvent::ObjectDeleteEvent(const GameObject& object)
 		{
-			this->object_copy = object.clone();
-			this->object_copy->clone_children(object, false);
+			object_copy = object.clone();
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				((Object2D*)object_copy)->clone_children((Object2D&)object, false);
+			}
 		}
 
 		ObjectDeleteEvent::~ObjectDeleteEvent()
 		{
-			object_copy->delete_children();
 			delete object_copy;
 		}
 
@@ -190,15 +203,17 @@ namespace bacon
 			if (action == EventAction::UNDO)
 			{
 				GameObject* new_object = object_copy->clone();
-				new_object->clone_children(*object_copy, true);
 				new_object->add_to_scene();
+				if (GameState::game_type == GameState::GameType::GAME_2D)
+				{
+					((Object2D*)new_object)->clone_children((Object2D&)object_copy, true);
+				}
 			}
 			else if (action == EventAction::REDO)
 			{
-				GameObject* scene_object = GameState::scene.find_object_by_uuid(object_copy->uuid);
+				GameObject* scene_object = GameState::find_object_by_uuid(object_copy->get_uuid());
 				assert(scene_object != nullptr);
 
-				scene_object->destroy();
 				delete scene_object;
 			}
 

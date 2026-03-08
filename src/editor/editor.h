@@ -65,7 +65,7 @@ namespace bacon
 		const std::vector<ConsoleMessage>& get_console_messages();
 
 		void draw_ui();
-		void editor_input();
+		void editor_input_2d();
 
 		void start_game();
 		void end_game();
