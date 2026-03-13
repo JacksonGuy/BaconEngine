@@ -61,19 +61,6 @@ namespace bacon
 		copy(camera);
 	}
 
-	CameraObject& CameraObject::operator=(const CameraObject& camera)
-	{
-		m_type_id = TypeID::CAMERA_2D;
-		copy(camera);
-
-		return *this;
-	}
-
-	CameraObject::~CameraObject()
-	{
-		destroy();
-	}
-
 	void CameraObject::copy(const GameObject& object)
 	{
 		Object2D::copy(object);

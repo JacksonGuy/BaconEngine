@@ -66,19 +66,6 @@ namespace bacon
 		copy(text_object);
 	}
 
-	TextObject& TextObject::operator=(const TextObject& text_object)
-	{
-		m_type_id = TypeID::TEXT_2D;
-		copy(text_object);
-
-		return *this;
-	}
-
-	TextObject::~TextObject()
-	{
-		destroy();
-	}
-
 	void TextObject::copy(const GameObject& object)
 	{
 		Object2D::copy(object);

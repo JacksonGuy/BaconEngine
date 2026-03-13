@@ -26,10 +26,10 @@ namespace bacon
 		TextObject();
 		TextObject(ByteStream& bytes);
 		TextObject(const TextObject& text_object);
-		TextObject& operator=(const TextObject& text_object);
+		TextObject& operator=(const TextObject& text_object) = delete;
 		TextObject(TextObject&& text_object) = delete;
 		TextObject& operator=(TextObject&& text_object) = delete;
-		~TextObject();
+		~TextObject() = default;
 
 		// void destroy() override;
 		void copy(const GameObject& object) override;

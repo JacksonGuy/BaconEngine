@@ -54,10 +54,10 @@ namespace bacon
 
 		GameObject();
 		GameObject(const GameObject& object);
-		GameObject& operator=(const GameObject& object);
+		GameObject& operator=(const GameObject& object) = delete;
 		GameObject(GameObject&& object) = delete;
 		GameObject& operator=(GameObject&& object) = delete;
-		virtual ~GameObject();
+		virtual ~GameObject() = default;
 
 		virtual void destroy();
 		virtual void copy(const GameObject& object);

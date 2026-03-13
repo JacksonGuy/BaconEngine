@@ -27,7 +27,7 @@ namespace bacon
 
 		Object2D();
 		Object2D(const Object2D& obj);
-		Object2D& operator=(const Object2D& obj);
+		Object2D& operator=(const Object2D& obj) = delete;
 		Object2D(Object2D&& obj) = delete;
 		Object2D& operator=(Object2D&& obj) = delete;
 		virtual ~Object2D() = default;

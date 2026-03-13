@@ -854,8 +854,7 @@ namespace bacon
 					event::ObjectDeleteEvent* event = new event::ObjectDeleteEvent(*object);
 					event::push_event(event);
 
-					// Remove from scene
-					object->destroy();
+					// Mark for deletion
 					will_delete = true;
 				}
 
@@ -938,6 +937,7 @@ namespace bacon
 			// Defer object delete until end of function
 			if (will_delete)
 			{
+				object->destroy();
 				delete object;
 			}
 		}

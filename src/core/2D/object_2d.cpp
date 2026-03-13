@@ -52,14 +52,6 @@ namespace bacon
 		this->copy(obj);
 	}
 
-	Object2D& Object2D::operator=(const Object2D& obj)
-	{
-		m_type_id = static_type_id;
-		this->copy(obj);
-
-		return *this;
-	}
-
 	void Object2D::copy(const GameObject& obj)
 	{
 		GameObject::copy(obj);

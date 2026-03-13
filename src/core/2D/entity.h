@@ -54,10 +54,10 @@ namespace bacon
 		Entity();
 		Entity(ByteStream& bytes);
 		Entity(const Entity& entity);
-		Entity& operator=(const Entity& entity);
+		Entity& operator=(const Entity& entity) = delete;
 		Entity(Entity&& entity) = delete;
 		Entity& operator=(Entity&& entity) = delete;
-		~Entity();
+		~Entity() = default;
 
 		void destroy() override;
 		void copy(const GameObject& object) override;

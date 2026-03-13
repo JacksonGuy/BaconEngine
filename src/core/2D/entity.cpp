@@ -84,19 +84,6 @@ namespace bacon
 		copy(entity);
 	}
 
-	Entity& Entity::operator=(const Entity& entity)
-	{
-		m_type_id = TypeID::ENTITY_2D;
-		copy(entity);
-
-		return *this;
-	}
-
-	Entity::~Entity()
-	{
-		destroy();
-	}
-
 	void Entity::destroy()
 	{
 		Object2D::destroy();

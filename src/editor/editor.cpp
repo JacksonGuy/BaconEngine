@@ -90,6 +90,7 @@ namespace bacon
 	{
 		if (Editor::copy_object)
 		{
+			Editor::copy_object->destroy();
 			delete Editor::copy_object;
 			Editor::copy_object = nullptr;
 		}

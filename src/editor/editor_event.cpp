@@ -133,6 +133,7 @@ namespace bacon
 
 		ObjectCreateEvent::~ObjectCreateEvent()
 		{
+			object_copy->delete_children();
 			delete object_copy;
 		}
 
@@ -152,6 +153,7 @@ namespace bacon
 				GameObject* scene_object = GameState::find_object_by_uuid(object_copy->get_uuid());
 				assert(scene_object != nullptr);
 
+				scene_object->destroy();
 				delete scene_object;
 			}
 			else if (action == EventAction::REDO)
@@ -172,6 +174,7 @@ namespace bacon
 
 		ObjectDeleteEvent::~ObjectDeleteEvent()
 		{
+			object_copy->delete_children();
 			delete object_copy;
 		}
 
@@ -191,6 +194,7 @@ namespace bacon
 				GameObject* scene_object = GameState::find_object_by_uuid(object_copy->get_uuid());
 				assert(scene_object != nullptr);
 
+				scene_object->destroy();
 				delete scene_object;
 			}
 

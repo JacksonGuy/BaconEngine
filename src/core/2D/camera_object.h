@@ -27,10 +27,10 @@ namespace bacon
 		CameraObject();
 		CameraObject(ByteStream& bytes);
 		CameraObject(const CameraObject& camera);
-		CameraObject& operator=(const CameraObject& camera);
+		CameraObject& operator=(const CameraObject& camera) = delete;
 		CameraObject(CameraObject&& camera) = delete;
 		CameraObject& operator=(CameraObject&& camera) = delete;
-		~CameraObject();
+		~CameraObject() = default;
 
 		// void destroy() override;
 		void copy(const GameObject& object) override;

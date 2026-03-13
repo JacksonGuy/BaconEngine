@@ -36,21 +36,6 @@ namespace bacon
 		m_in_scene = false;
 	}
 
-	GameObject& GameObject::operator=(const GameObject& object)
-	{
-		m_type_id = static_type_id;
-		copy(object);
-
-		m_in_scene = false;
-
-		return *this;
-	}
-
-	GameObject::~GameObject()
-	{
-		destroy();
-	}
-
 	void GameObject::destroy()
 	{
 		if (m_in_scene)
@@ -163,6 +148,7 @@ namespace bacon
 	{
 		for (GameObject* child : m_children)
 		{
+			child->destroy();
 			delete child;
 		}
 

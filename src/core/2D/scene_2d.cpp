@@ -24,6 +24,11 @@ namespace bacon
 		m_lua_state = std::make_unique<sol::state>();
 	}
 
+	Scene2D::~Scene2D()
+	{
+		cleanup();
+	}
+
 	const std::vector<Object2D*>& Scene2D::get_objects() const
 	{
 		return m_objects;
@@ -348,12 +353,8 @@ namespace bacon
 			GameState::state_2d->renderer->reset();
 		}
 
-		// Delete objects
-		// For some reason, using range-based for-loop
-		// here causes a segfault, but using an iterator doesn't?
-		for (auto it = m_objects.begin(); it != m_objects.end(); it++)
+		for (Object2D* object : m_objects)
 		{
-			Object2D* object = *it;
 			delete object;
 		}
 		m_objects.clear();
@@ -379,7 +380,6 @@ namespace bacon
 		}
 		b2DestroyWorld(m_world);
 
-		// Delete objects
 		for (GameObject* object : m_objects)
 		{
 			delete object;
