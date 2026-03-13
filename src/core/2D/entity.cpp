@@ -5,6 +5,7 @@
 #include "box2d/id.h"
 #include "box2d/types.h"
 #include "core/2D/object_2d.h"
+#include "core/game_object.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "raylib.h"
@@ -44,7 +45,7 @@ namespace bacon
 
 	Entity::Entity() : Object2D()
 	{
-		m_object_type = ObjectType::ENTITY;
+		m_type_id = TypeID::ENTITY_2D;
 		set_name("Entity");
 
 		m_texture = {0};
@@ -73,19 +74,19 @@ namespace bacon
 
 	Entity::Entity(ByteStream& bytes) : Object2D()
 	{
-		m_object_type = ObjectType::ENTITY;
+		m_type_id = TypeID::ENTITY_2D;
 		deserialize(bytes);
 	}
 
 	Entity::Entity(const Entity& entity) : Object2D()
 	{
-		m_object_type = ObjectType::ENTITY;
+		m_type_id = TypeID::ENTITY_2D;
 		copy(entity);
 	}
 
 	Entity& Entity::operator=(const Entity& entity)
 	{
-		m_object_type = ObjectType::ENTITY;
+		m_type_id = TypeID::ENTITY_2D;
 		copy(entity);
 
 		return *this;
@@ -146,8 +147,6 @@ namespace bacon
 		if (!get_in_scene()) return;
 
 		GameState::state_2d->scene->remove_entity(this);
-		GameState::state_2d->renderer->remove_from_layer(this);
-		set_in_scene(false);
 
 		remove_children_from_scene();
 	}
@@ -298,10 +297,11 @@ namespace bacon
 		float draw_rot = get_rotation();
 		Vector2 draw_size = get_size();
 
-		if (get_parent() != nullptr)
+		Object2D* parent = dynamic_cast_to<Object2D>(get_parent());
+		if (parent != nullptr)
 		{
-			draw_pos = rotate_about_point(draw_pos, get_parent()->get_position(), get_parent()->get_rotation());
-			draw_rot += get_parent()->get_rotation();
+			draw_pos = rotate_about_point(draw_pos, parent->get_position(), parent->get_rotation());
+			draw_rot += parent->get_rotation();
 		}
 
 		if (m_texture == nullptr)
@@ -522,10 +522,12 @@ namespace bacon
 		Object2D::load_from_json(data);
 
 		m_texture_path = json_read_string(data, "texture_path");
+		set_texture(m_texture_path);
 
 		m_physics_properties.type = BodyType(json_read_uint8(data, "body_type"));
-		m_physics_properties.body_center[0] = json_read_string(data, "body_center")[0];
-		m_physics_properties.body_center[1] = json_read_string(data, "body_center")[1];
+		Vector2 body_center = json_read_vector2(data, "body_center");
+		m_physics_properties.body_center[0] = body_center.x;
+		m_physics_properties.body_center[1] = body_center.y;
 		m_physics_properties.mass = json_read_float(data, "mass");
 		m_physics_properties.density = json_read_float(data, "density");
 		m_physics_properties.friction = json_read_float(data, "friction");

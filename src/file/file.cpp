@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/2D/game_state_2d.h"
 #include "core/game_state.h"
 #include "core/uuid.h"
 #include "nlohmann/json.hpp"
@@ -30,7 +31,7 @@ namespace bacon
 
 			if (GameState::game_type == GameState::GameType::GAME_2D)
 			{
-				project_data["settings"]["type"] = "2D";
+				project_data["settings"]["game_type"] = GameState::GameType::GAME_2D;
 				project_data["settings"]["gravity"] = GameState::state_2d->scene->get_gravity();
 
 				const std::vector<Object2D*>& objects = GameState::state_2d->scene->get_objects();
@@ -46,7 +47,7 @@ namespace bacon
 			}
 			else if (GameState::game_type == GameState::GameType::GAME_3D)
 			{
-				project_data["settings"]["type"] = "3D";
+				project_data["settings"]["game_type"] = GameState::GameType::GAME_3D;
 			}
 
 			outfile << std::setw(4) << project_data;
@@ -61,25 +62,9 @@ namespace bacon
 
 		void parse_project_settings(const nlohmann::json& json)
 		{
-			GameState::game_type = (GameState::GameType)json_read_uint8(json, "type");
 			globals::engine_version = json_read_string(json, "version");
 			globals::project_title = json_read_string(json, "title");
-
-			if (GameState::game_type == GameState::GameType::GAME_2D)
-			{
-				if (GameState::state_2d != nullptr)
-				{
-					delete GameState::state_2d;
-				}
-				GameState::state_2d = new GameState2D();
-
-				GameState::state_2d->scene->set_gravity(json_read_float(json, "gravity"));
-			}
-			else if (GameState::game_type == GameState::GameType::GAME_3D)
-			{
-				// TODO
-				// GameState::state_3d = new GameState3D();
-			}
+			GameState::state_2d->scene->set_gravity(json_read_float(json, "gravity"));
 		}
 
 		void parse_project_objects(const nlohmann::json& json)
@@ -92,19 +77,21 @@ namespace bacon
 					continue;
 				}
 
-				if (object["type"] == "entity")
+				TypeID type_id = TypeID(json_read_uint32(object, "type_id"));
+
+				if (type_id == TypeID::ENTITY_2D)
 				{
 					Entity* entity = new Entity();
 					entity->load_from_json(object);
 					entity->add_to_scene();
 				}
-				else if (object["type"] == "text")
+				else if (type_id == TypeID::TEXT_2D)
 				{
 					TextObject* text = new TextObject();
 					text->load_from_json(object);
 					text->add_to_scene();
 				}
-				else if (object["type"] == "camera")
+				else if (type_id == TypeID::CAMERA_2D)
 				{
 					CameraObject* camera = new CameraObject();
 					camera->load_from_json(object);
@@ -163,14 +150,45 @@ namespace bacon
 				entry_path.parent_path().generic_string();
 			globals::is_project_loaded = true;
 
+			// Parse json
+			json file_data = json::parse(infile);
+
+			// Get project type
+			GameState::game_type = GameState::GameType::NONE;
+			uint8_t game_type = json_read_uint8(file_data["settings"], "game_type");
+			switch ((GameState::GameType)game_type)
+			{
+				case GameState::GameType::NONE:
+				{
+					debug_error("Failed to load project: Invalid project type.");
+					return NFD_ERROR;
+				}
+
+				default:
+				{
+					GameState::game_type = GameState::GameType(game_type);
+					break;
+				}
+			}
+
 			// Delete scene data
 			if (GameState::game_type == GameState::GameType::GAME_2D)
 			{
-				GameState::state_2d->scene->reset();
+				if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
+				{
+					GameState::state_2d->scene->reset();
+				}
+				else
+				{
+					// Create state if it doesn't exist
+					if (!GameState::state_2d)
+					{
+						GameState::state_2d = new GameState2D();
+					}
+				}
 			}
 
-			// Load JSON data and parse
-			json file_data = json::parse(infile);
+			// Interpret JSON data
 			for (auto it = file_data.begin(); it != file_data.end(); it++)
 			{
 				std::string key = it.key();
@@ -280,14 +298,9 @@ namespace bacon
 			// Create new UUIDs for things.
 			// load_from_json preserves UUIDs.
 			object.set_uuid(UUID());
-			if (GameState::game_type == GameState::GameType::GAME_2D)
+			for (GameObject* child : object.get_children())
 			{
-				Object2D& object2d = (Object2D&)object;
-
-				for (Object2D* child : object2d.get_children())
-				{
-					child->set_uuid(UUID());
-				}
+				child->set_uuid(UUID());
 			}
 
 			debug_log("Object loaded from prefab.");

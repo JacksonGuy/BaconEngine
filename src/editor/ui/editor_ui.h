@@ -72,6 +72,7 @@ namespace bacon
 		inline ObjectFields obj_properties;
 		inline GameObject* view_properties_object = nullptr;
 		inline GameObject* inspect_object_copy = nullptr;
+		inline UUID drag_object_uuid;
 		inline bool properties_changes_made = false;
 
 		inline bool show_test = true;

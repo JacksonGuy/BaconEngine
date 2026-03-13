@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "core/2D/scene_2d.h"
+#include "core/game_object.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
@@ -193,12 +194,12 @@ namespace bacon
 				if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
 				{
 					for (GameObject* obj : GameState::state_2d->scene->get_objects())
-				{
-					if (obj->get_parent() == nullptr)
 					{
-						game_object_tree_recurse(obj);
+						if (obj->get_parent() == nullptr)
+						{
+							game_object_tree_recurse(obj);
+						}
 					}
-				}
 				}
 
 				ImGui::TreePop();
@@ -209,6 +210,8 @@ namespace bacon
 
 		void draw_scene_display()
 		{
+			// TODO:
+			// This is bad
 			Renderer2D* renderer =
 				(GameState::state_2d != nullptr) ? GameState::state_2d->renderer : nullptr;
 
@@ -506,10 +509,9 @@ namespace bacon
 				Entity* entity = new Entity();
 				entity->add_to_scene();
 
-				entity->name = name_buffer;
-				entity->position =
-					(Vector2){.x = position_buffer[0], .y = position_buffer[1]};
-				entity->set_size(size_buffer[0], size_buffer[1]);
+				entity->set_name(name_buffer);
+				entity->set_position({position_buffer[0], position_buffer[1]});
+				entity->set_size({size_buffer[0], size_buffer[1]});
 
 				ui::show_entity_create = false;
 
@@ -547,9 +549,8 @@ namespace bacon
 				TextObject* text = new TextObject();
 				text->add_to_scene();
 
-				text->name = name_buffer;
-				text->position =
-					(Vector2){position_buffer[0], position_buffer[1]};
+				text->set_name(name_buffer);
+				text->set_position((Vector2){position_buffer[0], position_buffer[1]});
 
 				ui::show_text_create = false;
 
@@ -582,7 +583,7 @@ namespace bacon
 				CameraObject* camera = new CameraObject();
 				camera->add_to_scene();
 
-				camera->name = name_buffer;
+				camera->set_name(name_buffer);
 
 				ui::show_camera_create = false;
 
@@ -823,11 +824,11 @@ namespace bacon
 			// Create tree node for parent
 			if (object->get_children().size() == 0)
 			{
-				ImGui::TreeNodeEx(object->name.c_str(), normalFlags);
+				ImGui::TreeNodeEx(object->get_name().c_str(), normalFlags);
 			}
 			else
 			{
-				is_open = ImGui::TreeNodeEx(object->name.c_str(), parentFlags);
+				is_open = ImGui::TreeNodeEx(object->get_name().c_str(), parentFlags);
 			}
 
 			// View object properties if left clicked
@@ -871,7 +872,8 @@ namespace bacon
 			// Handle mouse drag
 			if (ImGui::BeginDragDropSource())
 			{
-				ImGui::SetDragDropPayload("OBJECT_UUID", &object->uuid, sizeof(object->uuid));
+				ui::drag_object_uuid = object->get_uuid();
+				ImGui::SetDragDropPayload("OBJECT_UUID", &ui::drag_object_uuid, sizeof(ui::drag_object_uuid));
 				ImGui::EndDragDropSource();
 			}
 
@@ -903,7 +905,7 @@ namespace bacon
 						source_obj->set_parent(object);
 
 						event::TreeEvent* event = new event::TreeEvent();
-						event->object_uuid = source_obj->uuid;
+						event->object_uuid = source_obj->get_uuid();
 						event->old_parent = parent;
 						event->new_parent = object;
 
@@ -1044,12 +1046,19 @@ namespace bacon
 				object->load_from_json(json);
 				object->add_to_scene();
 
-				// Create prefab object in the center of the screen
-				Vector2 camera_pos = globals::editor_ref->camera.target;
-				object->set_position({
-					camera_pos.x + (ui::window_size.x / 2),
-					camera_pos.y + (ui::window_size.y / 2)
-				});
+				if (GameState::game_type == GameState::GameType::GAME_2D)
+				{
+					Object2D* object_2d = dynamic_cast_to<Object2D>(object);
+					if (object_2d != nullptr)
+					{
+						// Create prefab object in the center of the screen
+						Vector2 camera_pos = globals::editor_ref->camera.target;
+						object_2d->set_position({
+							camera_pos.x + (ui::window_size.x / 2),
+							camera_pos.y + (ui::window_size.y / 2)
+						});
+					}
+				}
 
 				event::ObjectCreateEvent* event = new event::ObjectCreateEvent(*object);
 				event::push_event(event);

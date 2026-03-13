@@ -17,4 +17,12 @@ namespace bacon
 	{
 		return find_object_by_uuid(UUID(uuid));
 	}
+
+	void GameState::cleanup()
+	{
+		if (game_type == GameType::GAME_2D)
+		{
+			GameState::state_2d->cleanup();
+		}
+	}
 }

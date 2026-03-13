@@ -74,36 +74,26 @@ namespace bacon
 
 			if (action == EventAction::UNDO)
 			{
-				if (GameState::game_type == GameState::GameType::GAME_2D)
+				object->set_parent(old_parent);
+				if (old_parent != nullptr)
 				{
-					Object2D* object2d = (Object2D*)object;
-
-					object2d->set_parent((Object2D*)old_parent);
-					if (old_parent != nullptr)
-					{
-						((Object2D*)old_parent)->add_child(object2d);
-					}
-					if (new_parent != nullptr)
-					{
-						((Object2D*)new_parent)->remove_child(object2d);
-					}
+					old_parent->add_child(object);
+				}
+				if (new_parent != nullptr)
+				{
+					new_parent->remove_child(object);
 				}
 			}
 			else if (action == EventAction::REDO)
 			{
-				if (GameState::game_type == GameState::GameType::GAME_2D)
+				object->set_parent(new_parent);
+				if (new_parent != nullptr)
 				{
-					Object2D* object2d = (Object2D*)object;
-
-					object2d->set_parent((Object2D*)new_parent);
-					if (new_parent != nullptr)
-					{
-						((Object2D*)new_parent)->add_child(object2d);
-					}
-					if (old_parent != nullptr)
-					{
-						((Object2D*)old_parent)->remove_child(object2d);
-					}
+					new_parent->add_child(object);
+				}
+				if (old_parent != nullptr)
+				{
+					old_parent->remove_child(object);
 				}
 			}
 
@@ -138,10 +128,7 @@ namespace bacon
 		ObjectCreateEvent::ObjectCreateEvent(const GameObject& object)
 		{
 			this->object_copy = object.clone();
-			if (GameState::game_type == GameState::GameType::GAME_2D)
-			{
-				((Object2D*)object_copy)->clone_children((Object2D&)object, false);
-			}
+			object_copy->clone_children(object, false);
 		}
 
 		ObjectCreateEvent::~ObjectCreateEvent()
@@ -171,11 +158,7 @@ namespace bacon
 			{
 				GameObject* new_object = object_copy->clone();
 				new_object->add_to_scene();
-				if (GameState::game_type == GameState::GameType::GAME_2D)
-				{
-					((Object2D*)new_object)->clone_children((Object2D&)object_copy, true);
-				}
-
+				new_object->clone_children(*object_copy, true);
 			}
 
 			globals::has_unsaved_changes = true;
@@ -184,10 +167,7 @@ namespace bacon
 		ObjectDeleteEvent::ObjectDeleteEvent(const GameObject& object)
 		{
 			object_copy = object.clone();
-			if (GameState::game_type == GameState::GameType::GAME_2D)
-			{
-				((Object2D*)object_copy)->clone_children((Object2D&)object, false);
-			}
+			object_copy->clone_children(object, false);
 		}
 
 		ObjectDeleteEvent::~ObjectDeleteEvent()
@@ -204,10 +184,7 @@ namespace bacon
 			{
 				GameObject* new_object = object_copy->clone();
 				new_object->add_to_scene();
-				if (GameState::game_type == GameState::GameType::GAME_2D)
-				{
-					((Object2D*)new_object)->clone_children((Object2D&)object_copy, true);
-				}
+				new_object->clone_children(*object_copy, true);
 			}
 			else if (action == EventAction::REDO)
 			{

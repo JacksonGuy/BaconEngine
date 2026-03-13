@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
+#include <exception>
 #include <string>
 
 #include "nlohmann/detail/exceptions.hpp"
@@ -97,91 +98,91 @@ namespace bacon
 	inline std::string json_read_string(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return ""; }
+		catch (const std::exception&) { return ""; }
 	}
 
 	inline bool json_read_bool(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return false; }
+		catch (const std::exception&) { return false; }
 	}
 
-	inline int json_read_int8(const nlohmann::json& json, const char* key)
+	inline int8_t json_read_int8(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_int16(const nlohmann::json& json, const char* key)
+	inline int16_t json_read_int16(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_int32(const nlohmann::json& json, const char* key)
+	inline int32_t json_read_int32(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_int64(const nlohmann::json& json, const char* key)
+	inline int64_t json_read_int64(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_uint8(const nlohmann::json& json, const char* key)
+	inline uint8_t json_read_uint8(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_uint16(const nlohmann::json& json, const char* key)
+	inline uint16_t json_read_uint16(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_uint32(const nlohmann::json& json, const char* key)
+	inline uint32_t json_read_uint32(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
-	inline int json_read_uint64(const nlohmann::json& json, const char* key)
+	inline uint64_t json_read_uint64(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
 	inline float json_read_float(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0.0f; }
+		catch (const std::exception&) { return 0.0f; }
 	}
 
 	inline double json_read_double(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0.0; }
+		catch (const std::exception&) { return 0.0; }
 	}
 
 	inline size_t json_read_size_t(const nlohmann::json& json, const char* key)
 	{
 		try { return json.at(key); }
-		catch (nlohmann::detail::out_of_range) { return 0; }
+		catch (const std::exception&) { return 0; }
 	}
 
 	inline Vector2 json_read_vector2(const nlohmann::json& json, const char* key)
 	{
 		try { return (Vector2){json.at(key)[0], json.at(key)[1]}; }
-		catch (nlohmann::detail::out_of_range) { return (Vector2){0.0f, 0.0f}; }
+		catch (const std::exception&) { return (Vector2){0.0f, 0.0f}; }
 	}
 
 	inline Color json_read_color(const nlohmann::json& json, const char* key)
 	{
 		try { return (Color){json.at(key)[0], json.at(key)[1], json.at(key)[2], json.at(key)[3]}; }
-		catch (nlohmann::detail::out_of_range) { return (Color){0, 0, 0, 0}; }
+		catch (const std::exception&) { return (Color){0, 0, 0, 0}; }
 	}
 
 	inline void _debug_log_impl(const char* level, const char* file, int line,

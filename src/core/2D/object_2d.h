@@ -12,43 +12,29 @@
 
 namespace bacon
 {
-	enum class ObjectType : uint8_t
-	{
-		OBJECT = 0,
-		ENTITY,
-		TEXT,
-		CAMERA,
-	};
-
 	class Object2D : public GameObject
 	{
 	public:
 		friend class Renderer;
 
-		static Object2D* create_object(ByteStream& bytes);
+		static Object2D* create_object_2d(ByteStream& bytes, TypeID type_id);
+		static bool classof(const GameObject* object)
+		{
+			return object->get_type_id() >= TypeID::OBJECT_2D_START &&
+				object->get_type_id() <= TypeID::OBJECT_2D_END;
+		}
+		static constexpr TypeID static_type_id = TypeID::OBJECT_2D;
 
 		Object2D();
 		Object2D(const Object2D& obj);
 		Object2D& operator=(const Object2D& obj);
 		Object2D(Object2D&& obj) = delete;
 		Object2D& operator=(Object2D&& obj) = delete;
-		virtual ~Object2D() = 0;
+		virtual ~Object2D() = default;
 
-		virtual void destroy() override;
 		virtual void copy(const GameObject& object) override;
-		virtual Object2D* clone() const override;
-		virtual Object2D* clone_unique() const override;
 
-		void add_children_to_scene() override;
-		void remove_children_from_scene() override;
-
-		Object2D* get_parent() const { return m_parent; };
-		void set_parent(Object2D* parent);
-		const std::vector<Object2D*>& get_children() const { return m_children; };
-		void add_child(Object2D* child);
-		void remove_child(Object2D* child);
-		void delete_children();
-		void clone_children(const Object2D& obj, bool add_to_scene = true);
+		void clone_children(const GameObject& object, bool add_to_scene) override;
 
 		virtual void draw_outline() const;
 		virtual bool contains_point(Vector2 point);
@@ -77,15 +63,11 @@ namespace bacon
 	protected:
 		virtual void deserialize(ByteStream& bytes) override;
 
-		ObjectType m_object_type;
-
 	private:
 		Vector2 m_position;
 		Vector2 m_size;
 		float m_rotation;
 		bool m_is_visible;
 		size_t m_layer;
-		Object2D* m_parent;
-		std::vector<Object2D*> m_children;
 	};
 } // namespace bacon

@@ -22,5 +22,6 @@ namespace bacon
 
 		GameObject* find_object_by_uuid(UUID uuid);
 		GameObject* find_object_by_uuid(std::string uuid);
+		void cleanup();
 	}
 } // namespace bacon

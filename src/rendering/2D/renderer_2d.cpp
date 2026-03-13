@@ -98,6 +98,18 @@ namespace bacon
 		}
 	}
 
+	void Renderer2D::debug_print_layers()
+	{
+		for (const RenderLayer& layer : m_layers)
+		{
+			std::cout << "Layer " << layer.layer_num << ":" << std::endl;
+			for (const Object2D* object : layer.objects)
+			{
+				std::cout << "\t" << object->get_name() << std::endl;
+			}
+		}
+	}
+
 	uint32_t Renderer2D::get_width() const
 	{
 		return this->m_frame_width;

@@ -84,9 +84,6 @@ namespace bacon
 
 		// TODO change default
 		ui::init();
-
-		// Initialize 2D game state (assets, scene, renderer)
-		GameState::state_2d = new GameState2D();
 	}
 
 	Editor::~Editor()
@@ -337,7 +334,7 @@ namespace bacon
 		}
 
 		// Left click deselect
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && Editor::cursor_inside_scene_preview)
 		{
 			bool found = false;
 			for (Object2D* object : GameState::state_2d->scene->get_objects())
@@ -464,20 +461,23 @@ namespace bacon
 			// Copy
 			if (IsKeyPressed(KEY_C) && inspect_object != nullptr)
 			{
-				Object2D* copy = inspect_object->clone();
-				copy->clone_children(*inspect_object);
+				GameObject* copy = inspect_object->clone();
+				copy->clone_children(*inspect_object, false);
 				Editor::copy_object = copy;
 			}
 
 			// Paste
 			if (IsKeyPressed(KEY_V) && Editor::copy_object != nullptr)
 			{
-				Object2D* copy_cast = (Object2D*)Editor::copy_object;
-				Object2D* new_object = copy_cast->clone_unique();
-				new_object->set_position(mouse_position);
-
-				new_object->clone_children(*copy_cast, true);
+				GameObject* new_object = Editor::copy_object->clone_unique();
+				new_object->clone_children(*Editor::copy_object, true);
 				new_object->add_to_scene();
+
+				if (GameState::game_type == GameState::GameType::GAME_2D)
+				{
+					Object2D* new_object_2d = (Object2D*)new_object;
+					new_object_2d->set_position(mouse_position);
+				}
 
 				ui::view_properties_object = new_object;
 				new_object->update_ui_buffer();
@@ -502,6 +502,8 @@ namespace bacon
 			return;
 		}
 
+		debug_log("Starting game...");
+
 		this->is_playing = true;
 
 		if (GameState::state_2d != nullptr && GameState::state_2d->scene != nullptr)
@@ -512,6 +514,8 @@ namespace bacon
 
 	void Editor::end_game()
 	{
+		debug_log("Ending game...");
+
 		this->is_playing = false;
 
 		// Store last object inspected

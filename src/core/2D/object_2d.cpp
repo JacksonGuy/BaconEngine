@@ -1,5 +1,6 @@
 #include "object_2d.h"
 
+#include "core/game_object.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "lib/byte_stream.h"
@@ -16,18 +17,15 @@
 
 namespace bacon
 {
-	Object2D* Object2D::create_object(ByteStream& bytes)
+	Object2D* Object2D::create_object_2d(ByteStream& bytes, TypeID type_id)
 	{
-		uint8_t type;
-		bytes >> type;
-
-		switch (ObjectType(type))
+		switch (type_id)
 		{
-			case ObjectType::ENTITY:
+			case TypeID::ENTITY_2D:
 				return new Entity(bytes);
-			case ObjectType::TEXT:
+			case TypeID::TEXT_2D:
 				return new TextObject(bytes);
-			case ObjectType::CAMERA:
+			case TypeID::CAMERA_2D:
 				return new CameraObject(bytes);
 			default:
 				debug_error("Unknown object type!");
@@ -37,9 +35,10 @@ namespace bacon
 
 	Object2D::Object2D() : GameObject()
 	{
+		m_type_id = static_type_id;
+
 		set_name("Object2D");
 
-		m_object_type = ObjectType::OBJECT;
 		m_position = {0.f, 0.f};
 		m_size = {1.f, 1.f};
 		m_rotation = 0.f;
@@ -49,24 +48,16 @@ namespace bacon
 
 	Object2D::Object2D(const Object2D& obj) : GameObject()
 	{
+		m_type_id = static_type_id;
 		this->copy(obj);
 	}
 
 	Object2D& Object2D::operator=(const Object2D& obj)
 	{
+		m_type_id = static_type_id;
 		this->copy(obj);
 
 		return *this;
-	}
-
-	void Object2D::destroy()
-	{
-		if (get_in_scene())
-		{
-			remove_from_scene();
-		}
-
-		delete_children();
 	}
 
 	void Object2D::copy(const GameObject& obj)
@@ -74,117 +65,51 @@ namespace bacon
 		GameObject::copy(obj);
 
 		const Object2D& object = static_cast<const Object2D&>(obj);
-		m_object_type = object.m_object_type;
+
+		Vector2 delta = Vector2Subtract(object.m_position, m_position);
 		m_position = object.m_position;
 		m_size = object.m_size;
 		m_rotation = object.m_rotation;
 		m_is_visible = object.m_is_visible;
 		m_layer = object.m_layer;
+
+		update_child_positions(delta);
 	}
 
-	void Object2D::add_children_to_scene()
+	void Object2D::clone_children(const GameObject& object, bool add_to_scene)
 	{
-		for (Object2D* child : m_children)
+		const Object2D* object_2d = dynamic_cast_to<const Object2D>(&object);
+		if (!object_2d)
 		{
-			child->add_to_scene();
-		}
-	}
-
-	void Object2D::remove_children_from_scene()
-	{
-		for (Object2D* child : m_children)
-		{
-			child->remove_from_scene();
-		}
-	}
-
-	/**
-	 * Sets the parent of the GameObject.
-	 * This will remove the object from its current
-	 * parent's child list.
-	 */
-	void Object2D::set_parent(Object2D* object)
-	{
-		if (object == nullptr || object->get_uuid() == get_uuid())
-		{
+			debug_error("Object is not an Object2D: {}", object.get_name().c_str());
 			return;
 		}
 
-		m_parent->remove_child(this);
-		m_parent = object;
-	}
-
-	/**
-	 * Adds a new GameObject to children.
-	 * Sets the passed GameObject's parent variable.
-	 */
-	void Object2D::add_child(Object2D* child)
-	{
-		m_children.push_back(child);
-		child->m_parent = this;
-	}
-
-	/**
-	 * Removes a GameObject from children.
-	 * Sets the passed GameObject's parent variable.
-	 */
-	void Object2D::remove_child(Object2D* child)
-	{
-		for (auto it = m_children.begin(); it != m_children.end(); ++it)
+		for (GameObject* child : object_2d->get_children())
 		{
-			Object2D* object = *it;
-			if (object->get_uuid() == child->get_uuid())
+			Object2D* child_obj = dynamic_cast_to<Object2D>(child);
+			if (!child_obj)
 			{
-				object->m_parent = nullptr;
-				m_children.erase(it);
-				return;
+				debug_error("Child is not an Object2D: {}", child->get_name().c_str());
+				continue;
 			}
-		}
-	}
 
-	/**
-	 * Destroys and deletes all children.
-	 * (Removes from scene and frees memory for each child).
-	 */
-	void Object2D::delete_children()
-	{
-		auto it = m_children.begin();
-		while (it != m_children.end())
-		{
-			Object2D* child = *it;
-
-			child->destroy();
-			delete child;
-
-			it = m_children.erase(it);
-		}
-
-		m_children.clear();
-	}
-
-	void Object2D::clone_children(const Object2D& object, bool add_to_scene)
-	{
-		for (Object2D* child : object.get_children())
-		{
 			// Clone child
 			Object2D* new_child = nullptr;
 			if (add_to_scene)
 			{
-				new_child = child->clone_unique();
+				new_child = (Object2D*)child->clone_unique();
 			}
 			else
 			{
-				new_child = child->clone();
+				new_child = (Object2D*)child->clone();
 			}
+			add_child(new_child);
 
 			// Set correct position
-			Vector2 delta = Vector2Subtract(child->m_position, child->m_parent->m_position);
+			Vector2 delta = Vector2Subtract(child_obj->m_position, object_2d->m_position);
 			Vector2 pos = Vector2Add(this->m_position, delta);
 			new_child->set_position(pos);
-
-			// Add to object
-			m_children.push_back(new_child);
-			new_child->set_parent(this);
 
 			// Add to scene
 			if (add_to_scene)
@@ -202,8 +127,13 @@ namespace bacon
 		float draw_rot = m_rotation;
 		if (m_parent != nullptr)
 		{
-			draw_pos = rotate_about_point(draw_pos, m_parent->m_position, m_parent->m_rotation);
-			draw_rot += m_parent->m_rotation;
+			Object2D* parent_2d = (Object2D*)m_parent;
+
+			draw_pos = rotate_about_point(
+				draw_pos,
+				parent_2d->m_position,
+				parent_2d->m_rotation);
+			draw_rot += parent_2d->m_rotation;
 		}
 
 		DrawRectangleLinesPro(
@@ -341,75 +271,27 @@ namespace bacon
 	{
 		GameObject::save_to_json(data);
 
-		data["object_type"] = static_cast<uint8_t>(m_object_type);
 		data["position"] = {m_position.x, m_position.y};
 		data["size"] = {m_size.x, m_size.y};
 		data["rotation"] = m_rotation;
 		data["is_visible"] = m_is_visible;
 		data["layer"] = m_layer;
-
-		for (Object2D* child : m_children)
-		{
-			nlohmann::json child_data;
-			child->save_to_json(child_data);
-			data["children"].push_back(child_data);
-		}
 	}
 
 	void Object2D::load_from_json(const nlohmann::json& data)
 	{
 		GameObject::load_from_json(data);
 
-		m_object_type = static_cast<ObjectType>(json_read_uint8(data, "object_type"));
 		m_position = json_read_vector2(data, "position");
 		m_size = json_read_vector2(data, "size");
 		m_rotation = json_read_float(data, "rotation");
 		m_is_visible = json_read_bool(data, "is_visible");
 		m_layer = json_read_size_t(data, "layer");
-
-		auto children = data["children"];
-		for (auto child : children)
-		{
-			if (child["type"] == "entity")
-			{
-				Entity* entity = new Entity();
-				entity->load_from_json(child);
-				entity->add_to_scene();
-
-				entity->set_parent(this);
-				this->add_child(entity);
-			}
-			else if (child["type"] == "text")
-			{
-				TextObject* text = new TextObject();
-				text->load_from_json(child);
-				text->add_to_scene();
-
-				text->set_parent(this);
-				this->add_child(text);
-			}
-			else if (child["type"] == "camera")
-			{
-				CameraObject* camera = new CameraObject();
-				camera->load_from_json(child);
-				camera->add_to_scene();
-
-				camera->set_parent(this);
-				this->add_child(camera);
-			}
-			else
-			{
-				debug_error("Unknown child type!");
-				continue;
-			}
-		}
 	}
 
 	ByteStream Object2D::serialize() const
 	{
 		ByteStream stream;
-
-		stream << static_cast<uint8_t>(m_object_type);
 
 		ByteStream base_data = GameObject::serialize();
 		stream << base_data.raw();
@@ -419,12 +301,6 @@ namespace bacon
 		stream << m_rotation;
 		stream << m_is_visible;
 		stream << m_layer;
-
-		stream << m_children.size();
-		for (GameObject* child : m_children)
-		{
-			stream << child->serialize().raw();
-		}
 
 		return stream;
 	}
@@ -438,27 +314,6 @@ namespace bacon
 		bytes >> m_rotation;
 		bytes >> m_is_visible;
 		bytes >> m_layer;
-
-		size_t child_count = 0;
-		bytes >> child_count;
-		m_children.reserve(child_count);
-		for (size_t i = 0; i < child_count; ++i)
-		{
-			// When we write byte arrays to ByteStream,
-			// we include the size of the array first.
-			// That isn't needed here, so just ignore this.
-			size_t child_size;
-			bytes >> child_size;
-
-			Object2D* child = Object2D::create_object(bytes);
-			if (!child)
-			{
-				debug_error("Failed to deserialize child object!");
-				return;
-			}
-			child->set_parent(this);
-			this->add_child(child);
-		}
 	}
 
 	void Object2D::set_position(Vector2 position)
@@ -482,9 +337,13 @@ namespace bacon
 	{
 		m_is_visible = visibility;
 
-		for (Object2D* child : m_children)
+		for (GameObject* child : m_children)
 		{
-			child->set_visibility(visibility);
+			Object2D* child_obj = dynamic_cast_to<Object2D>(child);
+			if (!child_obj)
+				continue;
+
+			child_obj->set_visibility(visibility);
 		}
 	}
 
@@ -504,9 +363,11 @@ namespace bacon
 
 	void Object2D::update_child_positions(Vector2 delta)
 	{
-		for (Object2D* child : m_children)
+		for (GameObject* child : m_children)
 		{
-			child->m_position = Vector2Add(child->m_position, delta);
+			Object2D* child_obj = (Object2D*)child;
+
+			child_obj->m_position = Vector2Add(child_obj->m_position, delta);
 		}
 	}
 } // namespace bacon

@@ -45,6 +45,12 @@ namespace bacon
 		static void operator delete(void* ptr);
 		static void operator delete(void* ptr, size_t size);
 
+		static bool classof(const GameObject* obj)
+		{
+			return obj->get_type_id() == TypeID::ENTITY_2D;
+		}
+		static constexpr TypeID static_type_id = TypeID::ENTITY_2D;
+
 		Entity();
 		Entity(ByteStream& bytes);
 		Entity(const Entity& entity);

@@ -38,7 +38,7 @@ namespace bacon
 
 	CameraObject::CameraObject() : Object2D()
 	{
-		m_object_type = ObjectType::CAMERA;
+		m_type_id = TypeID::CAMERA_2D;
 		set_name("Camera");
 
 		this->camera = {};
@@ -51,32 +51,27 @@ namespace bacon
 
 	CameraObject::CameraObject(ByteStream& bytes) : Object2D()
 	{
-		m_object_type = ObjectType::CAMERA;
+		m_type_id = TypeID::CAMERA_2D;
 		deserialize(bytes);
 	}
 
 	CameraObject::CameraObject(const CameraObject& camera) : Object2D()
 	{
-		m_object_type = ObjectType::CAMERA;
+		m_type_id = TypeID::CAMERA_2D;
 		copy(camera);
 	}
 
 	CameraObject& CameraObject::operator=(const CameraObject& camera)
 	{
-		m_object_type = ObjectType::CAMERA;
+		m_type_id = TypeID::CAMERA_2D;
 		copy(camera);
 
 		return *this;
 	}
 
-	void CameraObject::destroy()
+	CameraObject::~CameraObject()
 	{
-		if (get_in_scene())
-		{
-			remove_from_scene();
-		}
-
-		delete_children();
+		destroy();
 	}
 
 	void CameraObject::copy(const GameObject& object)
@@ -140,6 +135,9 @@ namespace bacon
 
 	void CameraObject::draw_outline() const
 	{
+		// Don't draw outline while playing game
+		if (globals::editor_ref->is_playing) return;
+
 		// Get size from zoom
 		Vector2 frame_size = {
 			ui::window_size.x / this->camera.zoom,
@@ -288,8 +286,8 @@ namespace bacon
 	{
 		Object2D::load_from_json(data);
 
-		is_active = json_read_bool(data, "is_active");
-		zoom = json_read_float(data, "zoom");
+		this->is_active = json_read_bool(data, "is_active");
+		this->zoom = json_read_float(data, "zoom");
 
 		if (this->is_active)
 		{
@@ -298,6 +296,7 @@ namespace bacon
 
 		camera.target = get_position();
 		camera.rotation = get_rotation();
+		camera.zoom = this->zoom;
 	}
 
 	ByteStream CameraObject::serialize() const
@@ -316,5 +315,7 @@ namespace bacon
 
 		bytes >> this->is_active;
 		bytes >> this->zoom;
+
+		camera.zoom = this->zoom;
 	}
 } // namespace bacon

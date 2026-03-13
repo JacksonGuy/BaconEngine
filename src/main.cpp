@@ -45,6 +45,7 @@ int main(int argc, char** argv)
 	globals::project_file =
 		"/home/jackson/BaconEngine/projects/test2/game.json";
 	file::load_project(false);
+	GameState::game_type = GameState::GameType::GAME_2D; // TODO
 
 	debug_log("Engine startup successful.");
 
@@ -52,27 +53,36 @@ int main(int argc, char** argv)
 	{
 		if (editor.is_playing)
 		{
-			// Do physics step
-			GameState::scene.simulation_step();
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				GameState::state_2d->scene->simulation_step();
+			}
 		}
 		else
 		{
-			editor.editor_input();
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				editor.editor_input_2d();
+			}
 		}
 
 		BeginDrawing();
 		ClearBackground(LIGHTGRAY);
 
-		Camera2D* drawing_camera = nullptr;
 		if (editor.is_playing)
 		{
-			drawing_camera = &GameState::scene.get_active_camera()->camera;
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				GameState::state_2d->scene->draw_entities();
+			}
 		}
 		else
 		{
-			drawing_camera = &editor.camera;
+			if (GameState::game_type == GameState::GameType::GAME_2D)
+			{
+				GameState::state_2d->scene->draw_entities(&editor.camera);
+			}
 		}
-		GameState::scene.draw_entities(drawing_camera);
 
 		editor.draw_ui();
 		EndDrawing();

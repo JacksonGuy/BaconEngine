@@ -44,7 +44,7 @@ namespace bacon
 
 	TextObject::TextObject() : Object2D()
 	{
-		m_object_type = ObjectType::TEXT;
+		m_type_id = TypeID::TEXT_2D;
 		set_name("Text");
 
 		m_text = "";
@@ -56,32 +56,27 @@ namespace bacon
 
 	TextObject::TextObject(ByteStream& bytes) : Object2D()
 	{
-		m_object_type = ObjectType::TEXT;
+		m_type_id = TypeID::TEXT_2D;
 		deserialize(bytes);
 	}
 
 	TextObject::TextObject(const TextObject& text_object) : Object2D()
 	{
-		m_object_type = ObjectType::TEXT;
+		m_type_id = TypeID::TEXT_2D;
 		copy(text_object);
 	}
 
 	TextObject& TextObject::operator=(const TextObject& text_object)
 	{
-		m_object_type = ObjectType::TEXT;
+		m_type_id = TypeID::TEXT_2D;
 		copy(text_object);
 
 		return *this;
 	}
 
-	void TextObject::destroy()
+	TextObject::~TextObject()
 	{
-		if (get_in_scene())
-		{
-			remove_from_scene();
-		}
-
-		delete_children();
+		destroy();
 	}
 
 	void TextObject::copy(const GameObject& object)
@@ -491,6 +486,7 @@ namespace bacon
 		m_char_spacing = json_read_int32(data, "char_spacing");
 		m_color = json_read_color(data, "color");
 
+		this->set_font(m_font_path);
 		this->set_text(m_text);
 	}
 

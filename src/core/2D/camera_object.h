@@ -14,6 +14,12 @@ namespace bacon
 		static void operator delete(void* ptr);
 		static void operator delete(void* ptr, size_t size);
 
+		static bool classof(const GameObject* obj)
+		{
+			return obj->get_type_id() == TypeID::CAMERA_2D;
+		}
+		static constexpr TypeID static_type_id = TypeID::CAMERA_2D;
+
 		Camera2D camera;
 		bool is_active;
 		float zoom;
@@ -24,9 +30,9 @@ namespace bacon
 		CameraObject& operator=(const CameraObject& camera);
 		CameraObject(CameraObject&& camera) = delete;
 		CameraObject& operator=(CameraObject&& camera) = delete;
-		~CameraObject() = default;
+		~CameraObject();
 
-		void destroy() override;
+		// void destroy() override;
 		void copy(const GameObject& object) override;
 		CameraObject* clone() const override;
 		CameraObject* clone_unique() const override;

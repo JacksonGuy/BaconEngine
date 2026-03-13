@@ -1,4 +1,4 @@
-#include "asset_manager.h"
+#include "asset_manager_2d.h"
 
 #include <memory>
 
@@ -8,12 +8,12 @@
 
 namespace bacon
 {
-	AssetManager::~AssetManager()
+	AssetManager2D::~AssetManager2D()
 	{
 		this->cleanup();
 	}
 
-	std::shared_ptr<Texture2D> AssetManager::load_texture(const std::string& path)
+	std::shared_ptr<Texture2D> AssetManager2D::load_texture(const std::string& path)
 	{
 		if (m_textures.find(path) != m_textures.end())
 		{
@@ -32,7 +32,7 @@ namespace bacon
 		}
 	}
 
-	std::shared_ptr<Font> AssetManager::load_font(const std::string& path)
+	std::shared_ptr<Font> AssetManager2D::load_font(const std::string& path)
 	{
 		if (m_fonts.find(path) != m_fonts.end())
 		{
@@ -52,18 +52,18 @@ namespace bacon
 	}
 
 	const std::unordered_map<std::string, std::shared_ptr<Texture2D>>&
-	AssetManager::get_textures() const
+	AssetManager2D::get_textures() const
 	{
 		return m_textures;
 	}
 
 	const std::unordered_map<std::string, std::shared_ptr<Font>>&
-	AssetManager::get_fonts() const
+	AssetManager2D::get_fonts() const
 	{
 		return m_fonts;
 	}
 
-	void AssetManager::cleanup()
+	void AssetManager2D::cleanup()
 	{
 		// Unload textures
 		for (auto it = m_textures.begin(); it != m_textures.end(); it++)

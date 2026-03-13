@@ -17,15 +17,21 @@ namespace bacon
 		static void operator delete(void* ptr);
 		static void operator delete(void* ptr, size_t size);
 
+		static bool classof(const GameObject* obj)
+		{
+			return obj->get_type_id() == TypeID::TEXT_2D;
+		}
+		static constexpr TypeID static_type_id = TypeID::TEXT_2D;
+
 		TextObject();
 		TextObject(ByteStream& bytes);
 		TextObject(const TextObject& text_object);
 		TextObject& operator=(const TextObject& text_object);
 		TextObject(TextObject&& text_object) = delete;
 		TextObject& operator=(TextObject&& text_object) = delete;
-		~TextObject() = default;
+		~TextObject();
 
-		void destroy() override;
+		// void destroy() override;
 		void copy(const GameObject& object) override;
 		TextObject* clone() const override;
 		TextObject* clone_unique() const override;

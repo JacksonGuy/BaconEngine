@@ -323,25 +323,22 @@ namespace bacon
 
 	void Scene2D::draw_entities(Camera2D* camera) const
 	{
+		assert(GameState::state_2d != nullptr);
+		assert(GameState::state_2d->renderer != nullptr);
+
 		if (camera != nullptr)
 		{
-			if (GameState::state_2d != nullptr && GameState::state_2d->renderer != nullptr)
-			{
-				GameState::state_2d->renderer->draw(camera);
-			}
+			GameState::state_2d->renderer->draw(camera);
 			return;
 		}
 
-		if (this->m_camera == nullptr)
+		if (m_camera == nullptr)
 		{
 			debug_error("Scene does not have a camera.");
 			return;
 		}
 
-		if (GameState::state_2d != nullptr && GameState::state_2d->renderer != nullptr)
-		{
-			GameState::state_2d->renderer->draw(&this->m_camera->camera);
-		}
+		GameState::state_2d->renderer->draw(&m_camera->camera);
 	}
 
 	void Scene2D::reset()
@@ -351,18 +348,12 @@ namespace bacon
 			GameState::state_2d->renderer->reset();
 		}
 
-		// Destroy bodies
-		for (Entity* entity : m_entities)
-		{
-			if (b2Body_IsValid(entity->get_body_id()))
-			{
-				b2DestroyBody(entity->get_body_id());
-			}
-		}
-
 		// Delete objects
-		for (GameObject* object : m_objects)
+		// For some reason, using range-based for-loop
+		// here causes a segfault, but using an iterator doesn't?
+		for (auto it = m_objects.begin(); it != m_objects.end(); it++)
 		{
+			Object2D* object = *it;
 			delete object;
 		}
 		m_objects.clear();
