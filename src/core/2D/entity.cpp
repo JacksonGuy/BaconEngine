@@ -1,4 +1,4 @@
-#include "entity.h"
+#include "entity_2d.h"
 
 #include "box2d/box2d.h"
 #include "box2d/collision.h"
@@ -21,29 +21,29 @@
 
 namespace bacon
 {
-	PoolAllocator<Entity> Entity::_allocator(globals::allocator_block_size);
+	PoolAllocator<Entity2D> Entity2D::_allocator(globals::allocator_block_size);
 
-	void* Entity::operator new(size_t size)
+	void* Entity2D::operator new(size_t size)
 	{
-		return Entity::_allocator.allocate();
+		return Entity2D::_allocator.allocate();
 	}
 
-	void* Entity::operator new(size_t size, void* ptr)
+	void* Entity2D::operator new(size_t size, void* ptr)
 	{
 		return ptr;
 	}
 
-	void Entity::operator delete(void* ptr)
+	void Entity2D::operator delete(void* ptr)
 	{
-		Entity::_allocator.deallocate((Entity*)ptr);
+		Entity2D::_allocator.deallocate((Entity2D*)ptr);
 	}
 
-	void Entity::operator delete(void* ptr, size_t size)
+	void Entity2D::operator delete(void* ptr, size_t size)
 	{
-		Entity::_allocator.deallocate((Entity*)ptr);
+		Entity2D::_allocator.deallocate((Entity2D*)ptr);
 	}
 
-	Entity::Entity() : Object2D()
+	Entity2D::Entity2D() : Object2D()
 	{
 		m_type_id = TypeID::ENTITY_2D;
 		set_name("Entity");
@@ -72,19 +72,19 @@ namespace bacon
 		};
 	}
 
-	Entity::Entity(ByteStream& bytes) : Object2D()
+	Entity2D::Entity2D(ByteStream& bytes) : Object2D()
 	{
 		m_type_id = TypeID::ENTITY_2D;
 		deserialize(bytes);
 	}
 
-	Entity::Entity(const Entity& entity) : Object2D()
+	Entity2D::Entity2D(const Entity2D& entity) : Object2D()
 	{
 		m_type_id = TypeID::ENTITY_2D;
 		copy(entity);
 	}
 
-	void Entity::destroy()
+	void Entity2D::destroy()
 	{
 		Object2D::destroy();
 
@@ -95,30 +95,30 @@ namespace bacon
 		}
 	}
 
-	void Entity::copy(const GameObject& object)
+	void Entity2D::copy(const GameObject& object)
 	{
 		Object2D::copy(object);
 
-		const Entity& entity = static_cast<const Entity&>(object);
+		const Entity2D& entity = static_cast<const Entity2D&>(object);
 
 		this->m_physics_properties = entity.m_physics_properties;
 		this->set_texture(entity.m_texture_path);
 	}
 
-	Entity* Entity::clone() const
+	Entity2D* Entity2D::clone() const
 	{
-		Entity* new_entity = new Entity(*this);
+		Entity2D* new_entity = new Entity2D(*this);
 		return new_entity;
 	}
 
-	Entity* Entity::clone_unique() const
+	Entity2D* Entity2D::clone_unique() const
 	{
-		Entity* new_entity = new Entity(*this);
+		Entity2D* new_entity = new Entity2D(*this);
 		new_entity->set_uuid(UUID());
 		return new_entity;
 	}
 
-	void Entity::add_to_scene()
+	void Entity2D::add_to_scene()
 	{
 		if (get_in_scene()) return;
 
@@ -129,7 +129,7 @@ namespace bacon
 		add_children_to_scene();
 	}
 
-	void Entity::remove_from_scene()
+	void Entity2D::remove_from_scene()
 	{
 		if (!get_in_scene()) return;
 
@@ -138,7 +138,7 @@ namespace bacon
 		remove_children_from_scene();
 	}
 
-	void Entity::set_texture(const std::string& path)
+	void Entity2D::set_texture(const std::string& path)
 	{
 		if (path.length() <= 0)
 		{
@@ -154,7 +154,7 @@ namespace bacon
 		}
 	}
 
-	void Entity::create_body(b2WorldId world_id)
+	void Entity2D::create_body(b2WorldId world_id)
 	{
 		b2BodyDef body_def = b2DefaultBodyDef();
 		body_def.rotation = b2MakeRot(get_rotation() * DEG2RAD);
@@ -220,13 +220,13 @@ namespace bacon
 		b2CreatePolygonShape(this->m_physics_body, &shape, &box);
 	}
 
-	void Entity::destroy_body()
+	void Entity2D::destroy_body()
 	{
 		b2DestroyBody(m_physics_body);
 		m_physics_body = b2_nullBodyId;
 	}
 
-	void Entity::update_ui_buffer() const
+	void Entity2D::update_ui_buffer() const
 	{
 		Object2D::update_ui_buffer();
 
@@ -248,7 +248,7 @@ namespace bacon
 		ui::obj_properties.is_bullet = m_physics_properties.is_bullet;
 	}
 
-	void Entity::update_from_ui_buffer()
+	void Entity2D::update_from_ui_buffer()
 	{
 		Object2D::update_from_ui_buffer();
 
@@ -275,7 +275,7 @@ namespace bacon
 		};
 	}
 
-	void Entity::draw() const
+	void Entity2D::draw() const
 	{
 		if (!get_visible())
 			return;
@@ -311,7 +311,7 @@ namespace bacon
 		}
 	}
 
-	void Entity::draw_properties_editor()
+	void Entity2D::draw_properties_editor()
 	{
 		// WARNING!!
 		using namespace event;
@@ -484,7 +484,7 @@ namespace bacon
 		}
 	}
 
-	void Entity::save_to_json(nlohmann::json& data) const
+	void Entity2D::save_to_json(nlohmann::json& data) const
 	{
 		Object2D::save_to_json(data);
 
@@ -504,7 +504,7 @@ namespace bacon
 		data["is_bullet"] = m_physics_properties.is_bullet;
 	}
 
-	void Entity::load_from_json(const nlohmann::json& data)
+	void Entity2D::load_from_json(const nlohmann::json& data)
 	{
 		Object2D::load_from_json(data);
 
@@ -528,7 +528,7 @@ namespace bacon
 		m_physics_properties.is_bullet = json_read_bool(data, "is_bullet");
 	}
 
-	ByteStream Entity::serialize() const
+	ByteStream Entity2D::serialize() const
 	{
 		ByteStream bytes = Object2D::serialize();
 
@@ -552,7 +552,7 @@ namespace bacon
 		return bytes;
 	}
 
-	void Entity::deserialize(ByteStream& bytes)
+	void Entity2D::deserialize(ByteStream& bytes)
 	{
 		Object2D::deserialize(bytes);
 

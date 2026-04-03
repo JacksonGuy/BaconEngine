@@ -10,7 +10,7 @@
 #include "raymath.h"
 #include "rlImGui.h"
 
-#include "core/2D/entity.h"
+#include "core/2D/entity_2d.h"
 #include "core/globals.h"
 #include "core/util.h"
 #include "editor/editor.h"

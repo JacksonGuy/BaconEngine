@@ -9,7 +9,7 @@
 #include "nlohmann/json.hpp"
 #include "nfd.h"
 
-#include "core/2D/entity.h"
+#include "core/2D/entity_2d.h"
 #include "editor/ui/editor_ui.h"
 #include "core/globals.h"
 #include "core/util.h"
@@ -81,7 +81,7 @@ namespace bacon
 
 				if (type_id == TypeID::ENTITY_2D)
 				{
-					Entity* entity = new Entity();
+					Entity2D* entity = new Entity2D();
 					entity->load_from_json(object);
 					entity->add_to_scene();
 				}

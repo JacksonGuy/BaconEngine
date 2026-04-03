@@ -506,7 +506,7 @@ namespace bacon
 
 			if (ImGui::Button("Create"))
 			{
-				Entity* entity = new Entity();
+				Entity2D* entity = new Entity2D();
 				entity->add_to_scene();
 
 				entity->set_name(name_buffer);
@@ -1026,7 +1026,7 @@ namespace bacon
 
 			if (json["type"] == "entity")
 			{
-				object = new Entity();
+				object = new Entity2D();
 			}
 			else if (json["type"] == "text")
 			{

@@ -226,7 +226,7 @@ namespace bacon
 
 				if (type_id == TypeID::ENTITY_2D)
 				{
-					Entity* entity = new Entity();
+					Entity2D* entity = new Entity2D();
 					entity->load_from_json(child);
 					entity->add_to_scene();
 

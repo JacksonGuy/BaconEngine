@@ -1,11 +1,14 @@
 #include "scene_2d.h"
 
 #include <memory>
+#include <stdexcept>
 
 #include "box2d/box2d.h"
 #include "box2d/id.h"
 
 #include "core/2D/camera_object.h"
+#include "core/2D/entity_2d.h"
+#include "core/2D/object_2d.h"
 #include "core/game_state.h"
 #include "core/util.h"
 #include "raylib.h"
@@ -34,7 +37,7 @@ namespace bacon
 		return m_objects;
 	}
 
-	const std::vector<Entity*>& Scene2D::get_entities() const
+	const std::vector<Entity2D*>& Scene2D::get_entities() const
 	{
 		return m_entities;
 	}
@@ -49,13 +52,14 @@ namespace bacon
 		return m_camera_objects;
 	}
 
-	void Scene2D::add_entity(Entity* entity)
+	void Scene2D::add_entity(Entity2D* entity)
 	{
-		this->m_objects.push_back(entity);
-		this->m_entities.push_back(entity);
+		m_objects.push_back(entity);
+		m_object_lookup.emplace(entity->get_uuid().as_string(), entity);
+		m_entities.push_back(entity);
 	}
 
-	void Scene2D::remove_entity(Entity* entity)
+	void Scene2D::remove_entity(Entity2D* entity)
 	{
 		if (!entity->get_in_scene()) return;
 
@@ -82,7 +86,7 @@ namespace bacon
 		// Remove from entity list
 		for (auto it = m_entities.begin(); it != m_entities.end(); it++)
 		{
-			Entity* ent = *it;
+			Entity2D* ent = *it;
 			if (ent->get_uuid() == entity->get_uuid())
 			{
 				m_entities.erase(it);
@@ -94,6 +98,9 @@ namespace bacon
 		{
 			return;
 		}
+
+		// Remove from lookup
+		m_object_lookup.erase(entity->get_uuid().as_string());
 
 		// Destroy physics body
 		if (b2Body_IsValid(entity->get_body_id()))
@@ -111,6 +118,7 @@ namespace bacon
 	void Scene2D::add_text_object(TextObject* text)
 	{
 		m_objects.push_back(text);
+		m_object_lookup.emplace(text->get_uuid().as_string(), text);
 		m_text_objects.push_back(text);
 	}
 
@@ -153,11 +161,15 @@ namespace bacon
 		{
 			return;
 		}
+
+		// Remove from object lookup
+		m_object_lookup.erase(text->get_uuid().as_string());
 	}
 
 	void Scene2D::add_camera(CameraObject* camera)
 	{
 		m_objects.push_back(camera);
+		m_object_lookup.emplace(camera->get_uuid().as_string(), camera);
 		m_camera_objects.push_back(camera);
 	}
 
@@ -206,32 +218,29 @@ namespace bacon
 		{
 			return;
 		}
+
+		// Remove from object lookup
+		m_object_lookup.erase(camera->get_uuid().as_string());
 	}
 
 	Object2D* Scene2D::find_object_by_uuid(std::string uuid) const
 	{
-		for (Object2D* object : m_objects)
+		try
 		{
-			if (object->get_uuid().as_string() == uuid)
-			{
-				return object;
-			}
+			Object2D* object = m_object_lookup.at(uuid);
+			return object;
 		}
-
-		return nullptr;
+		catch (const std::out_of_range&)
+		{
+			return nullptr;
+		}
 	}
 
 	Object2D* Scene2D::find_object_by_uuid(UUID uuid) const
 	{
-		for (Object2D* object : m_objects)
-		{
-			if (object->get_uuid() == uuid)
-			{
-				return object;
-			}
-		}
+		std::string uuid_string = uuid.as_string();
 
-		return nullptr;
+		return find_object_by_uuid(uuid_string);
 	}
 
 	void Scene2D::set_active_camera(CameraObject* camera)
@@ -257,7 +266,7 @@ namespace bacon
 			this->create_physics_world();
 		}
 
-		for (Entity* entity : m_entities)
+		for (Entity2D* entity : m_entities)
 		{
 			if (entity->get_body_type() != BodyType::NONE)
 			{
@@ -312,7 +321,7 @@ namespace bacon
 		b2World_Step(this->m_world, delta_time, this->physics_steps);
 
 		// Perform entity updates
-		for (Entity* entity : this->m_entities)
+		for (Entity2D* entity : this->m_entities)
 		{
 			if (entity->get_body_type() == BodyType::NONE)
 				continue;
@@ -371,7 +380,7 @@ namespace bacon
 	void Scene2D::cleanup()
 	{
 		// Destroy bodies
-		for (Entity* entity : m_entities)
+		for (Entity2D* entity : m_entities)
 		{
 			if (b2Body_IsValid(entity->get_body_id()))
 			{

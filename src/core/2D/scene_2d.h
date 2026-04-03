@@ -4,7 +4,7 @@
 
 #include "core/2D/object_2d.h"
 #include "core/2D/camera_object.h"
-#include "core/2D/entity.h"
+#include "core/2D/entity_2d.h"
 #include "core/2D/text_object.h"
 
 namespace bacon
@@ -22,12 +22,12 @@ namespace bacon
 		~Scene2D();
 
 		const std::vector<Object2D*>& get_objects() const;
-		const std::vector<Entity*>& get_entities() const;
+		const std::vector<Entity2D*>& get_entities() const;
 		const std::vector<TextObject*>& get_text_objects() const;
 		const std::vector<CameraObject*>& get_cameras() const;
 
-		void add_entity(Entity* entity);
-		void remove_entity(Entity* entity);
+		void add_entity(Entity2D* entity);
+		void remove_entity(Entity2D* entity);
 		void add_text_object(TextObject* text);
 		void remove_text_object(TextObject* text);
 		void add_camera(CameraObject* camera);
@@ -55,9 +55,10 @@ namespace bacon
 
 	private:
 		std::vector<Object2D*> m_objects;
-		std::vector<Entity*> m_entities;
+		std::vector<Entity2D*> m_entities;
 		std::vector<TextObject*> m_text_objects;
 		std::vector<CameraObject*> m_camera_objects;
+		std::unordered_map<std::string, Object2D*> m_object_lookup;
 
 		CameraObject* m_camera;
 

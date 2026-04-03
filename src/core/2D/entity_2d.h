@@ -6,6 +6,7 @@
 #include "raylib.h"
 
 #include "core/2D/object_2d.h"
+#include "core/lua_api.h"
 #include "lib/pool_allocator.h"
 
 namespace bacon
@@ -36,10 +37,10 @@ namespace bacon
 		bool is_bullet;
 	} PhysicsProperties;
 
-	class Entity : public Object2D
+	class Entity2D : public Object2D
 	{
 	public:
-		static PoolAllocator<Entity> _allocator;
+		static PoolAllocator<Entity2D> _allocator;
 		static void* operator new(size_t size);
 		static void* operator new(size_t size, void* ptr);
 		static void operator delete(void* ptr);
@@ -51,18 +52,21 @@ namespace bacon
 		}
 		static constexpr TypeID static_type_id = TypeID::ENTITY_2D;
 
-		Entity();
-		Entity(ByteStream& bytes);
-		Entity(const Entity& entity);
-		Entity& operator=(const Entity& entity) = delete;
-		Entity(Entity&& entity) = delete;
-		Entity& operator=(Entity&& entity) = delete;
-		~Entity() = default;
+		std::vector<std::string> lua_scripts;
+		std::unordered_map<std::string, LuaVar> lua_variables;
+
+		Entity2D();
+		Entity2D(ByteStream& bytes);
+		Entity2D(const Entity2D& Entity2D);
+		Entity2D& operator=(const Entity2D& Entity2D) = delete;
+		Entity2D(Entity2D&& Entity2D) = delete;
+		Entity2D& operator=(Entity2D&& Entity2D) = delete;
+		~Entity2D() = default;
 
 		void destroy() override;
 		void copy(const GameObject& object) override;
-		Entity* clone() const override;
-		Entity* clone_unique() const override;
+		Entity2D* clone() const override;
+		Entity2D* clone_unique() const override;
 
 		void add_to_scene() override;
 		void remove_from_scene() override;

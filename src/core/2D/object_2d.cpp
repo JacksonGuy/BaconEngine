@@ -22,7 +22,7 @@ namespace bacon
 		switch (type_id)
 		{
 			case TypeID::ENTITY_2D:
-				return new Entity(bytes);
+				return new Entity2D(bytes);
 			case TypeID::TEXT_2D:
 				return new TextObject(bytes);
 			case TypeID::CAMERA_2D:
