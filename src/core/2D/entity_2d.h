@@ -52,9 +52,6 @@ namespace bacon
 		}
 		static constexpr TypeID static_type_id = TypeID::ENTITY_2D;
 
-		std::vector<std::string> lua_scripts;
-		std::unordered_map<std::string, LuaVar> lua_variables;
-
 		Entity2D();
 		Entity2D(ByteStream& bytes);
 		Entity2D(const Entity2D& Entity2D);
@@ -80,6 +77,10 @@ namespace bacon
 		void create_body(b2WorldId world_id);
 		void destroy_body();
 
+		void load_lua_script(const std::string& path);
+		void create_lua_variable(const std::string& name, const LuaVar& var);
+		LuaVar* get_lua_variable(const std::string& name);
+
 		void update_ui_buffer() const override;
 		void update_from_ui_buffer() override;
 
@@ -98,5 +99,9 @@ namespace bacon
 		b2BodyId m_physics_body;
 		b2ShapeId m_physics_shape;
 		PhysicsProperties m_physics_properties;
+
+		std::vector<std::string> m_lua_script_paths;
+		std::vector<sol::protected_function> m_lua_script_objects;
+		std::unordered_map<std::string, LuaVar> m_lua_variables;
 	};
 } // namespace bacon

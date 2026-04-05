@@ -10,20 +10,21 @@ namespace bacon
 {
 	enum class LuaVar_t : uint8_t
 	{
-		STRING = 0,
+		NONE = 0,
+		STRING,
 		FLOAT,
 		INT,
 		BOOL,
 	};
 
-	typedef struct {
+	typedef struct LuaVar {
 		LuaVar_t type;
-		union value {
-			std::string str_val;
-			float float_val;
-			int int_val;
-			bool bool_val;
-		};
+		float float_val;
+		int int_val;
+		bool bool_val;
+		std::string str_val;
+
+		LuaVar();
 	} LuaVar;
 
 	namespace Lua

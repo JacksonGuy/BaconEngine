@@ -13,6 +13,7 @@ namespace bacon
 	{
 	public:
 		int physics_steps = 4;
+		std::unique_ptr<sol::state> lua_state;
 
 		Scene2D();
 		Scene2D(const Scene2D& scene) = delete;
@@ -65,7 +66,5 @@ namespace bacon
 		b2WorldId m_world;
 		float m_length_units_per_meter;
 		float m_gravity;
-
-		std::unique_ptr<sol::state> m_lua_state;
 	};
 } // namespace bacon

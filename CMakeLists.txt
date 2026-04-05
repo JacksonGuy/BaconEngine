@@ -27,6 +27,7 @@ set(SOURCE_FILES
     src/core/uuid.cpp
     src/core/game_state.cpp
     src/core/game_object.cpp
+    src/core/lua_api.cpp
     src/core/2D/game_state_2d.cpp
     src/core/2D/scene_2d.cpp
     src/core/2D/object_2d.cpp

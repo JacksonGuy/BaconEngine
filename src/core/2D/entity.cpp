@@ -7,7 +7,9 @@
 #include "core/2D/object_2d.h"
 #include "core/game_object.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_stdlib.h"
+#include "nlohmann/detail/value_t.hpp"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -103,6 +105,13 @@ namespace bacon
 
 		this->m_physics_properties = entity.m_physics_properties;
 		this->set_texture(entity.m_texture_path);
+
+		m_lua_variables = entity.m_lua_variables;
+		for (const std::string& path : entity.m_lua_script_paths)
+		{
+			// Adds path to list and creates script object
+			load_lua_script(path);
+		}
 	}
 
 	Entity2D* Entity2D::clone() const
@@ -226,6 +235,36 @@ namespace bacon
 		m_physics_body = b2_nullBodyId;
 	}
 
+	void Entity2D::load_lua_script(const std::string& path)
+	{
+		sol::load_result result = GameState::state_2d->scene->lua_state->load_file(path);
+		if (!result.valid())
+		{
+			debug_error("Failed to load script: %s", path.c_str());
+			return;
+		}
+
+		m_lua_script_paths.push_back(path);
+		m_lua_script_objects.push_back(result);
+	}
+
+	void Entity2D::create_lua_variable(const std::string& name, const LuaVar& var)
+	{
+		// m_lua_variables[name] = var;
+		m_lua_variables.emplace(std::pair(name, var));
+	}
+
+	LuaVar* Entity2D::get_lua_variable(const std::string& name)
+	{
+		auto variable = m_lua_variables.find(name);
+		if (variable == m_lua_variables.end())
+		{
+			return nullptr;
+		}
+
+		return &(variable->second);
+	}
+
 	void Entity2D::update_ui_buffer() const
 	{
 		Object2D::update_ui_buffer();
@@ -347,130 +386,215 @@ namespace bacon
 
 		ImGui::Separator();
 
-		ImGui::BeginTabBar("Properties");
-		// -----------------
-		// Physics variables
-		// -----------------
-		ImGui::BeginTabItem("Physics");
-		const char* body_options[] = {"None", "Static", "Dynamic", "Kinematic"};
-		int current_body_option = ui::obj_properties.body_type;
-		ImGui::ItemLabel("Physics Body", ItemLabelFlag::Left);
-		if (ImGui::Combo("##physics_body", &current_body_option, body_options, 4))
+		static bool show_variable_create = false;
+		if (ImGui::BeginTabBar("Properties"))
 		{
-			ui::obj_properties.body_type = BodyType(current_body_option);
+			if (ImGui::BeginTabItem("Physics"))
+			{
+				const char* body_options[] = {"None", "Static", "Dynamic", "Kinematic"};
+				int current_body_option = ui::obj_properties.body_type;
+				ImGui::ItemLabel("Physics Body", ItemLabelFlag::Left);
+				if (ImGui::Combo("##physics_body", &current_body_option, body_options, 4))
+				{
+					ui::obj_properties.body_type = BodyType(current_body_option);
 
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Mass", ItemLabelFlag::Left);
+				ImGui::InputFloat("##body_mass", &ui::obj_properties.mass);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Density", ItemLabelFlag::Left);
+				ImGui::InputFloat("##density", &ui::obj_properties.density);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Friction", ItemLabelFlag::Left);
+				ImGui::SliderFloat("##shape_friction", &ui::obj_properties.friction, 0.f, 1.f);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Restitution", ItemLabelFlag::Left);
+				ImGui::SliderFloat("##restitution", &ui::obj_properties.restitution, 0.f, 1.f);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Body Center", ItemLabelFlag::Left);
+				ImGui::InputFloat2("##body_center", ui::obj_properties.body_center);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Rotational Inertia", ItemLabelFlag::Left);
+				ImGui::InputFloat("##rotational_inertia", &ui::obj_properties.rotational_inertia);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Linear Damping", ItemLabelFlag::Left);
+				ImGui::SliderFloat("##linear_damping", &ui::obj_properties.linear_damping, 0.0f, 1.0f);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Angular Damping", ItemLabelFlag::Left);
+				ImGui::SliderFloat("##angular_damping", &ui::obj_properties.angular_damping, 0.0f, 1.0f);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Gravity Scale", ItemLabelFlag::Left);
+				ImGui::InputFloat("##gravity_scale", &ui::obj_properties.gravity_scale);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Sleeping?", ItemLabelFlag::Left);
+				ImGui::Checkbox("##is_sleeping", &ui::obj_properties.is_sleeping);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Disabled?", ItemLabelFlag::Left);
+				ImGui::Checkbox("##disabled", &ui::obj_properties.disabled);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Is Bullet?", ItemLabelFlag::Left);
+				ImGui::Checkbox("##is_bullet", &ui::obj_properties.is_bullet);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::ItemLabel("Fixed Rotation", ItemLabelFlag::Left);
+				ImGui::Checkbox("##fixed_rotation", &ui::obj_properties.fixed_rotation);
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Scripting"))
+			{
+				for (auto it = m_lua_variables.begin(); it != m_lua_variables.end(); ++it)
+				{
+					const std::string& var_name = it->first;
+					LuaVar& variable = it->second;
+
+					ImGui::ItemLabel(var_name, ItemLabelFlag::Left);
+					switch (variable.type)
+					{
+						case LuaVar_t::BOOL:
+						{
+							ImGui::Checkbox("##bool_val", &variable.bool_val);
+							break;
+						}
+
+						case LuaVar_t::INT:
+						{
+							ImGui::InputInt("##int_val", &variable.int_val);
+							break;
+						}
+
+						case LuaVar_t::FLOAT:
+						{
+							ImGui::InputFloat("##float_val", &variable.float_val);
+							break;
+						}
+
+						case LuaVar_t::STRING:
+						{
+							ImGui::InputText("##string_val", &variable.str_val);
+							break;
+						}
+
+						default:
+						{
+							break;
+						}
+					}
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+						globals::has_unsaved_changes = true;
+						ui::properties_changes_made = true;
+					}
+				}
+
+				if (ImGui::Button("Create Variable"))
+				{
+					show_variable_create = true;
+				}
+
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
 		}
 
-		ImGui::ItemLabel("Mass", ItemLabelFlag::Left);
-		ImGui::InputFloat("##body_mass", &ui::obj_properties.mass);
-		if (ImGui::IsItemDeactivatedAfterEdit())
+		if (show_variable_create)
 		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
+			static std::string variable_name;
+			static int variable_type_select;
+			const char* variable_types[] = {
+				"String", "Float", "Integer", "Boolean",
+			};
+
+			ImGui::Begin("Create Variable", &show_variable_create);
+				ImGui::ItemLabel("Variable Name", ItemLabelFlag::Left);
+				ImGui::InputText("##variable_name", &variable_name);
+
+				ImGui::ItemLabel("Variable Type", ItemLabelFlag::Left);
+				ImGui::Combo("##variable_type", &variable_type_select, variable_types, 4);
+
+				if (ImGui::Button("Create"))
+				{
+					LuaVar_t var_type = LuaVar_t(variable_type_select + 1);
+					LuaVar new_variable;
+					new_variable.type = var_type;
+
+					m_lua_variables.emplace(std::pair(variable_name, new_variable));
+					variable_name = "";
+
+					globals::has_unsaved_changes = true;
+					ui::properties_changes_made = true;
+				}
+			ImGui::End();
 		}
-
-		ImGui::ItemLabel("Density", ItemLabelFlag::Left);
-		ImGui::InputFloat("##density", &ui::obj_properties.density);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Friction", ItemLabelFlag::Left);
-		ImGui::SliderFloat("##shape_friction", &ui::obj_properties.friction, 0.f, 1.f);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Restitution", ItemLabelFlag::Left);
-		ImGui::SliderFloat("##restitution", &ui::obj_properties.restitution, 0.f, 1.f);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Body Center", ItemLabelFlag::Left);
-		ImGui::InputFloat2("##body_center", ui::obj_properties.body_center);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Rotational Inertia", ItemLabelFlag::Left);
-		ImGui::InputFloat("##rotational_inertia", &ui::obj_properties.rotational_inertia);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Linear Damping", ItemLabelFlag::Left);
-		ImGui::SliderFloat("##linear_damping", &ui::obj_properties.linear_damping, 0.0f, 1.0f);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Angular Damping", ItemLabelFlag::Left);
-		ImGui::SliderFloat("##angular_damping", &ui::obj_properties.angular_damping, 0.0f, 1.0f);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Gravity Scale", ItemLabelFlag::Left);
-		ImGui::InputFloat("##gravity_scale", &ui::obj_properties.gravity_scale);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Sleeping?", ItemLabelFlag::Left);
-		ImGui::Checkbox("##is_sleeping", &ui::obj_properties.is_sleeping);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Disabled?", ItemLabelFlag::Left);
-		ImGui::Checkbox("##disabled", &ui::obj_properties.disabled);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Is Bullet?", ItemLabelFlag::Left);
-		ImGui::Checkbox("##is_bullet", &ui::obj_properties.is_bullet);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::ItemLabel("Fixed Rotation", ItemLabelFlag::Left);
-		ImGui::Checkbox("##fixed_rotation", &ui::obj_properties.fixed_rotation);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			globals::has_unsaved_changes = true;
-			ui::properties_changes_made = true;
-		}
-
-		ImGui::EndTabItem();
-		// -----------------
-
-		ImGui::EndTabBar();
 
 		if (ui::properties_changes_made)
 		{
@@ -502,6 +626,50 @@ namespace bacon
 		data["is_asleep"] = m_physics_properties.is_sleeping;
 		data["fixed_rotation"] = m_physics_properties.fixed_rotation;
 		data["is_bullet"] = m_physics_properties.is_bullet;
+
+		for (auto it = m_lua_variables.begin(); it != m_lua_variables.end(); ++it)
+		{
+			const std::string& var_name = it->first;
+			const LuaVar& variable = it->second;
+
+			switch (variable.type)
+			{
+				case LuaVar_t::BOOL:
+					data["variables"][var_name] = {
+						{"type", LuaVar_t::BOOL},
+						{"value", variable.bool_val},
+					};
+					break;
+
+				case LuaVar_t::INT:
+					data["variables"][var_name] = {
+						{"type", LuaVar_t::INT},
+						{"value", variable.int_val},
+					};
+					break;
+
+				case LuaVar_t::FLOAT:
+					data["variables"][var_name] = {
+						{"type", LuaVar_t::FLOAT},
+						{"value", variable.float_val},
+					};
+					break;
+
+				case LuaVar_t::STRING:
+					data["variables"][var_name] = {
+						{"type", LuaVar_t::STRING},
+						{"value", variable.str_val},
+					};
+					break;
+
+				default:
+					data["variables"][var_name] = {
+						{"type", LuaVar_t::NONE},
+						{"value", NULL}
+					};
+					break;
+			}
+		}
 	}
 
 	void Entity2D::load_from_json(const nlohmann::json& data)
@@ -526,6 +694,45 @@ namespace bacon
 		m_physics_properties.is_sleeping = json_read_bool(data, "is_asleep");
 		m_physics_properties.fixed_rotation = json_read_bool(data, "fixed_rotation");
 		m_physics_properties.is_bullet = json_read_bool(data, "is_bullet");
+
+		if (data.contains("variables"))
+		{
+			for (auto it = data["variables"].begin(); it != data["variables"].end(); ++it)
+			{
+				const std::string& var_name = it.key();
+				auto& parameters = *it;
+				LuaVar_t var_type = parameters["type"];
+				auto value = parameters["value"];
+
+				if (var_type == LuaVar_t::NONE)
+					continue;
+
+				LuaVar new_variable;
+				new_variable.type = var_type;
+				switch (var_type)
+				{
+					case LuaVar_t::BOOL:
+						new_variable.bool_val = value;
+						break;
+
+					case LuaVar_t::INT:
+						new_variable.int_val = value;
+						break;
+
+					case LuaVar_t::FLOAT:
+						new_variable.float_val = value;
+						break;
+
+					case LuaVar_t::STRING:
+						new_variable.str_val = value;
+						break;
+
+					default:
+						break;
+				}
+				m_lua_variables[var_name] = new_variable;
+			}
+		}
 	}
 
 	ByteStream Entity2D::serialize() const

@@ -24,7 +24,7 @@ namespace bacon
 
 		this->create_physics_world();
 
-		m_lua_state = std::make_unique<sol::state>();
+		lua_state = std::make_unique<sol::state>();
 	}
 
 	Scene2D::~Scene2D()
@@ -374,7 +374,7 @@ namespace bacon
 		m_camera = nullptr;
 
 		this->create_physics_world();
-		m_lua_state.reset();
+		lua_state.reset();
 	}
 
 	void Scene2D::cleanup()
